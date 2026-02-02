@@ -194,6 +194,8 @@ function M.compile_problem(debug, on_complete)
     return
   end
 
+  require('cp.utils').ensure_dirs()
+
   local binary = debug and state.get_debug_file() or state.get_binary_file()
   local substitutions = { source = state.get_source_file(), binary = binary }
 
