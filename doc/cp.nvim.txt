@@ -208,7 +208,7 @@ CONFIGURATION                                                      *cp-config*
 Here's an example configuration with lazy.nvim:
 >lua
     {
-      'barrett-ruth/cp.nvim',
+      'barrettruth/cp.nvim',
       cmd = 'CP',
       build = 'uv sync',
       opts = {
