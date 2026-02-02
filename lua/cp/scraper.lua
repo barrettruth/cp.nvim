@@ -186,7 +186,7 @@ function M.scrape_all_tests(platform, contest_id, callback)
         return
       end
       vim.schedule(function()
-        vim.system({ 'mkdir', '-p', 'build', 'io' }):wait()
+        require('cp.utils').ensure_dirs()
         local config = require('cp.config')
         local base_name = config.default_filename(contest_id, ev.problem_id)
         for i, t in ipairs(ev.tests) do

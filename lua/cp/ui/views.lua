@@ -13,6 +13,7 @@ local utils = require('cp.utils')
 
 local current_diff_layout = nil
 local current_mode = nil
+local io_view_running = false
 
 function M.disable()
   local active_panel = state.get_active_panel()
@@ -390,6 +391,8 @@ function M.ensure_io_view()
     return
   end
 
+  require('cp.utils').ensure_dirs()
+
   local source_file = state.get_source_file()
   if source_file then
     local source_file_abs = vim.fn.fnamemodify(source_file, ':p')
@@ -622,6 +625,12 @@ local function render_io_view_results(io_state, test_indices, mode, combined_res
 end
 
 function M.run_io_view(test_indices_arg, debug, mode)
+  if io_view_running then
+    logger.log('Tests already running', vim.log.levels.WARN)
+    return
+  end
+  io_view_running = true
+
   logger.log(('%s tests...'):format(debug and 'Debugging' or 'Running'), vim.log.levels.INFO, true)
 
   mode = mode or 'combined'
@@ -633,6 +642,7 @@ function M.run_io_view(test_indices_arg, debug, mode)
       'No platform/contest/problem configured. Use :CP <platform> <contest> [...] first.',
       vim.log.levels.ERROR
     )
+    io_view_running = false
     return
   end
 
@@ -640,6 +650,7 @@ function M.run_io_view(test_indices_arg, debug, mode)
   local contest_data = cache.get_contest_data(platform, contest_id)
   if not contest_data or not contest_data.index_map then
     logger.log('No test cases available.', vim.log.levels.ERROR)
+    io_view_running = false
     return
   end
 
@@ -656,11 +667,13 @@ function M.run_io_view(test_indices_arg, debug, mode)
     local combined = cache.get_combined_test(platform, contest_id, problem_id)
     if not combined then
       logger.log('No combined test available', vim.log.levels.ERROR)
+      io_view_running = false
       return
     end
   else
     if not run.load_test_cases() then
       logger.log('No test cases available', vim.log.levels.ERROR)
+      io_view_running = false
       return
     end
   end
@@ -681,6 +694,7 @@ function M.run_io_view(test_indices_arg, debug, mode)
             ),
             vim.log.levels.WARN
           )
+          io_view_running = false
           return
         end
       end
@@ -698,6 +712,7 @@ function M.run_io_view(test_indices_arg, debug, mode)
 
   local io_state = state.get_io_view_state()
   if not io_state then
+    io_view_running = false
     return
   end
 
@@ -711,6 +726,7 @@ function M.run_io_view(test_indices_arg, debug, mode)
 
   execute.compile_problem(debug, function(compile_result)
     if not vim.api.nvim_buf_is_valid(io_state.output_buf) then
+      io_view_running = false
       return
     end
 
@@ -730,6 +746,7 @@ function M.run_io_view(test_indices_arg, debug, mode)
 
       local ns = vim.api.nvim_create_namespace('cp_io_view_compile_error')
       utils.update_buffer_content(io_state.output_buf, lines, highlights, ns)
+      io_view_running = false
       return
     end
 
@@ -737,6 +754,7 @@ function M.run_io_view(test_indices_arg, debug, mode)
       local combined = cache.get_combined_test(platform, contest_id, problem_id)
       if not combined then
         logger.log('No combined test found', vim.log.levels.ERROR)
+        io_view_running = false
         return
       end
 
@@ -745,18 +763,21 @@ function M.run_io_view(test_indices_arg, debug, mode)
       run.run_combined_test(debug, function(result)
         if not result then
           logger.log('Failed to run combined test', vim.log.levels.ERROR)
+          io_view_running = false
           return
         end
 
         if vim.api.nvim_buf_is_valid(io_state.output_buf) then
           render_io_view_results(io_state, test_indices, mode, result, combined.input)
         end
+        io_view_running = false
       end)
     else
       run.run_all_test_cases(test_indices, debug, nil, function()
         if vim.api.nvim_buf_is_valid(io_state.output_buf) then
           render_io_view_results(io_state, test_indices, mode, nil, nil)
         end
+        io_view_running = false
       end)
     end
   end)
@@ -859,6 +880,9 @@ function M.toggle_panel(panel_opts)
   end
 
   local function refresh_panel()
+    if state.get_active_panel() ~= 'run' then
+      return
+    end
     if not test_buffers.tab_buf or not vim.api.nvim_buf_is_valid(test_buffers.tab_buf) then
       return
     end
@@ -883,6 +907,10 @@ function M.toggle_panel(panel_opts)
       vim.api.nvim_win_call(test_windows.tab_win, function()
         vim.cmd.normal({ 'zz', bang = true })
       end)
+    end
+
+    if test_windows.tab_win and vim.api.nvim_win_is_valid(test_windows.tab_win) then
+      vim.api.nvim_set_current_win(test_windows.tab_win)
     end
   end
 
@@ -942,6 +970,9 @@ function M.toggle_panel(panel_opts)
 
   local function finalize_panel()
     vim.schedule(function()
+      if state.get_active_panel() ~= 'run' then
+        return
+      end
       if config.ui.ansi then
         require('cp.ui.ansi').setup_highlight_groups()
       end

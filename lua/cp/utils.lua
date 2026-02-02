@@ -262,4 +262,8 @@ function M.cwd_executables()
   return out
 end
 
+function M.ensure_dirs()
+  vim.system({ 'mkdir', '-p', 'build', 'io' }):wait()
+end
+
 return M
