@@ -205,71 +205,66 @@ Debug Builds ~
 ==============================================================================
 CONFIGURATION                                                      *cp-config*
 
-Here's an example configuration with lazy.nvim:
+Configuration is done via `vim.g.cp_config`. Set this before using the plugin:
 >lua
-    {
-      'barrettruth/cp.nvim',
-      cmd = 'CP',
-      build = 'uv sync',
-      opts = {
-        languages = {
-          cpp = {
-            extension = 'cc',
-            commands = {
-              build = { 'g++', '-std=c++17', '{source}', '-o', '{binary}',
-              '-fdiagnostics-color=always' },
-              run   = { '{binary}' },
-              debug = { 'g++', '-std=c++17', '-fsanitize=address,undefined',
-                        '{source}', '-o', '{binary}' },
-            },
-          },
-          python = {
-            extension = 'py',
-            commands = {
-              run   = { 'python', '{source}' },
-              debug = { 'python', '{source}' },
-            },
+    vim.g.cp_config = {
+      languages = {
+        cpp = {
+          extension = 'cc',
+          commands = {
+            build = { 'g++', '-std=c++17', '{source}', '-o', '{binary}',
+            '-fdiagnostics-color=always' },
+            run   = { '{binary}' },
+            debug = { 'g++', '-std=c++17', '-fsanitize=address,undefined',
+                      '{source}', '-o', '{binary}' },
           },
         },
-        platforms = {
-          cses = {
-            enabled_languages = { 'cpp', 'python' },
-            default_language  = 'cpp',
-            overrides = {
-              cpp = { extension = 'cpp', commands = { build = { ... } } }
-            },
-          },
-          atcoder = {
-            enabled_languages = { 'cpp', 'python' },
-            default_language  = 'cpp',
-          },
-          codeforces = {
-            enabled_languages = { 'cpp', 'python' },
-            default_language  = 'cpp',
+        python = {
+          extension = 'py',
+          commands = {
+            run   = { 'python', '{source}' },
+            debug = { 'python', '{source}' },
           },
         },
-        open_url = true,
-        debug = false,
-        ui = {
-          ansi = true,
-          run = {
-            width = 0.3,
-            next_test_key = '<c-n>',  -- or nil to disable
-            prev_test_key = '<c-p>',  -- or nil to disable
+      },
+      platforms = {
+        cses = {
+          enabled_languages = { 'cpp', 'python' },
+          default_language  = 'cpp',
+          overrides = {
+            cpp = { extension = 'cpp', commands = { build = { ... } } }
           },
-          panel = {
-            diff_modes = { 'side-by-side', 'git', 'vim' },
-            max_output_lines = 50,
-          },
-          diff = {
-            git = {
-              args = { 'diff', '--no-index', '--word-diff=plain',
-                       '--word-diff-regex=.', '--no-prefix' },
-            },
-          },
-          picker = 'telescope',
         },
-      }
+        atcoder = {
+          enabled_languages = { 'cpp', 'python' },
+          default_language  = 'cpp',
+        },
+        codeforces = {
+          enabled_languages = { 'cpp', 'python' },
+          default_language  = 'cpp',
+        },
+      },
+      open_url = true,
+      debug = false,
+      ui = {
+        ansi = true,
+        run = {
+          width = 0.3,
+          next_test_key = '<c-n>',  -- or nil to disable
+          prev_test_key = '<c-p>',  -- or nil to disable
+        },
+        panel = {
+          diff_modes = { 'side-by-side', 'git', 'vim' },
+          max_output_lines = 50,
+        },
+        diff = {
+          git = {
+            args = { 'diff', '--no-index', '--word-diff=plain',
+                     '--word-diff-regex=.', '--no-prefix' },
+          },
+        },
+        picker = 'telescope',
+      },
     }
 <
 
@@ -279,7 +274,7 @@ the default; per-platform overrides can tweak 'extension' or 'commands'.
 
 For example, to run CodeForces contests with Python by default:
 >lua
-    {
+    vim.g.cp_config = {
       platforms = {
         codeforces = {
           default_language  = 'python',
@@ -290,7 +285,7 @@ For example, to run CodeForces contests with Python by default:
 Any language is supported provided the proper configuration. For example, to
 run CSES problems with Rust using the single schema:
 >lua
-    {
+    vim.g.cp_config = {
       languages = {
         rust = {
           extension = 'rs',
