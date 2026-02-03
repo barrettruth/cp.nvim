@@ -21,7 +21,7 @@ https://github.com/user-attachments/assets/e81d8dfb-578f-4a79-9989-210164fc0148
 
 ## Installation
 
-Install using your package manager of choice or with
+Install using your package manager of choice or via
 [luarocks](https://luarocks.org/modules/barrettruth/cp.nvim):
 
 ```
