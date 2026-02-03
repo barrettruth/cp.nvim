@@ -19,6 +19,15 @@ https://github.com/user-attachments/assets/e81d8dfb-578f-4a79-9989-210164fc0148
 - **Language agnostic**: Works with any language
 - **Diff viewer**: Compare expected vs actual output with 3 diff modes
 
+## Installation
+
+Install using your package manager of choice or with
+[luarocks](https://luarocks.org/modules/barrettruth/cp.nvim):
+
+```
+luarocks install cp.nvim
+```
+
 ## Optional Dependencies
 
 - [uv](https://docs.astral.sh/uv/) for problem scraping
