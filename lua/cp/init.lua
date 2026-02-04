@@ -34,4 +34,13 @@ function M.is_initialized()
   return initialized
 end
 
+---@deprecated Use `vim.g.cp_config` instead
+function M.setup(user_config)
+  vim.deprecate('require("cp").setup()', 'vim.g.cp_config', 'v0.1.0', 'cp.nvim', false)
+
+  if user_config then
+    vim.g.cp_config = vim.tbl_deep_extend('force', vim.g.cp_config or {}, user_config)
+  end
+end
+
 return M
