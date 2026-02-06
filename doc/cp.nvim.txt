@@ -205,9 +205,9 @@ Debug Builds ~
 ==============================================================================
 CONFIGURATION                                                      *cp-config*
 
-Configuration is done via `vim.g.cp_config`. Set this before using the plugin:
+Configuration is done via `vim.g.cp`. Set this before using the plugin:
 >lua
-    vim.g.cp_config = {
+    vim.g.cp = {
       languages = {
         cpp = {
           extension = 'cc',
@@ -274,7 +274,7 @@ the default; per-platform overrides can tweak 'extension' or 'commands'.
 
 For example, to run CodeForces contests with Python by default:
 >lua
-    vim.g.cp_config = {
+    vim.g.cp = {
       platforms = {
         codeforces = {
           default_language  = 'python',
@@ -285,7 +285,7 @@ For example, to run CodeForces contests with Python by default:
 Any language is supported provided the proper configuration. For example, to
 run CSES problems with Rust using the single schema:
 >lua
-    vim.g.cp_config = {
+    vim.g.cp = {
       languages = {
         rust = {
           extension = 'rs',
