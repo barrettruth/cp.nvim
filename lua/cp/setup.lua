@@ -160,6 +160,8 @@ function M.setup_contest(platform, contest_id, problem_id, language)
     vim.bo[bufnr].buftype = ''
     vim.bo[bufnr].swapfile = false
 
+    state.set_language(lang)
+
     if cfg.hooks and cfg.hooks.setup_code and not vim.b[bufnr].cp_setup_done then
       local ok = pcall(cfg.hooks.setup_code, state)
       if ok then
