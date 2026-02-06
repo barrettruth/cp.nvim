@@ -17,10 +17,6 @@ local function ensure_initialized()
   if initialized then
     return
   end
-  if vim.g.cp_config then
-    vim.deprecate('vim.g.cp_config', 'vim.g.cp', 'v0.7.6', 'cp.nvim', false)
-    vim.g.cp = vim.g.cp or vim.g.cp_config
-  end
   local user_config = vim.g.cp or {}
   local config = config_module.setup(user_config)
   config_module.set_current_config(config)
@@ -40,7 +36,7 @@ end
 
 ---@deprecated Use `vim.g.cp` instead
 function M.setup(user_config)
-  vim.deprecate('require("cp").setup()', 'vim.g.cp', 'v0.1.0', 'cp.nvim', false)
+  vim.deprecate('require("cp").setup()', 'vim.g.cp', 'v0.7.7', 'cp.nvim', false)
 
   if user_config then
     vim.g.cp = vim.tbl_deep_extend('force', vim.g.cp or {}, user_config)
