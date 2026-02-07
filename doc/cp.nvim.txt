@@ -203,6 +203,43 @@ Debug Builds ~
 <
 
 ==============================================================================
+MAPPINGS                                                        *cp-mappings*
+
+cp.nvim provides <Plug> mappings for all primary actions. These dispatch
+through the same code path as |:CP|.
+
+                                                              *<Plug>(cp-run)*
+<Plug>(cp-run)          Run tests in I/O view. Equivalent to :CP run.
+
+                                                            *<Plug>(cp-panel)*
+<Plug>(cp-panel)        Open full-screen test panel. Equivalent to :CP panel.
+
+                                                             *<Plug>(cp-edit)*
+<Plug>(cp-edit)         Open the test case editor. Equivalent to :CP edit.
+
+                                                             *<Plug>(cp-next)*
+<Plug>(cp-next)         Navigate to the next problem. Equivalent to :CP next.
+
+                                                             *<Plug>(cp-prev)*
+<Plug>(cp-prev)         Navigate to the previous problem. Equivalent to :CP prev.
+
+                                                             *<Plug>(cp-pick)*
+<Plug>(cp-pick)         Launch the contest picker. Equivalent to :CP pick.
+
+                                                         *<Plug>(cp-interact)*
+<Plug>(cp-interact)     Open interactive mode. Equivalent to :CP interact.
+
+Example configuration: >lua
+    vim.keymap.set('n', '<leader>cr', '<Plug>(cp-run)')
+    vim.keymap.set('n', '<leader>cp', '<Plug>(cp-panel)')
+    vim.keymap.set('n', '<leader>ce', '<Plug>(cp-edit)')
+    vim.keymap.set('n', '<leader>cn', '<Plug>(cp-next)')
+    vim.keymap.set('n', '<leader>cN', '<Plug>(cp-prev)')
+    vim.keymap.set('n', '<leader>cc', '<Plug>(cp-pick)')
+    vim.keymap.set('n', '<leader>ci', '<Plug>(cp-interact)')
+<
+
+==============================================================================
 CONFIGURATION                                                      *cp-config*
 
 Configuration is done via `vim.g.cp`. Set this before using the plugin:
