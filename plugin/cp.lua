@@ -154,3 +154,17 @@ end, {
     return {}
   end,
 })
+
+local function cp_action(action)
+  return function()
+    require('cp').handle_command({ fargs = { action } })
+  end
+end
+
+vim.keymap.set('n', '<Plug>(cp-run)', cp_action('run'), { desc = 'CP run tests' })
+vim.keymap.set('n', '<Plug>(cp-panel)', cp_action('panel'), { desc = 'CP open panel' })
+vim.keymap.set('n', '<Plug>(cp-edit)', cp_action('edit'), { desc = 'CP edit test cases' })
+vim.keymap.set('n', '<Plug>(cp-next)', cp_action('next'), { desc = 'CP next problem' })
+vim.keymap.set('n', '<Plug>(cp-prev)', cp_action('prev'), { desc = 'CP previous problem' })
+vim.keymap.set('n', '<Plug>(cp-pick)', cp_action('pick'), { desc = 'CP pick contest' })
+vim.keymap.set('n', '<Plug>(cp-interact)', cp_action('interact'), { desc = 'CP interactive mode' })
