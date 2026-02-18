@@ -78,7 +78,7 @@ def _extract_title(block: Tag) -> tuple[str, str]:
 
 def _extract_samples(block: Tag) -> tuple[list[TestCase], bool]:
     st = block.find("div", class_="sample-test")
-    if not st:
+    if not isinstance(st, Tag):
         return [], False
 
     input_pres: list[Tag] = [
