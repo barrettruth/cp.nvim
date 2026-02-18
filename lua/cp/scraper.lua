@@ -42,36 +42,32 @@ local function run_scraper(platform, subcommand, args, opts)
     local buf = ''
 
     local handle
-    handle = uv.spawn(
-      cmd[1],
-      {
-        args = vim.list_slice(cmd, 2),
-        stdio = { nil, stdout, stderr },
-        env = env,
-        cwd = plugin_path,
-      },
-      function(code, signal)
-        if buf ~= '' and opts.on_event then
-          local ok_tail, ev_tail = pcall(vim.json.decode, buf)
-          if ok_tail then
-            opts.on_event(ev_tail)
-          end
-          buf = ''
+    handle = uv.spawn(cmd[1], {
+      args = vim.list_slice(cmd, 2),
+      stdio = { nil, stdout, stderr },
+      env = env,
+      cwd = plugin_path,
+    }, function(code, signal)
+      if buf ~= '' and opts.on_event then
+        local ok_tail, ev_tail = pcall(vim.json.decode, buf)
+        if ok_tail then
+          opts.on_event(ev_tail)
         end
-        if opts.on_exit then
-          opts.on_exit({ success = (code == 0), code = code, signal = signal })
-        end
-        if not stdout:is_closing() then
-          stdout:close()
-        end
-        if not stderr:is_closing() then
-          stderr:close()
-        end
-        if handle and not handle:is_closing() then
-          handle:close()
-        end
+        buf = ''
       end
-    )
+      if opts.on_exit then
+        opts.on_exit({ success = (code == 0), code = code, signal = signal })
+      end
+      if not stdout:is_closing() then
+        stdout:close()
+      end
+      if not stderr:is_closing() then
+        stderr:close()
+      end
+      if handle and not handle:is_closing() then
+        handle:close()
+      end
+    end)
 
     if not handle then
       logger.log('Failed to start scraper process', vim.log.levels.ERROR)
