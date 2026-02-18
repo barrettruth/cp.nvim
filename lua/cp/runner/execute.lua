@@ -43,6 +43,7 @@ end
 function M.compile(compile_cmd, substitutions, on_complete)
   local cmd = substitute_template(compile_cmd, substitutions)
   local sh = table.concat(cmd, ' ') .. ' 2>&1'
+  logger.log('compile: ' .. sh)
 
   local t0 = vim.uv.hrtime()
   vim.system({ 'sh', '-c', sh }, { text = false }, function(r)
@@ -119,6 +120,7 @@ function M.run(cmd, stdin, timeout_ms, memory_mb, on_complete)
   local sec = math.ceil(timeout_ms / 1000)
   local timeout_prefix = ('%s -k 1s %ds '):format(timeout_bin, sec)
   local sh = prefix .. timeout_prefix .. ('%s -v sh -c %q 2>&1'):format(time_bin, prog)
+  logger.log('run: ' .. sh)
 
   local t0 = vim.uv.hrtime()
   vim.system({ 'sh', '-c', sh }, { stdin = stdin, text = true }, function(r)
