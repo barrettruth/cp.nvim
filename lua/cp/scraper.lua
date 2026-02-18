@@ -25,6 +25,15 @@ end
 ---@param args string[]
 ---@param opts { sync?: boolean, ndjson?: boolean, on_event?: fun(ev: table), on_exit?: fun(result: table) }
 local function run_scraper(platform, subcommand, args, opts)
+  if not utils.setup_python_env() then
+    local msg = 'no Python environment available (install uv or nix)'
+    logger.log(msg, vim.log.levels.ERROR)
+    if opts and opts.on_exit then
+      opts.on_exit({ success = false, error = msg })
+    end
+    return { success = false, error = msg }
+  end
+
   local plugin_path = utils.get_plugin_path()
   local cmd = utils.get_python_cmd(platform, plugin_path)
   vim.list_extend(cmd, { subcommand })

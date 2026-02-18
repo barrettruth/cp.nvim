@@ -129,7 +129,8 @@ local function discover_nix_python()
   end
 
   local plugin_path = M.get_plugin_path()
-  logger.log('Building Python environment with nix...', nil, true)
+  vim.notify('[cp.nvim] Building Python environment with nix...', vim.log.levels.INFO)
+  vim.cmd.redraw()
   local result = vim
     .system(
       { 'nix', 'build', plugin_path .. '#pythonEnv', '--no-link', '--print-out-paths' },
@@ -177,6 +178,8 @@ function M.setup_python_env()
   if vim.fn.executable('uv') == 1 then
     local plugin_path = M.get_plugin_path()
     logger.log('Python env: uv sync (dir=' .. plugin_path .. ')')
+    vim.notify('[cp.nvim] Setting up Python environment...', vim.log.levels.INFO)
+    vim.cmd.redraw()
 
     local env = vim.fn.environ()
     env.VIRTUAL_ENV = ''
@@ -262,10 +265,6 @@ function M.check_required_runtime()
   local timeout = M.timeout_capability()
   if not timeout.ok then
     return false, timeout.reason
-  end
-
-  if not M.setup_python_env() then
-    return false, 'no Python environment available (install uv or nix)'
   end
 
   return true
