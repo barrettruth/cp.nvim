@@ -60,7 +60,11 @@ local function find_gnu_time()
 
   _time_cached = true
   _time_path = nil
-  _time_reason = 'GNU time not found'
+  if uname and uname.sysname == 'Darwin' then
+    _time_reason = 'GNU time not found (install via: brew install coreutils)'
+  else
+    _time_reason = 'GNU time not found'
+  end
   return _time_path, _time_reason
 end
 
@@ -251,12 +255,12 @@ function M.check_required_runtime()
 
   local time = M.time_capability()
   if not time.ok then
-    return false, 'GNU time not found: ' .. (time.reason or '')
+    return false, time.reason
   end
 
   local timeout = M.timeout_capability()
   if not timeout.ok then
-    return false, 'GNU timeout not found: ' .. (timeout.reason or '')
+    return false, timeout.reason
   end
 
   if not M.setup_python_env() then
@@ -310,7 +314,11 @@ local function find_gnu_timeout()
 
   _timeout_cached = true
   _timeout_path = nil
-  _timeout_reason = 'GNU timeout not found'
+  if uname and uname.sysname == 'Darwin' then
+    _timeout_reason = 'GNU timeout not found (install via: brew install coreutils)'
+  else
+    _timeout_reason = 'GNU timeout not found'
+  end
   return _timeout_path, _timeout_reason
 end
 

@@ -15,17 +15,25 @@ local initialized = false
 
 local function ensure_initialized()
   if initialized then
-    return
+    return true
   end
   local user_config = vim.g.cp or {}
-  local config = config_module.setup(user_config)
-  config_module.set_current_config(config)
+  local ok, result = pcall(config_module.setup, user_config)
+  if not ok then
+    local msg = tostring(result):gsub('^.+:%d+: ', '')
+    vim.notify(msg, vim.log.levels.ERROR)
+    return false
+  end
+  config_module.set_current_config(result)
   initialized = true
+  return true
 end
 
 ---@return nil
 function M.handle_command(opts)
-  ensure_initialized()
+  if not ensure_initialized() then
+    return
+  end
   local commands = require('cp.commands')
   commands.handle_command(opts)
 end
