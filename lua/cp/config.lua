@@ -292,7 +292,15 @@ end
 ---@return cp.Config
 function M.setup(user_config)
   vim.validate({ user_config = { user_config, { 'table', 'nil' }, true } })
-  local cfg = vim.tbl_deep_extend('force', vim.deepcopy(M.defaults), user_config or {})
+  local defaults = vim.deepcopy(M.defaults)
+  if user_config and user_config.platforms then
+    for plat in pairs(defaults.platforms) do
+      if not user_config.platforms[plat] then
+        defaults.platforms[plat] = nil
+      end
+    end
+  end
+  local cfg = vim.tbl_deep_extend('force', defaults, user_config or {})
 
   if not next(cfg.languages) then
     error('[cp.nvim] At least one language must be configured')
