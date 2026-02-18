@@ -30,6 +30,8 @@ local function run_scraper(platform, subcommand, args, opts)
   vim.list_extend(cmd, { subcommand })
   vim.list_extend(cmd, args)
 
+  logger.log('scraper cmd: ' .. table.concat(cmd, ' '))
+
   local env = vim.fn.environ()
   env.VIRTUAL_ENV = ''
   env.PYTHONPATH = ''

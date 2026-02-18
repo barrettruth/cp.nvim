@@ -169,12 +169,14 @@ function M.setup_python_env()
   end
 
   if _nix_python then
+    logger.log('Python env: nix (python=' .. _nix_python .. ')')
     python_env_setup = true
     return true
   end
 
   if vim.fn.executable('uv') == 1 then
     local plugin_path = M.get_plugin_path()
+    logger.log('Python env: uv sync (dir=' .. plugin_path .. ')')
 
     local env = vim.fn.environ()
     env.VIRTUAL_ENV = ''
@@ -187,12 +189,16 @@ function M.setup_python_env()
       logger.log('Failed to setup Python environment: ' .. result.stderr, vim.log.levels.ERROR)
       return false
     end
+    if result.stderr and result.stderr ~= '' then
+      logger.log('uv sync stderr: ' .. result.stderr:gsub('%s+$', ''))
+    end
 
     python_env_setup = true
     return true
   end
 
   if vim.fn.executable('nix') == 1 then
+    logger.log('Python env: nix discovery')
     if discover_nix_python() then
       python_env_setup = true
       return true
