@@ -44,7 +44,12 @@ local function run_scraper(platform, subcommand, args, opts)
     local handle
     handle = uv.spawn(
       cmd[1],
-      { args = vim.list_slice(cmd, 2), stdio = { nil, stdout, stderr }, env = env, cwd = plugin_path },
+      {
+        args = vim.list_slice(cmd, 2),
+        stdio = { nil, stdout, stderr },
+        env = env,
+        cwd = plugin_path,
+      },
       function(code, signal)
         if buf ~= '' and opts.on_event then
           local ok_tail, ev_tail = pcall(vim.json.decode, buf)

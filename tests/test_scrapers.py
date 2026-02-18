@@ -6,11 +6,6 @@ from scrapers.models import (
     TestsResult,
 )
 
-MODEL_FOR_MODE = {
-    "metadata": MetadataResult,
-    "contests": ContestListResult,
-}
-
 MATRIX = {
     "cses": {
         "metadata": ("introductory_problems",),
@@ -43,17 +38,16 @@ def test_scraper_offline_fixture_matrix(run_scraper_offline, scraper, mode):
     assert rc in (0, 1), f"Bad exit code {rc}"
     assert objs, f"No JSON output for {scraper}:{mode}"
 
-    if mode in ("metadata", "contests"):
-        Model = MODEL_FOR_MODE[mode]
-        model = Model.model_validate(objs[-1])
-        assert model is not None
+    if mode == "metadata":
+        model = MetadataResult.model_validate(objs[-1])
         assert model.success is True
-        if mode == "metadata":
-            assert model.url
-            assert len(model.problems) >= 1
-            assert all(isinstance(p.id, str) and p.id for p in model.problems)
-        else:
-            assert len(model.contests) >= 1
+        assert model.url
+        assert len(model.problems) >= 1
+        assert all(isinstance(p.id, str) and p.id for p in model.problems)
+    elif mode == "contests":
+        model = ContestListResult.model_validate(objs[-1])
+        assert model.success is True
+        assert len(model.contests) >= 1
     else:
         assert len(objs) >= 1, "No test objects returned"
         validated_any = False
