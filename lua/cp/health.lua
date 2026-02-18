@@ -19,11 +19,13 @@ local function check()
   end
 
   if utils.is_nix_build() then
-    vim.health.ok('Nix-built Python environment detected')
+    local source = utils.is_nix_discovered() and 'runtime discovery' or 'flake install'
+    vim.health.ok('Nix Python environment detected (' .. source .. ')')
     local py = utils.get_nix_python()
+    vim.health.info('Python: ' .. py)
     local r = vim.system({ py, '--version' }, { text = true }):wait()
     if r.code == 0 then
-      vim.health.info('Python: ' .. r.stdout:gsub('\n', ''))
+      vim.health.info('Python version: ' .. r.stdout:gsub('\n', ''))
     end
   else
     if vim.fn.executable('uv') == 1 then
@@ -34,6 +36,10 @@ local function check()
       end
     else
       vim.health.warn('uv not found (install https://docs.astral.sh/uv/ for scraping)')
+    end
+
+    if vim.fn.executable('nix') == 1 then
+      vim.health.info('nix available but Python environment not resolved via nix')
     end
 
     local plugin_path = utils.get_plugin_path()
@@ -52,7 +58,7 @@ local function check()
     vim.health.error('GNU time not found: ' .. (time_cap.reason or ''))
   end
 
-  local timeout_cap = utils.time_capability()
+  local timeout_cap = utils.timeout_capability()
   if timeout_cap.ok then
     vim.health.ok('GNU timeout found: ' .. timeout_cap.path)
   else

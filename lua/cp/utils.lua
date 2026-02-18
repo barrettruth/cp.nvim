@@ -3,6 +3,7 @@ local M = {}
 local logger = require('cp.log')
 
 local _nix_python = nil
+local _nix_discovered = false
 
 local uname = vim.loop.os_uname()
 
@@ -89,6 +90,10 @@ function M.get_nix_python()
   return _nix_python
 end
 
+function M.is_nix_discovered()
+  return _nix_discovered
+end
+
 function M.get_python_cmd(module, plugin_path)
   if _nix_python then
     return { _nix_python, '-m', 'scrapers.' .. module }
@@ -113,6 +118,7 @@ local function discover_nix_python()
   end
 
   local plugin_path = M.get_plugin_path()
+  logger.log('Building Python environment with nix...', nil, true)
   local result = vim
     .system(
       { 'nix', 'build', plugin_path .. '#pythonEnv', '--no-link', '--print-out-paths' },
@@ -141,6 +147,7 @@ local function discover_nix_python()
   end
 
   _nix_python = python_path
+  _nix_discovered = true
   return true
 end
 
