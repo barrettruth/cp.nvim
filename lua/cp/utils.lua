@@ -2,6 +2,8 @@ local M = {}
 
 local logger = require('cp.log')
 
+local _nix_python = nil
+
 local uname = vim.loop.os_uname()
 
 local _time_cached = false
@@ -79,7 +81,68 @@ function M.get_plugin_path()
   return vim.fn.fnamemodify(plugin_path, ':h:h:h')
 end
 
+function M.is_nix_build()
+  return _nix_python ~= nil
+end
+
+function M.get_nix_python()
+  return _nix_python
+end
+
+function M.get_python_cmd(module, plugin_path)
+  if _nix_python then
+    return { _nix_python, '-m', 'scrapers.' .. module }
+  end
+  return { 'uv', 'run', '--directory', plugin_path, '-m', 'scrapers.' .. module }
+end
+
 local python_env_setup = false
+
+local function discover_nix_python()
+  local cache_dir = vim.fn.stdpath('cache') .. '/cp-nvim'
+  local cache_file = cache_dir .. '/nix-python'
+
+  local f = io.open(cache_file, 'r')
+  if f then
+    local cached = f:read('*l')
+    f:close()
+    if cached and vim.fn.executable(cached) == 1 then
+      _nix_python = cached
+      return true
+    end
+  end
+
+  local plugin_path = M.get_plugin_path()
+  local result = vim
+    .system(
+      { 'nix', 'build', plugin_path .. '#pythonEnv', '--no-link', '--print-out-paths' },
+      { text = true }
+    )
+    :wait()
+
+  if result.code ~= 0 then
+    logger.log('nix build #pythonEnv failed: ' .. (result.stderr or ''), vim.log.levels.WARN)
+    return false
+  end
+
+  local store_path = result.stdout:gsub('%s+$', '')
+  local python_path = store_path .. '/bin/python3'
+
+  if vim.fn.executable(python_path) ~= 1 then
+    logger.log('nix python not executable at ' .. python_path, vim.log.levels.WARN)
+    return false
+  end
+
+  vim.fn.mkdir(cache_dir, 'p')
+  f = io.open(cache_file, 'w')
+  if f then
+    f:write(python_path)
+    f:close()
+  end
+
+  _nix_python = python_path
+  return true
+end
 
 ---@return boolean success
 function M.setup_python_env()
@@ -87,35 +150,47 @@ function M.setup_python_env()
     return true
   end
 
-  local plugin_path = M.get_plugin_path()
-  local venv_dir = plugin_path .. '/.venv'
-
-  if vim.fn.executable('uv') == 0 then
-    logger.log(
-      'uv is not installed. Install it to enable problem scraping: https://docs.astral.sh/uv/',
-      vim.log.levels.WARN
-    )
-    return false
+  if _nix_python then
+    python_env_setup = true
+    return true
   end
 
-  if vim.fn.isdirectory(venv_dir) == 0 then
-    logger.log('Setting up Python environment for scrapers...')
-    local env = vim.fn.environ()
-    env.VIRTUAL_ENV = ''
-    env.PYTHONPATH = ''
-    env.CONDA_PREFIX = ''
-    local result = vim
-      .system({ 'uv', 'sync' }, { cwd = plugin_path, text = true, env = env })
-      :wait()
-    if result.code ~= 0 then
-      logger.log('Failed to setup Python environment: ' .. result.stderr, vim.log.levels.ERROR)
-      return false
+  if vim.fn.executable('uv') == 1 then
+    local plugin_path = M.get_plugin_path()
+    local venv_dir = plugin_path .. '/.venv'
+
+    if vim.fn.isdirectory(venv_dir) == 0 then
+      logger.log('Setting up Python environment for scrapers...')
+      local env = vim.fn.environ()
+      env.VIRTUAL_ENV = ''
+      env.PYTHONPATH = ''
+      env.CONDA_PREFIX = ''
+      local result = vim
+        .system({ 'uv', 'sync' }, { cwd = plugin_path, text = true, env = env })
+        :wait()
+      if result.code ~= 0 then
+        logger.log('Failed to setup Python environment: ' .. result.stderr, vim.log.levels.ERROR)
+        return false
+      end
+      logger.log('Python environment setup complete.')
     end
-    logger.log('Python environment setup complete.')
+
+    python_env_setup = true
+    return true
   end
 
-  python_env_setup = true
-  return true
+  if vim.fn.executable('nix') == 1 then
+    if discover_nix_python() then
+      python_env_setup = true
+      return true
+    end
+  end
+
+  logger.log(
+    'No Python environment available. Install uv (https://docs.astral.sh/uv/) or use nix.',
+    vim.log.levels.WARN
+  )
+  return false
 end
 
 --- Configure the buffer with good defaults
@@ -170,12 +245,8 @@ function M.check_required_runtime()
     return false, 'GNU timeout not found: ' .. (timeout.reason or '')
   end
 
-  if vim.fn.executable('uv') ~= 1 then
-    return false, 'uv not found (https://docs.astral.sh/uv/)'
-  end
-
   if not M.setup_python_env() then
-    return false, 'failed to set up Python virtual environment'
+    return false, 'no Python environment available (install uv or nix)'
   end
 
   return true

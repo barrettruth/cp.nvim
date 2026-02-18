@@ -121,13 +121,22 @@ function M.toggle_interactive(interactor_cmd)
       end
       local orchestrator =
         vim.fn.fnamemodify(utils.get_plugin_path() .. '/scripts/interact.py', ':p')
-      cmdline = table.concat({
-        'uv',
-        'run',
-        vim.fn.shellescape(orchestrator),
-        vim.fn.shellescape(interactor),
-        vim.fn.shellescape(binary),
-      }, ' ')
+      if utils.is_nix_build() then
+        cmdline = table.concat({
+          vim.fn.shellescape(utils.get_nix_python()),
+          vim.fn.shellescape(orchestrator),
+          vim.fn.shellescape(interactor),
+          vim.fn.shellescape(binary),
+        }, ' ')
+      else
+        cmdline = table.concat({
+          'uv',
+          'run',
+          vim.fn.shellescape(orchestrator),
+          vim.fn.shellescape(interactor),
+          vim.fn.shellescape(binary),
+        }, ' ')
+      end
     else
       cmdline = vim.fn.shellescape(binary)
     end

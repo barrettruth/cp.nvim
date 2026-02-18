@@ -10,7 +10,7 @@ from typing import Any
 import httpx
 import pytest
 import requests
-from scrapling import fetchers
+from curl_cffi import requests as curl_requests
 
 ROOT = Path(__file__).resolve().parent.parent
 FIX = Path(__file__).resolve().parent / "fixtures"
@@ -136,12 +136,15 @@ def run_scraper_offline(fixture_text):
 
             case "codeforces":
 
-                class MockCodeForcesPage:
+                class MockCurlResponse:
                     def __init__(self, html: str):
-                        self.html_content = html
+                        self.text = html
 
-                def _mock_stealthy_fetch(url: str, **kwargs):
-                    return MockCodeForcesPage(_router_codeforces(url=url))
+                    def raise_for_status(self):
+                        pass
+
+                def _mock_curl_get(url: str, **kwargs):
+                    return MockCurlResponse(_router_codeforces(url=url))
 
                 def _mock_requests_get(url: str, **kwargs):
                     if "api/contest.list" in url:
@@ -172,7 +175,7 @@ def run_scraper_offline(fixture_text):
                     raise AssertionError(f"Unexpected requests.get call: {url}")
 
                 return {
-                    "Fetcher.get": _mock_stealthy_fetch,
+                    "curl_requests.get": _mock_curl_get,
                     "requests.get": _mock_requests_get,
                 }
 
@@ -212,21 +215,23 @@ def run_scraper_offline(fixture_text):
                         return MockResponse(data)
                     raise AssertionError(f"No fixture for CodeChef url={url!r}")
 
-                class MockCodeChefPage:
+                class MockCodeChefCurlResponse:
                     def __init__(self, html: str):
-                        self.body = html
-                        self.status = 200
+                        self.text = html
 
-                def _mock_stealthy_fetch(url: str, **kwargs):
+                    def raise_for_status(self):
+                        pass
+
+                def _mock_curl_get(url: str, **kwargs):
                     if "/problems/" in url:
                         problem_id = url.rstrip("/").split("/")[-1]
                         html = fixture_text(f"codechef/{problem_id}.html")
-                        return MockCodeChefPage(html)
+                        return MockCodeChefCurlResponse(html)
                     raise AssertionError(f"No fixture for CodeChef url={url!r}")
 
                 return {
                     "__offline_get_async": __offline_get_async,
-                    "Fetcher.get": _mock_stealthy_fetch,
+                    "curl_requests.get": _mock_curl_get,
                 }
 
             case _:
@@ -245,7 +250,7 @@ def run_scraper_offline(fixture_text):
         offline_fetches = _make_offline_fetches(scraper_name)
 
         if scraper_name == "codeforces":
-            fetchers.Fetcher.get = offline_fetches["Fetcher.get"]
+            curl_requests.get = offline_fetches["curl_requests.get"]
             requests.get = offline_fetches["requests.get"]
         elif scraper_name == "atcoder":
             ns._fetch = offline_fetches["_fetch"]
@@ -254,7 +259,7 @@ def run_scraper_offline(fixture_text):
             httpx.AsyncClient.get = offline_fetches["__offline_fetch_text"]
         elif scraper_name == "codechef":
             httpx.AsyncClient.get = offline_fetches["__offline_get_async"]
-            fetchers.Fetcher.get = offline_fetches["Fetcher.get"]
+            curl_requests.get = offline_fetches["curl_requests.get"]
 
         scraper_class = getattr(ns, scraper_classes[scraper_name])
         scraper = scraper_class()

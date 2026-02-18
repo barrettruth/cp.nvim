@@ -12,8 +12,6 @@ dependencies = [
     "ndjson>=0.3.1",
     "pydantic>=2.11.10",
     "requests>=2.32.5",
-    "scrapling[fetchers]>=0.3.5",
-    "types-requests>=2.32.4.20250913",
 ]
 
 [dependency-groups]
