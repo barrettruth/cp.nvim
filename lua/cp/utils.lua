@@ -82,18 +82,24 @@ function M.get_plugin_path()
   return vim.fn.fnamemodify(plugin_path, ':h:h:h')
 end
 
+---@return boolean
 function M.is_nix_build()
   return _nix_python ~= nil
 end
 
+---@return string|nil
 function M.get_nix_python()
   return _nix_python
 end
 
+---@return boolean
 function M.is_nix_discovered()
   return _nix_discovered
 end
 
+---@param module string
+---@param plugin_path string
+---@return string[]
 function M.get_python_cmd(module, plugin_path)
   if _nix_python then
     return { _nix_python, '-m', 'scrapers.' .. module }
@@ -103,6 +109,7 @@ end
 
 local python_env_setup = false
 
+---@return boolean
 local function discover_nix_python()
   local cache_dir = vim.fn.stdpath('cache') .. '/cp-nvim'
   local cache_file = cache_dir .. '/nix-python'
