@@ -14,3 +14,6 @@ __pycache__
 .claude/
 
 node_modules/
+
+.envrc
+.direnv/
