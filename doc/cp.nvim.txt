@@ -19,225 +19,13 @@ REQUIREMENTS                                                 *cp-requirements*
 - uv package manager (https://docs.astral.sh/uv/)
 
 ==============================================================================
-COMMANDS                                                         *cp-commands*
+SETUP                                                              *cp-setup*
 
-:CP                                                                      *:CP*
-        cp.nvim uses a single :CP command with intelligent argument parsing:
-
-        Setup Commands ~
-            :CP {platform} {contest_id} [--lang {language}]
-                                Full setup: set platform and load contest metadata.
-                                Scrapes test cases and creates source file.
-                                --lang: Use specific language (default: platform default)
-                                Examples: >
-                                    :CP codeforces 1933
-                                    :CP codeforces 1933 --lang python
+Load cp.nvim with your package manager. For example, with lazy.nvim: >lua
+    { 'barrettruth/cp.nvim' }
 <
-        View Commands ~
-            :CP run [all|n|n,m,...] [--debug]
-                                Run tests in I/O view (see |cp-io-view|).
-                                Lightweight split showing test verdicts.
-
-                                Execution modes:
-                                • :CP run              Combined: single execution with all tests
-                                                       (auto-switches to individual when multiple samples)
-                                • :CP run all          Individual: N separate executions
-                                • :CP run n            Individual: run test n only
-                                • :CP run n,m,...      Individual: run specific tests (e.g. nth and mth)
-
-                                --debug: Use debug build (builds to build/<name>.dbg)
-
-                                Combined mode runs all test inputs in one execution (matching
-                                platform behavior for multi-test problems). When a problem has
-                                multiple independent sample test cases, :CP run auto-switches to
-                                individual mode to run each sample separately.
-
-                                Examples: >
-                                    :CP run              " Combined: all tests, one execution
-                                    :CP run all          " Individual: all tests, N executions
-                                    :CP run 2            " Individual: test 2 only
-                                    :CP run 1,3,5        " Individual: tests 1, 3, and 5
-                                    :CP run all --debug  " Individual with debug build
-<
-            :CP panel [--debug] [n]
-                                Open full-screen test panel (see |cp-panel|).
-                                Aggregate table with diff modes for detailed analysis.
-                                Optional [n] focuses on specific test.
-                                --debug: Use debug build (with sanitizers, etc.)
-                                Examples: >
-                                    :CP panel            " All tests
-                                    :CP panel --debug 3  " Test 3, debug build
-<
-
-            :CP pick [--lang {language}]
-                                Launch configured picker for interactive
-                                platform/contest selection.
-                                --lang: Pre-select language for chosen contest.
-                                Example: >
-                                    :CP pick
-                                    :CP pick --lang python
-<
-
-            :CP interact [script]
-                                Open an interactive terminal for the current problem.
-                                If an executable interactor is provided, runs the compiled
-                                binary against the source file (see
-                                *cp-interact*). Otherwise, runs the source
-                                file. Only valid for interactive problems.
-
-        Navigation Commands ~
-            :CP next [--lang {language}]
-                                Navigate to next problem in current contest.
-                                Stops at last problem (no wrapping).
-                                --lang: Use specific language for next problem.
-                                By default, preserves current file's language if
-                                enabled for the new problem, otherwise uses platform
-                                default.
-                                Examples: >
-                                    :CP next
-                                    :CP next --lang python
-<
-            :CP prev [--lang {language}]
-                                Navigate to previous problem in current contest.
-                                Stops at first problem (no wrapping).
-                                --lang: Use specific language for previous problem.
-                                By default, preserves current file's language if
-                                enabled for the new problem, otherwise uses platform
-                                default.
-                                Examples: >
-                                    :CP prev
-                                    :CP prev --lang cpp
-<
-            :CP {problem_id} [--lang {language}]
-                                Jump to problem {problem_id} in a contest.
-                                Requires that a contest has already been set up.
-                                --lang: Use specific language for this problem.
-                                Examples: >
-                                    :CP B
-                                    :CP C --lang python
-<
-
-        Edit Commands ~
-            :CP edit [n]
-                                Open grid test editor showing all test cases.
-                                Tests displayed as 2×N grid (2 rows, N columns):
-                                • Top row: Test inputs (editable)
-                                • Bottom row: Expected outputs (editable)
-
-                                Optional [n]: Jump cursor to test n's input buffer
-
-                                Changes saved to both cache and disk on exit,
-                                taking effect immediately in :CP run and CLI.
-
-                                Keybindings (configurable via |EditConfig|):
-                                  q         Save all and exit editor
-                                  ]t        Jump to next test column
-                                  [t        Jump to previous test column
-                                  gd        Delete current test column
-                                  ga        Add new test column at end
-                                  <c-w>     Normal window navigation
-
-                                Examples: >
-                                    :CP edit        " Edit all tests
-                                    :CP edit 3      " Edit all, start at test 3
-<
-
-        State Restoration ~
-            :CP                 Restore state from current file.
-                                Automatically detects platform, contest, problem,
-                                and language from cached state. Use this after
-                                switching files to restore your CP environment.
-
-        Cache Commands ~
-            :CP cache clear [platform] [contest]
-                                Clear cache data at different granularities:
-                                • No args: Clear all cached data
-                                • [platform]: Clear all data for a platform
-                                • [platform] [contest]: Clear specific contest
-                                Examples: >
-                                    :CP cache clear
-                                    :CP cache clear codeforces
-                                    :CP cache clear codeforces 1848
-<
-            :CP cache read
-                                View the cache in a pretty-printed lua buffer.
-                                Exit with q.
-
-Template Variables ~
-                                                            *cp-template-vars*
-    Command templates support variable substitution using {variable} syntax:
-
-    • {source}      Source file path (e.g. "abc324a.cpp")
-    • {binary}      Output binary path (e.g. "build/abc324a.run" or
-                    "build/abc324a.dbg" for debug builds)
-
-    Example template: >
-        build = { 'g++', '{source}', '-o', '{binary}', '-std=c++17' }
-<    Would expand to: >
-        g++ abc324a.cpp -o build/abc324a.run -std=c++17
-<
-Debug Builds ~
-                                                            *cp-debug-builds*
-    The --debug flag uses the debug command configuration instead of build:
-
-    • Normal build:  commands.build → outputs to build/<name>.run
-    • Debug build:   commands.debug → outputs to build/<name>.dbg
-
-    Debug builds typically include sanitizers (address, undefined behavior) to
-    catch memory errors, buffer overflows, and other issues. Both binaries
-    coexist, so you can switch between normal and debug mode without
-    recompiling.
-
-    Example debug configuration: >
-        languages = {
-          cpp = {
-            extension = 'cc',
-            commands = {
-              build = { 'g++', '-std=c++17', '{source}', '-o', '{binary}' },
-              run   = { '{binary}' },
-              debug = { 'g++', '-std=c++17', '-fsanitize=address,undefined',
-                        '{source}', '-o', '{binary}' },
-            }
-          }
-        }
-<
-
-==============================================================================
-MAPPINGS                                                        *cp-mappings*
-
-cp.nvim provides <Plug> mappings for all primary actions. These dispatch
-through the same code path as |:CP|.
-
-                                                              *<Plug>(cp-run)*
-<Plug>(cp-run)          Run tests in I/O view. Equivalent to :CP run.
-
-                                                            *<Plug>(cp-panel)*
-<Plug>(cp-panel)        Open full-screen test panel. Equivalent to :CP panel.
-
-                                                             *<Plug>(cp-edit)*
-<Plug>(cp-edit)         Open the test case editor. Equivalent to :CP edit.
-
-                                                             *<Plug>(cp-next)*
-<Plug>(cp-next)         Navigate to the next problem. Equivalent to :CP next.
-
-                                                             *<Plug>(cp-prev)*
-<Plug>(cp-prev)         Navigate to the previous problem. Equivalent to :CP prev.
-
-                                                             *<Plug>(cp-pick)*
-<Plug>(cp-pick)         Launch the contest picker. Equivalent to :CP pick.
-
-                                                         *<Plug>(cp-interact)*
-<Plug>(cp-interact)     Open interactive mode. Equivalent to :CP interact.
-
-Example configuration: >lua
-    vim.keymap.set('n', '<leader>cr', '<Plug>(cp-run)')
-    vim.keymap.set('n', '<leader>cp', '<Plug>(cp-panel)')
-    vim.keymap.set('n', '<leader>ce', '<Plug>(cp-edit)')
-    vim.keymap.set('n', '<leader>cn', '<Plug>(cp-next)')
-    vim.keymap.set('n', '<leader>cN', '<Plug>(cp-prev)')
-    vim.keymap.set('n', '<leader>cc', '<Plug>(cp-pick)')
-    vim.keymap.set('n', '<leader>ci', '<Plug>(cp-interact)')
-<
+The plugin works automatically with no configuration required. For
+customization, see |cp-config|.
 
 ==============================================================================
 CONFIGURATION                                                      *cp-config*
@@ -462,10 +250,230 @@ run CSES problems with Rust using the single schema:
             print("Source file: " .. state.get_source_file())
           end,
           setup_io_input = function(bufnr, state)
-            -- Custom setup for input buffer
             vim.api.nvim_set_option_value('number', false, { buf = bufnr })
           end
         }
+<
+
+==============================================================================
+COMMANDS                                                         *cp-commands*
+
+:CP                                                                      *:CP*
+        cp.nvim uses a single :CP command with intelligent argument parsing:
+
+        Setup Commands ~
+            :CP {platform} {contest_id} [--lang {language}]
+                                Full setup: set platform and load contest metadata.
+                                Scrapes test cases and creates source file.
+                                --lang: Use specific language (default: platform default)
+                                Examples: >
+                                    :CP codeforces 1933
+                                    :CP codeforces 1933 --lang python
+<
+        View Commands ~
+            :CP run [all|n|n,m,...] [--debug]
+                                Run tests in I/O view (see |cp-io-view|).
+                                Lightweight split showing test verdicts.
+
+                                Execution modes:
+                                • :CP run              Combined: single execution with all tests
+                                                       (auto-switches to individual when multiple samples)
+                                • :CP run all          Individual: N separate executions
+                                • :CP run n            Individual: run test n only
+                                • :CP run n,m,...      Individual: run specific tests (e.g. nth and mth)
+
+                                --debug: Use debug build (builds to build/<name>.dbg)
+
+                                Combined mode runs all test inputs in one execution (matching
+                                platform behavior for multi-test problems). When a problem has
+                                multiple independent sample test cases, :CP run auto-switches to
+                                individual mode to run each sample separately.
+
+                                Examples: >
+                                    :CP run              " Combined: all tests, one execution
+                                    :CP run all          " Individual: all tests, N executions
+                                    :CP run 2            " Individual: test 2 only
+                                    :CP run 1,3,5        " Individual: tests 1, 3, and 5
+                                    :CP run all --debug  " Individual with debug build
+<
+            :CP panel [--debug] [n]
+                                Open full-screen test panel (see |cp-panel|).
+                                Aggregate table with diff modes for detailed analysis.
+                                Optional [n] focuses on specific test.
+                                --debug: Use debug build (with sanitizers, etc.)
+                                Examples: >
+                                    :CP panel            " All tests
+                                    :CP panel --debug 3  " Test 3, debug build
+<
+
+            :CP pick [--lang {language}]
+                                Launch configured picker for interactive
+                                platform/contest selection.
+                                --lang: Pre-select language for chosen contest.
+                                Example: >
+                                    :CP pick
+                                    :CP pick --lang python
+<
+
+            :CP interact [script]
+                                Open an interactive terminal for the current problem.
+                                If an executable interactor is provided, runs the compiled
+                                binary against the source file (see
+                                *cp-interact*). Otherwise, runs the source
+                                file. Only valid for interactive problems.
+
+        Navigation Commands ~
+            :CP next [--lang {language}]
+                                Navigate to next problem in current contest.
+                                Stops at last problem (no wrapping).
+                                --lang: Use specific language for next problem.
+                                By default, preserves current file's language if
+                                enabled for the new problem, otherwise uses platform
+                                default.
+                                Examples: >
+                                    :CP next
+                                    :CP next --lang python
+<
+            :CP prev [--lang {language}]
+                                Navigate to previous problem in current contest.
+                                Stops at first problem (no wrapping).
+                                --lang: Use specific language for previous problem.
+                                By default, preserves current file's language if
+                                enabled for the new problem, otherwise uses platform
+                                default.
+                                Examples: >
+                                    :CP prev
+                                    :CP prev --lang cpp
+<
+            :CP {problem_id} [--lang {language}]
+                                Jump to problem {problem_id} in a contest.
+                                Requires that a contest has already been set up.
+                                --lang: Use specific language for this problem.
+                                Examples: >
+                                    :CP B
+                                    :CP C --lang python
+<
+
+        Edit Commands ~
+            :CP edit [n]
+                                Open grid test editor showing all test cases.
+                                Tests displayed as 2×N grid (2 rows, N columns):
+                                • Top row: Test inputs (editable)
+                                • Bottom row: Expected outputs (editable)
+
+                                Optional [n]: Jump cursor to test n's input buffer
+
+                                Changes saved to both cache and disk on exit,
+                                taking effect immediately in :CP run and CLI.
+
+                                Keybindings (configurable via |EditConfig|):
+                                  q         Save all and exit editor
+                                  ]t        Jump to next test column
+                                  [t        Jump to previous test column
+                                  gd        Delete current test column
+                                  ga        Add new test column at end
+                                  <c-w>     Normal window navigation
+
+                                Examples: >
+                                    :CP edit        " Edit all tests
+                                    :CP edit 3      " Edit all, start at test 3
+<
+
+        State Restoration ~
+            :CP                 Restore state from current file.
+                                Automatically detects platform, contest, problem,
+                                and language from cached state. Use this after
+                                switching files to restore your CP environment.
+
+        Cache Commands ~
+            :CP cache clear [platform] [contest]
+                                Clear cache data at different granularities:
+                                • No args: Clear all cached data
+                                • [platform]: Clear all data for a platform
+                                • [platform] [contest]: Clear specific contest
+                                Examples: >
+                                    :CP cache clear
+                                    :CP cache clear codeforces
+                                    :CP cache clear codeforces 1848
+<
+            :CP cache read
+                                View the cache in a pretty-printed lua buffer.
+                                Exit with q.
+
+Template Variables ~
+                                                            *cp-template-vars*
+    Command templates support variable substitution using {variable} syntax:
+
+    • {source}      Source file path (e.g. "abc324a.cpp")
+    • {binary}      Output binary path (e.g. "build/abc324a.run" or
+                    "build/abc324a.dbg" for debug builds)
+
+    Example template: >
+        build = { 'g++', '{source}', '-o', '{binary}', '-std=c++17' }
+<    Would expand to: >
+        g++ abc324a.cpp -o build/abc324a.run -std=c++17
+<
+Debug Builds ~
+                                                            *cp-debug-builds*
+    The --debug flag uses the debug command configuration instead of build:
+
+    • Normal build:  commands.build → outputs to build/<name>.run
+    • Debug build:   commands.debug → outputs to build/<name>.dbg
+
+    Debug builds typically include sanitizers (address, undefined behavior) to
+    catch memory errors, buffer overflows, and other issues. Both binaries
+    coexist, so you can switch between normal and debug mode without
+    recompiling.
+
+    Example debug configuration: >
+        languages = {
+          cpp = {
+            extension = 'cc',
+            commands = {
+              build = { 'g++', '-std=c++17', '{source}', '-o', '{binary}' },
+              run   = { '{binary}' },
+              debug = { 'g++', '-std=c++17', '-fsanitize=address,undefined',
+                        '{source}', '-o', '{binary}' },
+            }
+          }
+        }
+<
+
+==============================================================================
+MAPPINGS                                                        *cp-mappings*
+
+cp.nvim provides <Plug> mappings for all primary actions. These dispatch
+through the same code path as |:CP|.
+
+                                                              *<Plug>(cp-run)*
+<Plug>(cp-run)          Run tests in I/O view. Equivalent to :CP run.
+
+                                                            *<Plug>(cp-panel)*
+<Plug>(cp-panel)        Open full-screen test panel. Equivalent to :CP panel.
+
+                                                             *<Plug>(cp-edit)*
+<Plug>(cp-edit)         Open the test case editor. Equivalent to :CP edit.
+
+                                                             *<Plug>(cp-next)*
+<Plug>(cp-next)         Navigate to the next problem. Equivalent to :CP next.
+
+                                                             *<Plug>(cp-prev)*
+<Plug>(cp-prev)         Navigate to the previous problem. Equivalent to :CP prev.
+
+                                                             *<Plug>(cp-pick)*
+<Plug>(cp-pick)         Launch the contest picker. Equivalent to :CP pick.
+
+                                                         *<Plug>(cp-interact)*
+<Plug>(cp-interact)     Open interactive mode. Equivalent to :CP interact.
+
+Example configuration: >lua
+    vim.keymap.set('n', '<leader>cr', '<Plug>(cp-run)')
+    vim.keymap.set('n', '<leader>cp', '<Plug>(cp-panel)')
+    vim.keymap.set('n', '<leader>ce', '<Plug>(cp-edit)')
+    vim.keymap.set('n', '<leader>cn', '<Plug>(cp-next)')
+    vim.keymap.set('n', '<leader>cN', '<Plug>(cp-prev)')
+    vim.keymap.set('n', '<leader>cc', '<Plug>(cp-pick)')
+    vim.keymap.set('n', '<leader>ci', '<Plug>(cp-interact)')
 <
 
 ==============================================================================
