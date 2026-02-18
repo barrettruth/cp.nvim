@@ -2,13 +2,12 @@
 
 import asyncio
 import json
-import logging
 import re
 from typing import Any
 
 import requests
 from bs4 import BeautifulSoup, Tag
-from scrapling.fetchers import Fetcher
+from curl_cffi import requests as curl_requests
 
 from .base import BaseScraper
 from .models import (
@@ -18,10 +17,6 @@ from .models import (
     ProblemSummary,
     TestCase,
 )
-
-# suppress scrapling logging - https://github.com/D4Vinci/Scrapling/issues/31)
-logging.getLogger("scrapling").setLevel(logging.CRITICAL)
-
 
 BASE_URL = "https://codeforces.com"
 API_CONTEST_LIST_URL = f"{BASE_URL}/api/contest.list"
@@ -140,10 +135,9 @@ def _is_interactive(block: Tag) -> bool:
 
 def _fetch_problems_html(contest_id: str) -> str:
     url = f"{BASE_URL}/contest/{contest_id}/problems"
-    page = Fetcher.get(
-        url,
-    )
-    return page.html_content
+    response = curl_requests.get(url, impersonate="chrome", timeout=TIMEOUT_SECONDS)
+    response.raise_for_status()
+    return response.text
 
 
 def _parse_all_blocks(html: str) -> list[dict[str, Any]]:

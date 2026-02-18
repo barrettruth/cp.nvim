@@ -6,7 +6,7 @@ import re
 from typing import Any
 
 import httpx
-from scrapling.fetchers import Fetcher
+from curl_cffi import requests as curl_requests
 
 from .base import BaseScraper
 from .models import (
@@ -50,8 +50,9 @@ def _extract_memory_limit(html: str) -> float:
 
 
 def _fetch_html_sync(url: str) -> str:
-    response = Fetcher.get(url)
-    return str(response.body)
+    response = curl_requests.get(url, impersonate="chrome", timeout=TIMEOUT_S)
+    response.raise_for_status()
+    return response.text
 
 
 class CodeChefScraper(BaseScraper):
