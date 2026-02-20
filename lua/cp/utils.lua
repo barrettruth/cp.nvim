@@ -189,7 +189,10 @@ function M.setup_python_env()
       .system({ 'uv', 'sync' }, { cwd = plugin_path, text = true, env = env })
       :wait()
     if result.code ~= 0 then
-      logger.log('Failed to setup Python environment: ' .. result.stderr, vim.log.levels.ERROR)
+      logger.log(
+        'Failed to setup Python environment: ' .. (result.stderr or ''),
+        vim.log.levels.ERROR
+      )
       return false
     end
     if result.stderr and result.stderr ~= '' then
