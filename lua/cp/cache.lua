@@ -38,6 +38,8 @@
 
 local M = {}
 
+local CACHE_VERSION = 1
+
 local logger = require('cp.log')
 local cache_file = vim.fn.stdpath('data') .. '/cp-nvim.json'
 local cache_data = {}
@@ -65,9 +67,15 @@ function M.load()
 
   local ok, decoded = pcall(vim.json.decode, table.concat(content, '\n'))
   if ok then
-    cache_data = decoded
+    if decoded._version ~= CACHE_VERSION then
+      cache_data = {}
+      M.save()
+    else
+      cache_data = decoded
+    end
   else
-    logger.log('Could not decode json in cache file', vim.log.levels.ERROR)
+    cache_data = {}
+    M.save()
   end
   loaded = true
 end
@@ -78,6 +86,7 @@ function M.save()
   vim.schedule(function()
     vim.fn.mkdir(vim.fn.fnamemodify(cache_file, ':h'), 'p')
 
+    cache_data._version = CACHE_VERSION
     local encoded = vim.json.encode(cache_data)
     local lines = vim.split(encoded, '\n')
     vim.fn.writefile(lines, cache_file)
