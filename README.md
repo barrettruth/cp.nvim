@@ -28,11 +28,12 @@ Install using your package manager of choice or via
 luarocks install cp.nvim
 ```
 
-## Optional Dependencies
+## Dependencies
 
-- [uv](https://docs.astral.sh/uv/) for problem scraping
 - GNU [time](https://www.gnu.org/software/time/) and
   [timeout](https://www.gnu.org/software/coreutils/manual/html_node/timeout-invocation.html)
+- [uv](https://docs.astral.sh/uv/) or [nix](https://nixos.org/) for problem
+  scraping
 
 ## Quick Start
 
