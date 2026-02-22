@@ -20,6 +20,15 @@ local function syshandle(result)
   return { success = true, data = data }
 end
 
+local function spawn_env_list(env_map)
+  local out = {}
+  for key, value in pairs(env_map) do
+    out[#out + 1] = tostring(key) .. '=' .. tostring(value)
+  end
+  table.sort(out)
+  return out
+end
+
 ---@param platform string
 ---@param subcommand string
 ---@param args string[]
@@ -56,7 +65,7 @@ local function run_scraper(platform, subcommand, args, opts)
     handle = uv.spawn(cmd[1], {
       args = vim.list_slice(cmd, 2),
       stdio = { nil, stdout, stderr },
-      env = env,
+      env = spawn_env_list(env),
       cwd = plugin_path,
     }, function(code, signal)
       if buf ~= '' and opts.on_event then
