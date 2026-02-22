@@ -40,7 +40,6 @@ local M = {}
 
 local CACHE_VERSION = 1
 
-local logger = require('cp.log')
 local cache_file = vim.fn.stdpath('data') .. '/cp-nvim.json'
 local cache_data = {}
 local loaded = false
