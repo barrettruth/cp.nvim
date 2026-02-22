@@ -20,12 +20,13 @@ local function syshandle(result)
   return { success = true, data = data }
 end
 
+---@param env_map table<string, string>
+---@return string[]
 local function spawn_env_list(env_map)
   local out = {}
   for key, value in pairs(env_map) do
     out[#out + 1] = tostring(key) .. '=' .. tostring(value)
   end
-  table.sort(out)
   return out
 end
 
