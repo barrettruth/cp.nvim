@@ -65,6 +65,9 @@
           packages = with (pkgsFor system); [
             uv
             python312
+            prettier
+            stylua
+            selene
             lua-language-server
           ];
         };
