@@ -65,6 +65,7 @@
           packages = with (pkgsFor system); [
             uv
             python312
+            lua-language-server
           ];
         };
       });
