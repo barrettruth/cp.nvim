@@ -57,7 +57,7 @@ local function run_scraper(platform, subcommand, args, opts)
   env.CONDA_PREFIX = ''
 
   if opts and opts.ndjson then
-    local uv = vim.loop
+    local uv = vim.uv
     local stdout = uv.new_pipe(false)
     local stderr = uv.new_pipe(false)
     local buf = ''
