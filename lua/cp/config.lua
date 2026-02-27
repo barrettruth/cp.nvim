@@ -7,6 +7,7 @@
 ---@class CpLanguage
 ---@field extension string
 ---@field commands CpLangCommands
+---@field template? string
 
 ---@class CpPlatformOverrides
 ---@field extension? string
@@ -215,6 +216,10 @@ local function validate_language(id, lang)
     extension = { lang.extension, 'string' },
     commands = { lang.commands, { 'table' } },
   })
+
+  if lang.template ~= nil then
+    vim.validate({ template = { lang.template, 'string' } })
+  end
 
   if not lang.commands.run then
     error(('[cp.nvim] languages.%s.commands.run is required'):format(id))

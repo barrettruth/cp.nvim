@@ -8,6 +8,21 @@ local logger = require('cp.log')
 local scraper = require('cp.scraper')
 local state = require('cp.state')
 
+local function apply_template(bufnr, lang_id, platform)
+  local config = config_module.get_config()
+  local eff = config.runtime.effective[platform] and config.runtime.effective[platform][lang_id]
+  if not eff or not eff.template then
+    return
+  end
+  local path = vim.fn.expand(eff.template)
+  if vim.fn.filereadable(path) ~= 1 then
+    logger.log(('[cp.nvim] template not readable: %s'):format(path), vim.log.levels.WARN)
+    return
+  end
+  local lines = vim.fn.readfile(path)
+  vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
+end
+
 ---Get the language of the current file from cache
 ---@return string?
 local function get_current_file_language()
@@ -179,7 +194,7 @@ function M.setup_contest(platform, contest_id, problem_id, language)
       contest_id = contest_id,
       language = lang,
       requested_problem_id = problem_id,
-      token = vim.loop.hrtime(),
+      token = vim.uv.hrtime(),
     })
 
     logger.log('Fetching contests problems...', vim.log.levels.INFO, true)
@@ -270,14 +285,17 @@ function M.setup_problem(problem_id, language)
           mods = { silent = true, noautocmd = true, keepalt = true },
         })
         state.set_solution_win(vim.api.nvim_get_current_win())
-        if config.hooks and config.hooks.setup_code and not vim.b[prov.bufnr].cp_setup_done then
-          local ok = pcall(config.hooks.setup_code, state)
-          if ok then
+        if not vim.b[prov.bufnr].cp_setup_done then
+          apply_template(prov.bufnr, lang, platform)
+          if config.hooks and config.hooks.setup_code then
+            local ok = pcall(config.hooks.setup_code, state)
+            if ok then
+              vim.b[prov.bufnr].cp_setup_done = true
+            end
+          else
+            helpers.clearcol(prov.bufnr)
             vim.b[prov.bufnr].cp_setup_done = true
           end
-        elseif not vim.b[prov.bufnr].cp_setup_done then
-          helpers.clearcol(prov.bufnr)
-          vim.b[prov.bufnr].cp_setup_done = true
         end
         cache.set_file_state(
           vim.fn.fnamemodify(source_file, ':p'),
@@ -300,14 +318,21 @@ function M.setup_problem(problem_id, language)
   local bufnr = vim.api.nvim_get_current_buf()
   state.set_solution_win(vim.api.nvim_get_current_win())
   require('cp.ui.views').ensure_io_view()
-  if config.hooks and config.hooks.setup_code and not vim.b[bufnr].cp_setup_done then
-    local ok = pcall(config.hooks.setup_code, state)
-    if ok then
+  if not vim.b[bufnr].cp_setup_done then
+    local is_new = vim.api.nvim_buf_line_count(bufnr) == 1
+      and vim.api.nvim_buf_get_lines(bufnr, 0, 1, false)[1] == ''
+    if is_new then
+      apply_template(bufnr, lang, platform)
+    end
+    if config.hooks and config.hooks.setup_code then
+      local ok = pcall(config.hooks.setup_code, state)
+      if ok then
+        vim.b[bufnr].cp_setup_done = true
+      end
+    else
+      helpers.clearcol(bufnr)
       vim.b[bufnr].cp_setup_done = true
     end
-  elseif not vim.b[bufnr].cp_setup_done then
-    helpers.clearcol(bufnr)
-    vim.b[bufnr].cp_setup_done = true
   end
   cache.set_file_state(
     vim.fn.expand('%:p'),

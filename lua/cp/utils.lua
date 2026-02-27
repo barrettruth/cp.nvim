@@ -5,7 +5,7 @@ local logger = require('cp.log')
 local _nix_python = nil
 local _nix_discovered = false
 
-local uname = vim.loop.os_uname()
+local uname = vim.uv.os_uname()
 
 local _time_cached = false
 local _time_path = nil
@@ -336,7 +336,7 @@ function M.timeout_capability()
 end
 
 function M.cwd_executables()
-  local uv = vim.uv or vim.loop
+  local uv = vim.uv
   local req = uv.fs_scandir('.')
   if not req then
     return {}
