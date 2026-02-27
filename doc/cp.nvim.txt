@@ -889,6 +889,116 @@ Functions ~
             {bufnr}  (integer) Buffer handle
 
 ==============================================================================
+STATUSLINE INTEGRATION                                        *cp-statusline*
+
+cp.nvim exposes its runtime state through a public module that can be queried
+from any statusline plugin. Import it with: >lua
+    local state = require('cp.state')
+<
+All getters return nil when no problem is active, so guard every value before
+use. Calling any getter outside a CP context is safe and has no side effects.
+
+State API ~
+                                                                  *cp.State*
+The following getters are available for statusline use:
+
+    get_platform()      (string?) Platform id. e.g. "codeforces", "atcoder"
+    get_contest_id()    (string?) Contest id. e.g. "1933", "abc324"
+    get_problem_id()    (string?) Problem id. e.g. "A", "B"
+    get_language()      (string?) Language id. e.g. "cpp", "python"
+    get_base_name()     (string?) Derived filename stem. e.g. "1933a"
+    get_source_file()   (string?) Full source filename. e.g. "1933a.cc"
+    get_active_panel()  (string?) Non-nil when the test panel is open.
+
+Recipe: vanilla statusline ~
+
+Set vim.o.statusline from an autocommand so it is recalculated on every
+BufEnter: >lua
+    local function cp_component()
+      local state = require('cp.state')
+      local platform = state.get_platform()
+      if not platform then
+        return ''
+      end
+      local parts = {
+        platform,
+        state.get_contest_id(),
+        state.get_problem_id(),
+        state.get_language(),
+      }
+      local filtered = {}
+      for _, v in ipairs(parts) do
+        if v then filtered[#filtered + 1] = v end
+      end
+      return '[' .. table.concat(filtered, ' · ') .. ']'
+    end
+
+    vim.api.nvim_create_autocmd({ 'BufEnter', 'User' }, {
+      callback = function()
+        vim.o.statusline = cp_component() .. ' %f %=%l:%c'
+      end
+    })
+<
+
+Recipe: lualine ~
+
+Add a custom component to any lualine section. The cond field hides the
+component entirely when no problem is active: >lua
+    local function cp_lualine()
+      local state = require('cp.state')
+      local parts = {
+        state.get_platform(),
+        state.get_contest_id(),
+        state.get_problem_id(),
+        state.get_language(),
+      }
+      local filtered = {}
+      for _, v in ipairs(parts) do
+        if v then filtered[#filtered + 1] = v end
+      end
+      return table.concat(filtered, ' · ')
+    end
+
+    require('lualine').setup({
+      sections = {
+        lualine_c = {
+          {
+            cp_lualine,
+            cond = function()
+              return require('cp.state').get_platform() ~= nil
+            end,
+          },
+        },
+      },
+    })
+<
+
+Recipe: heirline ~
+
+Build a heirline component using a provider and condition: >lua
+    local CpComponent = {
+      condition = function()
+        return require('cp.state').get_platform() ~= nil
+      end,
+      provider = function()
+        local state = require('cp.state')
+        local parts = {
+          state.get_platform(),
+          state.get_contest_id(),
+          state.get_problem_id(),
+          state.get_language(),
+        }
+        local filtered = {}
+        for _, v in ipairs(parts) do
+          if v then filtered[#filtered + 1] = v end
+        end
+        return '[' .. table.concat(filtered, ' · ') .. ']'
+      end,
+    }
+<
+Include CpComponent in your heirline StatusLine spec wherever desired.
+
+==============================================================================
 PANEL KEYMAPS                                                  *cp-panel-keys*
 
 <c-n>   Navigate to next test case
