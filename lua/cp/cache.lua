@@ -27,6 +27,7 @@
 ---@field multi_test? boolean
 ---@field memory_mb? number
 ---@field timeout_ms? number
+---@field epsilon? number
 ---@field combined_test? CombinedTest
 ---@field test_cases TestCase[]
 
@@ -271,6 +272,34 @@ function M.get_constraints(platform, contest_id, problem_id)
 
   local problem_data = cache_data[platform][contest_id].problems[index]
   return problem_data.timeout_ms, problem_data.memory_mb
+end
+
+---@param platform string
+---@param contest_id string
+---@param problem_id? string
+---@return number?
+function M.get_epsilon(platform, contest_id, problem_id)
+  vim.validate({
+    platform = { platform, 'string' },
+    contest_id = { contest_id, 'string' },
+    problem_id = { problem_id, { 'string', 'nil' }, true },
+  })
+
+  if
+    not cache_data[platform]
+    or not cache_data[platform][contest_id]
+    or not cache_data[platform][contest_id].index_map
+  then
+    return nil
+  end
+
+  local index = cache_data[platform][contest_id].index_map[problem_id]
+  if not index then
+    return nil
+  end
+
+  local problem_data = cache_data[platform][contest_id].problems[index]
+  return problem_data and problem_data.epsilon or nil
 end
 
 ---@param file_path string
