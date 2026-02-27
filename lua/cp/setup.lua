@@ -10,17 +10,13 @@ local state = require('cp.state')
 
 local function apply_template(bufnr, lang_id, platform)
   local config = config_module.get_config()
-  local eff = config.runtime.effective[platform]
-    and config.runtime.effective[platform][lang_id]
+  local eff = config.runtime.effective[platform] and config.runtime.effective[platform][lang_id]
   if not eff or not eff.template then
     return
   end
   local path = vim.fn.expand(eff.template)
   if vim.fn.filereadable(path) ~= 1 then
-    logger.log(
-      ('[cp.nvim] template not readable: %s'):format(path),
-      vim.log.levels.WARN
-    )
+    logger.log(('[cp.nvim] template not readable: %s'):format(path), vim.log.levels.WARN)
     return
   end
   local lines = vim.fn.readfile(path)
