@@ -346,6 +346,8 @@ function M.get_data_pretty()
   return vim.inspect(cache_data)
 end
 
-M._cache = cache_data
+function M.get_raw_cache()
+  return cache_data
+end
 
 return M
