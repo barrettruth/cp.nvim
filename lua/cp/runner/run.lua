@@ -276,26 +276,35 @@ function M.run_all_test_cases(indices, debug, on_each, on_done)
     end
   end
 
-  local function run_next(pos)
-    if pos > #to_run then
-      logger.log(
-        ('Finished %s %d test cases.'):format(debug and 'debugging' or 'running', #to_run),
-        vim.log.levels.INFO,
-        true
-      )
-      on_done(panel_state.test_cases)
-      return
-    end
-
-    M.run_test_case(to_run[pos], debug, function()
-      if on_each then
-        on_each(pos, #to_run)
-      end
-      run_next(pos + 1)
-    end)
+  if #to_run == 0 then
+    logger.log(
+      ('Finished %s %d test cases.'):format(debug and 'debugging' or 'running', 0),
+      vim.log.levels.INFO,
+      true
+    )
+    on_done(panel_state.test_cases)
+    return
   end
 
-  run_next(1)
+  local total = #to_run
+  local remaining = total
+
+  for _, idx in ipairs(to_run) do
+    M.run_test_case(idx, debug, function()
+      if on_each then
+        on_each(idx, total)
+      end
+      remaining = remaining - 1
+      if remaining == 0 then
+        logger.log(
+          ('Finished %s %d test cases.'):format(debug and 'debugging' or 'running', total),
+          vim.log.levels.INFO,
+          true
+        )
+        on_done(panel_state.test_cases)
+      end
+    end)
+  end
 end
 
 ---@return PanelState
