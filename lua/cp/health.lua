@@ -13,7 +13,7 @@ local function check()
     vim.health.error('cp.nvim requires Neovim 0.10.0+')
   end
 
-  local uname = vim.loop.os_uname()
+  local uname = vim.uv.os_uname()
   if uname.sysname == 'Windows_NT' then
     vim.health.error('Windows is not supported')
   end

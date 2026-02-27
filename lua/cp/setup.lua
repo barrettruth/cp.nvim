@@ -179,7 +179,7 @@ function M.setup_contest(platform, contest_id, problem_id, language)
       contest_id = contest_id,
       language = lang,
       requested_problem_id = problem_id,
-      token = vim.loop.hrtime(),
+      token = vim.uv.hrtime(),
     })
 
     logger.log('Fetching contests problems...', vim.log.levels.INFO, true)
