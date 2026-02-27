@@ -21,6 +21,7 @@
 ---@class PanelConfig
 ---@field diff_modes string[]
 ---@field max_output_lines integer
+---@field epsilon number?
 
 ---@class DiffGitConfig
 ---@field args string[]
@@ -174,7 +175,7 @@ M.defaults = {
       add_test_key = 'ga',
       save_and_exit_key = 'q',
     },
-    panel = { diff_modes = { 'side-by-side', 'git', 'vim' }, max_output_lines = 50 },
+    panel = { diff_modes = { 'side-by-side', 'git', 'vim' }, max_output_lines = 50, epsilon = nil },
     diff = {
       git = {
         args = { 'diff', '--no-index', '--word-diff=plain', '--word-diff-regex=.', '--no-prefix' },
@@ -367,6 +368,13 @@ function M.setup(user_config)
         return type(v) == 'number' and v > 0 and v == math.floor(v)
       end,
       'positive integer',
+    },
+    epsilon = {
+      cfg.ui.panel.epsilon,
+      function(v)
+        return v == nil or (type(v) == 'number' and v >= 0)
+      end,
+      'nil or non-negative number',
     },
     git = { cfg.ui.diff.git, { 'table' } },
     git_args = { cfg.ui.diff.git.args, is_string_list, 'string[]' },

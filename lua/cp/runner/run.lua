@@ -19,6 +19,7 @@
 ---@class ProblemConstraints
 ---@field timeout_ms number
 ---@field memory_mb number
+---@field epsilon number?
 
 ---@class PanelState
 ---@field test_cases RanTestCase[]
@@ -56,7 +57,8 @@ local function load_constraints_from_cache(platform, contest_id, problem_id)
   cache.load()
   local timeout_ms, memory_mb = cache.get_constraints(platform, contest_id, problem_id)
   if timeout_ms and memory_mb then
-    return { timeout_ms = timeout_ms, memory_mb = memory_mb }
+    local epsilon = cache.get_epsilon(platform, contest_id, problem_id)
+    return { timeout_ms = timeout_ms, memory_mb = memory_mb, epsilon = epsilon }
   end
   return nil
 end
@@ -97,6 +99,49 @@ end
 ---@return string[]
 local function build_command(cmd, substitutions)
   return execute.build_command(cmd, substitutions)
+end
+
+local function compare_outputs(actual, expected, epsilon)
+  local norm_actual = normalize_lines(actual)
+  local norm_expected = normalize_lines(expected)
+
+  if epsilon == nil or epsilon == 0 then
+    return norm_actual == norm_expected
+  end
+
+  local actual_lines = vim.split(norm_actual, '\n', { plain = true })
+  local expected_lines = vim.split(norm_expected, '\n', { plain = true })
+
+  if #actual_lines ~= #expected_lines then
+    return false
+  end
+
+  for i = 1, #actual_lines do
+    local a_tokens = vim.split(actual_lines[i], '%s+', { plain = false, trimempty = true })
+    local e_tokens = vim.split(expected_lines[i], '%s+', { plain = false, trimempty = true })
+
+    if #a_tokens ~= #e_tokens then
+      return false
+    end
+
+    for j = 1, #a_tokens do
+      local a_tok, e_tok = a_tokens[j], e_tokens[j]
+      local a_num = tonumber(a_tok)
+      local e_num = tonumber(e_tok)
+
+      if a_num ~= nil and e_num ~= nil then
+        if math.abs(a_num - e_num) > epsilon then
+          return false
+        end
+      else
+        if a_tok ~= e_tok then
+          return false
+        end
+      end
+    end
+  end
+
+  return true
 end
 
 ---@param test_case RanTestCase
@@ -143,7 +188,9 @@ local function run_single_test_case(test_case, debug, on_complete)
     end
 
     local expected = test_case.expected or ''
-    local ok = normalize_lines(out) == normalize_lines(expected)
+    local epsilon = (panel_state.constraints and panel_state.constraints.epsilon)
+      or config.ui.panel.epsilon
+    local ok = compare_outputs(out, expected, epsilon)
 
     local signal = r.signal
     if not signal and r.code and r.code >= 128 then
