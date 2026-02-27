@@ -101,6 +101,10 @@ local function build_command(cmd, substitutions)
   return execute.build_command(cmd, substitutions)
 end
 
+---@param actual string
+---@param expected string
+---@param epsilon number?
+---@return boolean
 local function compare_outputs(actual, expected, epsilon)
   local norm_actual = normalize_lines(actual)
   local norm_expected = normalize_lines(expected)
