@@ -33,7 +33,7 @@ end
 ---@param platform string
 ---@param subcommand string
 ---@param args string[]
----@param opts { sync?: boolean, ndjson?: boolean, on_event?: fun(ev: table), on_exit?: fun(result: table) }
+---@param opts { sync?: boolean, ndjson?: boolean, on_event?: fun(ev: table), on_exit?: fun(result: table), env_extra?: table<string, string>, stdin?: string }
 local function run_scraper(platform, subcommand, args, opts)
   if not utils.setup_python_env() then
     local msg = 'no Python environment available (install uv or nix)'
