@@ -103,6 +103,8 @@ end, {
           end
         end
         return filter_candidates(candidates)
+      elseif args[2] == 'login' then
+        return filter_candidates(platforms)
       elseif args[2] == 'race' then
         local candidates = { 'stop' }
         vim.list_extend(candidates, platforms)

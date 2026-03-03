@@ -13,6 +13,7 @@ M.ACTIONS = {
   'race',
   'stress',
   'submit',
+  'login',
 }
 
 M.PLATFORM_DISPLAY_NAMES = {
