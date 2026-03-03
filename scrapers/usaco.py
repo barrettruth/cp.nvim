@@ -279,9 +279,20 @@ class USACOScraper(BaseScraper):
                 payload = await coro
                 print(json.dumps(payload), flush=True)
 
-
-    async def submit(self, contest_id: str, problem_id: str, source_code: str, language_id: str, credentials: dict[str, str]) -> SubmitResult:
-        return SubmitResult(success=False, error="USACO submit not yet implemented", submission_id="", verdict="")
+    async def submit(
+        self,
+        contest_id: str,
+        problem_id: str,
+        source_code: str,
+        language_id: str,
+        credentials: dict[str, str],
+    ) -> SubmitResult:
+        return SubmitResult(
+            success=False,
+            error="USACO submit not yet implemented",
+            submission_id="",
+            verdict="",
+        )
 
 
 if __name__ == "__main__":

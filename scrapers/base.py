@@ -6,7 +6,13 @@ import sys
 from abc import ABC, abstractmethod
 
 from .language_ids import get_language_id
-from .models import CombinedTest, ContestListResult, MetadataResult, SubmitResult, TestsResult
+from .models import (
+    CombinedTest,
+    ContestListResult,
+    MetadataResult,
+    SubmitResult,
+    TestsResult,
+)
 
 _PRECISION_ABS_REL_RE = re.compile(
     r"(?:absolute|relative)\s+error[^.]*?10\s*[\^{]\s*\{?\s*[-\u2212]\s*(\d+)\s*\}?",
@@ -43,7 +49,14 @@ class BaseScraper(ABC):
     async def stream_tests_for_category_async(self, category_id: str) -> None: ...
 
     @abstractmethod
-    async def submit(self, contest_id: str, problem_id: str, source_code: str, language_id: str, credentials: dict[str, str]) -> SubmitResult: ...
+    async def submit(
+        self,
+        contest_id: str,
+        problem_id: str,
+        source_code: str,
+        language_id: str,
+        credentials: dict[str, str],
+    ) -> SubmitResult: ...
 
     def _usage(self) -> str:
         name = self.platform_name
@@ -102,7 +115,11 @@ class BaseScraper(ABC):
 
             case "submit":
                 if len(args) != 5:
-                    print(self._submit_error("Usage: <platform> submit <contest_id> <problem_id> <language_id>").model_dump_json())
+                    print(
+                        self._submit_error(
+                            "Usage: <platform> submit <contest_id> <problem_id> <language_id>"
+                        ).model_dump_json()
+                    )
                     return 1
                 source_code = sys.stdin.read()
                 creds_raw = os.environ.get("CP_CREDENTIALS", "{}")
@@ -111,7 +128,9 @@ class BaseScraper(ABC):
                 except json.JSONDecodeError:
                     credentials = {}
                 language_id = get_language_id(self.platform_name, args[4]) or args[4]
-                result = await self.submit(args[2], args[3], source_code, language_id, credentials)
+                result = await self.submit(
+                    args[2], args[3], source_code, language_id, credentials
+                )
                 print(result.model_dump_json())
                 return 0 if result.success else 1
 

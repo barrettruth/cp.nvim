@@ -369,15 +369,26 @@ class AtcoderScraper(BaseScraper):
 
         await asyncio.gather(*(emit(r) for r in rows))
 
-    async def submit(self, contest_id: str, problem_id: str, source_code: str, language_id: str, credentials: dict[str, str]) -> SubmitResult:
+    async def submit(
+        self,
+        contest_id: str,
+        problem_id: str,
+        source_code: str,
+        language_id: str,
+        credentials: dict[str, str],
+    ) -> SubmitResult:
         def _submit_sync() -> SubmitResult:
             try:
-                login_page = _session.get(f"{BASE_URL}/login", headers=HEADERS, timeout=TIMEOUT_SECONDS)
+                login_page = _session.get(
+                    f"{BASE_URL}/login", headers=HEADERS, timeout=TIMEOUT_SECONDS
+                )
                 login_page.raise_for_status()
                 soup = BeautifulSoup(login_page.text, "html.parser")
                 csrf_input = soup.find("input", {"name": "csrf_token"})
                 if not csrf_input:
-                    return SubmitResult(success=False, error="Could not find CSRF token on login page")
+                    return SubmitResult(
+                        success=False, error="Could not find CSRF token on login page"
+                    )
                 csrf_token = csrf_input.get("value", "")
 
                 login_resp = _session.post(
@@ -401,7 +412,9 @@ class AtcoderScraper(BaseScraper):
                 soup = BeautifulSoup(submit_page.text, "html.parser")
                 csrf_input = soup.find("input", {"name": "csrf_token"})
                 if not csrf_input:
-                    return SubmitResult(success=False, error="Could not find CSRF token on submit page")
+                    return SubmitResult(
+                        success=False, error="Could not find CSRF token on submit page"
+                    )
                 csrf_token = csrf_input.get("value", "")
 
                 task_screen_name = f"{contest_id}_{problem_id}"
@@ -418,7 +431,9 @@ class AtcoderScraper(BaseScraper):
                 )
                 submit_resp.raise_for_status()
 
-                return SubmitResult(success=True, error="", submission_id="", verdict="submitted")
+                return SubmitResult(
+                    success=True, error="", submission_id="", verdict="submitted"
+                )
             except Exception as e:
                 return SubmitResult(success=False, error=str(e))
 
