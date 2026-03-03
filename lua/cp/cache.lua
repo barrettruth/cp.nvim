@@ -388,6 +388,18 @@ function M.set_credentials(platform, creds)
   M.save()
 end
 
+---@param platform string?
+function M.clear_credentials(platform)
+  if platform then
+    if cache_data._credentials then
+      cache_data._credentials[platform] = nil
+    end
+  else
+    cache_data._credentials = nil
+  end
+  M.save()
+end
+
 function M.clear_all()
   local creds = cache_data._credentials
   cache_data = {}
