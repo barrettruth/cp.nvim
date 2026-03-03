@@ -444,12 +444,12 @@ function M.ensure_io_view()
 
   local cfg = config_module.get_config()
 
-  if cfg.hooks and cfg.hooks.setup_io_output then
-    pcall(cfg.hooks.setup_io_output, output_buf, state)
+  local io = cfg.hooks and cfg.hooks.setup and cfg.hooks.setup.io
+  if io and io.output then
+    pcall(io.output, output_buf, state)
   end
-
-  if cfg.hooks and cfg.hooks.setup_io_input then
-    pcall(cfg.hooks.setup_io_input, input_buf, state)
+  if io and io.input then
+    pcall(io.input, input_buf, state)
   end
 
   local test_cases = cache.get_test_cases(platform, contest_id, problem_id)
@@ -958,15 +958,12 @@ function M.toggle_panel(panel_opts)
 
   setup_keybindings_for_buffer(test_buffers.tab_buf)
 
-  if config.hooks and config.hooks.before_run then
-    vim.schedule_wrap(function()
-      config.hooks.before_run(state)
-    end)
+  local o = config.hooks and config.hooks.on
+  if o and o.run then
+    vim.schedule(function() o.run(state) end)
   end
-  if panel_opts and panel_opts.debug and config.hooks and config.hooks.before_debug then
-    vim.schedule_wrap(function()
-      config.hooks.before_debug(state)
-    end)
+  if panel_opts and panel_opts.debug and o and o.debug then
+    vim.schedule(function() o.debug(state) end)
   end
 
   vim.api.nvim_set_current_win(test_windows.tab_win)

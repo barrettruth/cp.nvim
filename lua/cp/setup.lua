@@ -196,13 +196,6 @@ function M.setup_contest(platform, contest_id, problem_id, language)
 
     state.set_language(lang)
 
-    if cfg.hooks and cfg.hooks.setup_code and not vim.b[bufnr].cp_setup_done then
-      local ok = pcall(cfg.hooks.setup_code, state)
-      if ok then
-        vim.b[bufnr].cp_setup_done = true
-      end
-    end
-
     state.set_provisional({
       bufnr = bufnr,
       platform = platform,
@@ -281,7 +274,15 @@ function M.setup_problem(problem_id, language)
     return
   end
 
-  vim.fn.mkdir(vim.fn.fnamemodify(source_file, ':h'), 'p')
+  local contest_dir = vim.fn.fnamemodify(source_file, ':h')
+  local is_new_dir = vim.fn.isdirectory(contest_dir) == 0
+  vim.fn.mkdir(contest_dir, 'p')
+  if is_new_dir then
+    local s = config.hooks and config.hooks.setup
+    if s and s.contest then
+      pcall(s.contest, state)
+    end
+  end
 
   local prov = state.get_provisional()
   if prov and prov.platform == platform and prov.contest_id == (state.get_contest_id() or '') then
@@ -302,14 +303,22 @@ function M.setup_problem(problem_id, language)
         state.set_solution_win(vim.api.nvim_get_current_win())
         if not vim.b[prov.bufnr].cp_setup_done then
           apply_template(prov.bufnr, lang, platform)
-          if config.hooks and config.hooks.setup_code then
-            local ok = pcall(config.hooks.setup_code, state)
-            if ok then
-              vim.b[prov.bufnr].cp_setup_done = true
-            end
+          local s = config.hooks and config.hooks.setup
+          if s and s.code then
+            local ok = pcall(s.code, state)
+            if ok then vim.b[prov.bufnr].cp_setup_done = true end
           else
             helpers.clearcol(prov.bufnr)
             vim.b[prov.bufnr].cp_setup_done = true
+          end
+          local o = config.hooks and config.hooks.on
+          if o and o.enter then
+            local bufnr = prov.bufnr
+            vim.api.nvim_create_autocmd('BufEnter', {
+              buffer = bufnr,
+              callback = function() pcall(o.enter, state) end,
+            })
+            pcall(o.enter, state)
           end
         end
         cache.set_file_state(
@@ -339,14 +348,21 @@ function M.setup_problem(problem_id, language)
     if is_new then
       apply_template(bufnr, lang, platform)
     end
-    if config.hooks and config.hooks.setup_code then
-      local ok = pcall(config.hooks.setup_code, state)
-      if ok then
-        vim.b[bufnr].cp_setup_done = true
-      end
+    local s = config.hooks and config.hooks.setup
+    if s and s.code then
+      local ok = pcall(s.code, state)
+      if ok then vim.b[bufnr].cp_setup_done = true end
     else
       helpers.clearcol(bufnr)
       vim.b[bufnr].cp_setup_done = true
+    end
+    local o = config.hooks and config.hooks.on
+    if o and o.enter then
+      vim.api.nvim_create_autocmd('BufEnter', {
+        buffer = bufnr,
+        callback = function() pcall(o.enter, state) end,
+      })
+      pcall(o.enter, state)
     end
   end
   cache.set_file_state(
