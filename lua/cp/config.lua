@@ -9,6 +9,9 @@
 ---@field commands CpLangCommands
 ---@field template? string
 
+---@class CpTemplatesConfig
+---@field cursor_marker? string
+
 ---@class CpPlatformOverrides
 ---@field extension? string
 ---@field commands? CpLangCommands
@@ -86,6 +89,7 @@
 ---@class cp.Config
 ---@field languages table<string, CpLanguage>
 ---@field platforms table<string, CpPlatform>
+---@field templates? CpTemplatesConfig
 ---@field hooks Hooks
 ---@field debug boolean
 ---@field open_url boolean
@@ -318,6 +322,13 @@ function M.setup(user_config)
 
   if not next(cfg.platforms) then
     error('[cp.nvim] At least one platform must be configured')
+  end
+
+  if cfg.templates ~= nil then
+    vim.validate({ templates = { cfg.templates, 'table' } })
+    if cfg.templates.cursor_marker ~= nil then
+      vim.validate({ cursor_marker = { cfg.templates.cursor_marker, 'string' } })
+    end
   end
 
   vim.validate({

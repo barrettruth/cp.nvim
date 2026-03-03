@@ -21,6 +21,21 @@ local function apply_template(bufnr, lang_id, platform)
   end
   local lines = vim.fn.readfile(path)
   vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
+  local marker = config.templates and config.templates.cursor_marker
+  if marker then
+    for lnum, line in ipairs(lines) do
+      local col = line:find(marker, 1, true)
+      if col then
+        local new_line = line:sub(1, col - 1) .. line:sub(col + #marker)
+        vim.api.nvim_buf_set_lines(bufnr, lnum - 1, lnum, false, { new_line })
+        local winid = vim.fn.bufwinid(bufnr)
+        if winid ~= -1 then
+          vim.api.nvim_win_set_cursor(winid, { lnum, col - 1 })
+        end
+        break
+      end
+    end
+  end
 end
 
 ---Get the language of the current file from cache
