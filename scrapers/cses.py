@@ -7,12 +7,13 @@ from typing import Any
 
 import httpx
 
-from .base import BaseScraper
+from .base import BaseScraper, extract_precision
 from .models import (
     ContestListResult,
     ContestSummary,
     MetadataResult,
     ProblemSummary,
+    SubmitResult,
     TestCase,
 )
 
@@ -129,17 +130,21 @@ def parse_category_problems(category_id: str, html: str) -> list[ProblemSummary]
     return []
 
 
-def _extract_problem_info(html: str) -> tuple[int, int, bool]:
+def _extract_problem_info(html: str) -> tuple[int, int, bool, float | None]:
     tm = TIME_RE.search(html)
     mm = MEM_RE.search(html)
     t = int(round(float(tm.group(1)) * 1000)) if tm else 0
     m = int(mm.group(1)) if mm else 0
     md = MD_BLOCK_RE.search(html)
     interactive = False
+    precision = None
     if md:
         body = md.group(1)
         interactive = "This is an interactive problem." in body
-    return t, m, interactive
+        from bs4 import BeautifulSoup
+
+        precision = extract_precision(BeautifulSoup(body, "html.parser").get_text(" "))
+    return t, m, interactive, precision
 
 
 def parse_title(html: str) -> str:
@@ -256,6 +261,9 @@ class CSESScraper(BaseScraper):
             for coro in asyncio.as_completed(tasks):
                 payload = await coro
                 print(json.dumps(payload), flush=True)
+
+    async def submit(self, contest_id: str, problem_id: str, source_code: str, language_id: str, credentials: dict[str, str]) -> SubmitResult:
+        return SubmitResult(success=False, error="CSES submit not yet implemented", submission_id="", verdict="")
 
 
 if __name__ == "__main__":

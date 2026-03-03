@@ -27,7 +27,7 @@
 ---@field multi_test? boolean
 ---@field memory_mb? number
 ---@field timeout_ms? number
----@field epsilon? number
+---@field precision? number
 ---@field combined_test? CombinedTest
 ---@field test_cases TestCase[]
 
@@ -231,7 +231,8 @@ function M.set_test_cases(
   timeout_ms,
   memory_mb,
   interactive,
-  multi_test
+  multi_test,
+  precision
 )
   vim.validate({
     platform = { platform, 'string' },
@@ -243,6 +244,7 @@ function M.set_test_cases(
     memory_mb = { memory_mb, { 'number', 'nil' }, true },
     interactive = { interactive, { 'boolean', 'nil' }, true },
     multi_test = { multi_test, { 'boolean', 'nil' }, true },
+    precision = { precision, { 'number', 'nil' }, true },
   })
 
   local index = cache_data[platform][contest_id].index_map[problem_id]
@@ -253,6 +255,7 @@ function M.set_test_cases(
   cache_data[platform][contest_id].problems[index].memory_mb = memory_mb
   cache_data[platform][contest_id].problems[index].interactive = interactive
   cache_data[platform][contest_id].problems[index].multi_test = multi_test
+  cache_data[platform][contest_id].problems[index].precision = precision
 
   M.save()
 end
@@ -278,7 +281,7 @@ end
 ---@param contest_id string
 ---@param problem_id? string
 ---@return number?
-function M.get_epsilon(platform, contest_id, problem_id)
+function M.get_precision(platform, contest_id, problem_id)
   vim.validate({
     platform = { platform, 'string' },
     contest_id = { contest_id, 'string' },
@@ -299,7 +302,7 @@ function M.get_epsilon(platform, contest_id, problem_id)
   end
 
   local problem_data = cache_data[platform][contest_id].problems[index]
-  return problem_data and problem_data.epsilon or nil
+  return problem_data and problem_data.precision or nil
 end
 
 ---@param file_path string
@@ -349,9 +352,22 @@ function M.set_contest_summaries(platform, contests)
     cache_data[platform][contest.id] = cache_data[platform][contest.id] or {}
     cache_data[platform][contest.id].display_name = contest.display_name
     cache_data[platform][contest.id].name = contest.name
+    if contest.start_time then
+      cache_data[platform][contest.id].start_time = contest.start_time
+    end
   end
 
   M.save()
+end
+
+---@param platform string
+---@param contest_id string
+---@return integer?
+function M.get_contest_start_time(platform, contest_id)
+  if not cache_data[platform] or not cache_data[platform][contest_id] then
+    return nil
+  end
+  return cache_data[platform][contest_id].start_time
 end
 
 function M.clear_all()

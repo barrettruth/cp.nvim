@@ -56,6 +56,12 @@ local function run_scraper(platform, subcommand, args, opts)
   env.PYTHONPATH = ''
   env.CONDA_PREFIX = ''
 
+  if opts and opts.env_extra then
+    for k, v in pairs(opts.env_extra) do
+      env[k] = v
+    end
+  end
+
   if opts and opts.ndjson then
     local uv = vim.uv
     local stdout = uv.new_pipe(false)
@@ -126,6 +132,9 @@ local function run_scraper(platform, subcommand, args, opts)
   end
 
   local sysopts = { text = true, timeout = 30000, env = env, cwd = plugin_path }
+  if opts and opts.stdin then
+    sysopts.stdin = opts.stdin
+  end
   if opts and opts.sync then
     local result = vim.system(cmd, sysopts):wait()
     return syshandle(result)
@@ -228,10 +237,28 @@ function M.scrape_all_tests(platform, contest_id, callback)
             memory_mb = ev.memory_mb or 0,
             interactive = ev.interactive or false,
             multi_test = ev.multi_test or false,
+            precision = ev.precision,
             problem_id = ev.problem_id,
           })
         end
       end)
+    end,
+  })
+end
+
+function M.submit(platform, contest_id, problem_id, language, source_code, credentials, callback)
+  local creds_json = vim.json.encode(credentials)
+  run_scraper(platform, 'submit', { contest_id, problem_id, language }, {
+    stdin = source_code,
+    env_extra = { CP_CREDENTIALS = creds_json },
+    on_exit = function(result)
+      if type(callback) == 'function' then
+        if result and result.success then
+          callback(result.data or { success = true })
+        else
+          callback({ success = false, error = result and result.error or 'unknown' })
+        end
+      end
     end,
   })
 end

@@ -9,12 +9,13 @@ import requests
 from bs4 import BeautifulSoup, Tag
 from curl_cffi import requests as curl_requests
 
-from .base import BaseScraper
+from .base import BaseScraper, extract_precision
 from .models import (
     ContestListResult,
     ContestSummary,
     MetadataResult,
     ProblemSummary,
+    SubmitResult,
     TestCase,
 )
 
@@ -153,6 +154,7 @@ def _parse_all_blocks(html: str) -> list[dict[str, Any]]:
         raw_samples, is_grouped = _extract_samples(b)
         timeout_ms, memory_mb = _extract_limits(b)
         interactive = _is_interactive(b)
+        precision = extract_precision(b.get_text(" ", strip=True))
 
         if is_grouped and raw_samples:
             combined_input = f"{len(raw_samples)}\n" + "\n".join(
@@ -179,6 +181,7 @@ def _parse_all_blocks(html: str) -> list[dict[str, Any]]:
                 "memory_mb": memory_mb,
                 "interactive": interactive,
                 "multi_test": is_grouped,
+                "precision": precision,
             }
         )
     return out
@@ -228,11 +231,20 @@ class CodeforcesScraper(BaseScraper):
 
             contests: list[ContestSummary] = []
             for c in data["result"]:
-                if c.get("phase") != "FINISHED":
+                phase = c.get("phase")
+                if phase not in ("FINISHED", "BEFORE", "CODING"):
                     continue
                 cid = str(c["id"])
                 name = c["name"]
-                contests.append(ContestSummary(id=cid, name=name, display_name=name))
+                start_time = c.get("startTimeSeconds") if phase != "FINISHED" else None
+                contests.append(
+                    ContestSummary(
+                        id=cid,
+                        name=name,
+                        display_name=name,
+                        start_time=start_time,
+                    )
+                )
 
             if not contests:
                 return self._contests_error("No contests found")
@@ -263,10 +275,14 @@ class CodeforcesScraper(BaseScraper):
                         "memory_mb": b.get("memory_mb", 0),
                         "interactive": bool(b.get("interactive")),
                         "multi_test": bool(b.get("multi_test", False)),
+                        "precision": b.get("precision"),
                     }
                 ),
                 flush=True,
             )
+
+    async def submit(self, contest_id: str, problem_id: str, source_code: str, language_id: str, credentials: dict[str, str]) -> SubmitResult:
+        return SubmitResult(success=False, error="Codeforces submit not yet implemented", submission_id="", verdict="")
 
 
 if __name__ == "__main__":

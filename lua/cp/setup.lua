@@ -130,7 +130,8 @@ local function start_tests(platform, contest_id, problems)
         ev.timeout_ms or 0,
         ev.memory_mb or 0,
         ev.interactive,
-        ev.multi_test
+        ev.multi_test,
+        ev.precision
       )
 
       local io_state = state.get_io_view_state()
