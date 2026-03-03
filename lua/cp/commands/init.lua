@@ -83,6 +83,12 @@ local function parse_command(args)
       else
         return { type = 'action', action = 'interact' }
       end
+    elseif first == 'login' then
+      return {
+        type = 'action',
+        action = 'login',
+        platform = args[2],
+      }
     elseif first == 'stress' then
       return {
         type = 'action',
@@ -317,6 +323,8 @@ function M.handle_command(opts)
       edit.toggle_edit(cmd.test_index)
     elseif cmd.action == 'stress' then
       require('cp.stress').toggle(cmd.generator_cmd, cmd.brute_cmd)
+    elseif cmd.action == 'login' then
+      require('cp.login').login(cmd.platform)
     elseif cmd.action == 'submit' then
       require('cp.submit').submit({ language = cmd.language })
     elseif cmd.action == 'race' then
