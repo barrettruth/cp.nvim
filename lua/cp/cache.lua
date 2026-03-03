@@ -371,8 +371,29 @@ function M.get_contest_start_time(platform, contest_id)
   return cache_data[platform][contest_id].start_time
 end
 
+---@param platform string
+---@return table?
+function M.get_credentials(platform)
+  if not cache_data._credentials then
+    return nil
+  end
+  return cache_data._credentials[platform]
+end
+
+---@param platform string
+---@param creds table
+function M.set_credentials(platform, creds)
+  cache_data._credentials = cache_data._credentials or {}
+  cache_data._credentials[platform] = creds
+  M.save()
+end
+
 function M.clear_all()
+  local creds = cache_data._credentials
   cache_data = {}
+  if creds then
+    cache_data._credentials = creds
+  end
   M.save()
 end
 

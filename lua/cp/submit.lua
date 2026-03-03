@@ -1,43 +1,11 @@
 local M = {}
 
+local cache = require('cp.cache')
 local logger = require('cp.log')
 local state = require('cp.state')
 
-local credentials_file = vim.fn.stdpath('data') .. '/cp-nvim-credentials.json'
-
-local function load_credentials(platform)
-  if vim.fn.filereadable(credentials_file) ~= 1 then
-    return nil
-  end
-  local content = vim.fn.readfile(credentials_file)
-  if #content == 0 then
-    return nil
-  end
-  local ok, data = pcall(vim.json.decode, table.concat(content, '\n'))
-  if not ok then
-    return nil
-  end
-  return data[platform]
-end
-
-local function save_credentials(platform, creds)
-  local data = {}
-  if vim.fn.filereadable(credentials_file) == 1 then
-    local content = vim.fn.readfile(credentials_file)
-    if #content > 0 then
-      local ok, decoded = pcall(vim.json.decode, table.concat(content, '\n'))
-      if ok then
-        data = decoded
-      end
-    end
-  end
-  data[platform] = creds
-  vim.fn.mkdir(vim.fn.fnamemodify(credentials_file, ':h'), 'p')
-  vim.fn.writefile({ vim.json.encode(data) }, credentials_file)
-end
-
 local function prompt_credentials(platform, callback)
-  local saved = load_credentials(platform)
+  local saved = cache.get_credentials(platform)
   if saved and saved.username and saved.password then
     callback(saved)
     return
@@ -55,7 +23,7 @@ local function prompt_credentials(platform, callback)
       return
     end
     local creds = { username = username, password = password }
-    save_credentials(platform, creds)
+    cache.set_credentials(platform, creds)
     callback(creds)
   end)
 end
