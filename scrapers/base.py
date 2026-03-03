@@ -1,8 +1,31 @@
 import asyncio
+import json
+import os
+import re
 import sys
 from abc import ABC, abstractmethod
 
-from .models import CombinedTest, ContestListResult, MetadataResult, TestsResult
+from .language_ids import get_language_id
+from .models import CombinedTest, ContestListResult, MetadataResult, SubmitResult, TestsResult
+
+_PRECISION_ABS_REL_RE = re.compile(
+    r"(?:absolute|relative)\s+error[^.]*?10\s*[\^{]\s*\{?\s*[-\u2212]\s*(\d+)\s*\}?",
+    re.IGNORECASE,
+)
+_PRECISION_DECIMAL_RE = re.compile(
+    r"round(?:ed)?\s+to\s+(\d+)\s+decimal\s+place",
+    re.IGNORECASE,
+)
+
+
+def extract_precision(text: str) -> float | None:
+    m = _PRECISION_ABS_REL_RE.search(text)
+    if m:
+        return 10 ** -int(m.group(1))
+    m = _PRECISION_DECIMAL_RE.search(text)
+    if m:
+        return 10 ** -int(m.group(1))
+    return None
 
 
 class BaseScraper(ABC):
@@ -18,6 +41,9 @@ class BaseScraper(ABC):
 
     @abstractmethod
     async def stream_tests_for_category_async(self, category_id: str) -> None: ...
+
+    @abstractmethod
+    async def submit(self, contest_id: str, problem_id: str, source_code: str, language_id: str, credentials: dict[str, str]) -> SubmitResult: ...
 
     def _usage(self) -> str:
         name = self.platform_name
@@ -39,6 +65,9 @@ class BaseScraper(ABC):
 
     def _contests_error(self, msg: str) -> ContestListResult:
         return ContestListResult(success=False, error=msg)
+
+    def _submit_error(self, msg: str) -> SubmitResult:
+        return SubmitResult(success=False, error=msg)
 
     async def _run_cli_async(self, args: list[str]) -> int:
         if len(args) < 2:
@@ -68,6 +97,21 @@ class BaseScraper(ABC):
                     print(self._contests_error(self._usage()).model_dump_json())
                     return 1
                 result = await self.scrape_contest_list()
+                print(result.model_dump_json())
+                return 0 if result.success else 1
+
+            case "submit":
+                if len(args) != 5:
+                    print(self._submit_error("Usage: <platform> submit <contest_id> <problem_id> <language_id>").model_dump_json())
+                    return 1
+                source_code = sys.stdin.read()
+                creds_raw = os.environ.get("CP_CREDENTIALS", "{}")
+                try:
+                    credentials = json.loads(creds_raw)
+                except json.JSONDecodeError:
+                    credentials = {}
+                language_id = get_language_id(self.platform_name, args[4]) or args[4]
+                result = await self.submit(args[2], args[3], source_code, language_id, credentials)
                 print(result.model_dump_json())
                 return 0 if result.success else 1
 

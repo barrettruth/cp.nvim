@@ -8,12 +8,13 @@ from typing import Any
 import httpx
 from curl_cffi import requests as curl_requests
 
-from .base import BaseScraper
+from .base import BaseScraper, extract_precision
 from .models import (
     ContestListResult,
     ContestSummary,
     MetadataResult,
     ProblemSummary,
+    SubmitResult,
     TestCase,
 )
 
@@ -219,11 +220,13 @@ class CodeChefScraper(BaseScraper):
                         )
                         memory_mb = _extract_memory_limit(html)
                         interactive = False
+                        precision = extract_precision(html)
                     except Exception:
                         tests = []
                         timeout_ms = 1000
                         memory_mb = 256.0
                         interactive = False
+                        precision = None
                     combined_input = "\n".join(t.input for t in tests) if tests else ""
                     combined_expected = (
                         "\n".join(t.expected for t in tests) if tests else ""
@@ -241,12 +244,16 @@ class CodeChefScraper(BaseScraper):
                         "memory_mb": memory_mb,
                         "interactive": interactive,
                         "multi_test": False,
+                        "precision": precision,
                     }
 
             tasks = [run_one(problem_code) for problem_code in problems.keys()]
             for coro in asyncio.as_completed(tasks):
                 payload = await coro
                 print(json.dumps(payload), flush=True)
+
+    async def submit(self, contest_id: str, problem_id: str, source_code: str, language_id: str, credentials: dict[str, str]) -> SubmitResult:
+        return SubmitResult(success=False, error="CodeChef submit not yet implemented", submission_id="", verdict="")
 
 
 if __name__ == "__main__":

@@ -26,6 +26,7 @@ class ContestSummary(BaseModel):
     id: str
     name: str
     display_name: str | None = None
+    start_time: int | None = None
 
     model_config = ConfigDict(extra="forbid")
 
@@ -59,6 +60,13 @@ class TestsResult(ScrapingResult):
     memory_mb: float
     interactive: bool = False
     multi_test: bool = False
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class SubmitResult(ScrapingResult):
+    submission_id: str = ""
+    verdict: str = ""
 
     model_config = ConfigDict(extra="forbid")
 

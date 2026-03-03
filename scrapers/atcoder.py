@@ -14,13 +14,14 @@ from bs4 import BeautifulSoup, Tag
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-from .base import BaseScraper
+from .base import BaseScraper, extract_precision
 from .models import (
     CombinedTest,
     ContestListResult,
     ContestSummary,
     MetadataResult,
     ProblemSummary,
+    SubmitResult,
     TestCase,
     TestsResult,
 )
@@ -121,6 +122,23 @@ def _parse_last_page(html: str) -> int:
     return max(nums) if nums else 1
 
 
+def _parse_start_time(tr: Tag) -> int | None:
+    tds = tr.select("td")
+    if not tds:
+        return None
+    time_el = tds[0].select_one("time.fixtime-full")
+    if not time_el:
+        return None
+    text = time_el.get_text(strip=True)
+    try:
+        from datetime import datetime
+
+        dt = datetime.strptime(text, "%Y-%m-%d %H:%M:%S%z")
+        return int(dt.timestamp())
+    except (ValueError, TypeError):
+        return None
+
+
 def _parse_archive_contests(html: str) -> list[ContestSummary]:
     soup = BeautifulSoup(html, "html.parser")
     tbody = soup.select_one("table.table-default tbody") or soup.select_one("tbody")
@@ -139,7 +157,10 @@ def _parse_archive_contests(html: str) -> list[ContestSummary]:
             continue
         cid = m.group(1)
         name = a.get_text(strip=True)
-        out.append(ContestSummary(id=cid, name=name, display_name=name))
+        start_time = _parse_start_time(tr)
+        out.append(
+            ContestSummary(id=cid, name=name, display_name=name, start_time=start_time)
+        )
     return out
 
 
@@ -169,7 +190,7 @@ def _parse_tasks_list(html: str) -> list[dict[str, str]]:
     return rows
 
 
-def _extract_problem_info(html: str) -> tuple[int, float, bool]:
+def _extract_problem_info(html: str) -> tuple[int, float, bool, float | None]:
     soup = BeautifulSoup(html, "html.parser")
     txt = soup.get_text(" ", strip=True)
     timeout_ms = 0
@@ -181,9 +202,10 @@ def _extract_problem_info(html: str) -> tuple[int, float, bool]:
     if ms:
         memory_mb = float(ms.group(1)) * MIB_TO_MB
     div = soup.select_one("#problem-statement")
-    txt = div.get_text(" ", strip=True) if div else soup.get_text(" ", strip=True)
-    interactive = "This is an interactive" in txt
-    return timeout_ms, memory_mb, interactive
+    body = div.get_text(" ", strip=True) if div else soup.get_text(" ", strip=True)
+    interactive = "This is an interactive" in body
+    precision = extract_precision(body)
+    return timeout_ms, memory_mb, interactive, precision
 
 
 def _extract_samples(html: str) -> list[TestCase]:
@@ -220,12 +242,13 @@ def _scrape_problem_page_sync(contest_id: str, slug: str) -> dict[str, Any]:
         tests = _extract_samples(html)
     except Exception:
         tests = []
-    timeout_ms, memory_mb, interactive = _extract_problem_info(html)
+    timeout_ms, memory_mb, interactive, precision = _extract_problem_info(html)
     return {
         "tests": tests,
         "timeout_ms": timeout_ms,
         "memory_mb": memory_mb,
         "interactive": interactive,
+        "precision": precision,
     }
 
 
@@ -241,14 +264,29 @@ def _to_problem_summaries(rows: list[dict[str, str]]) -> list[ProblemSummary]:
     return out
 
 
+async def _fetch_upcoming_contests_async(
+    client: httpx.AsyncClient,
+) -> list[ContestSummary]:
+    try:
+        html = await _get_async(client, f"{BASE_URL}/contests/")
+        return _parse_archive_contests(html)
+    except Exception:
+        return []
+
+
 async def _fetch_all_contests_async() -> list[ContestSummary]:
     async with httpx.AsyncClient(
         limits=httpx.Limits(max_connections=100, max_keepalive_connections=100),
     ) as client:
+        upcoming = await _fetch_upcoming_contests_async(client)
         first_html = await _get_async(client, ARCHIVE_URL)
         last = _parse_last_page(first_html)
         out = _parse_archive_contests(first_html)
         if last <= 1:
+            seen = {c.id for c in out}
+            for c in upcoming:
+                if c.id not in seen:
+                    out.append(c)
             return out
         tasks = [
             asyncio.create_task(_get_async(client, f"{ARCHIVE_URL}?page={p}"))
@@ -257,6 +295,10 @@ async def _fetch_all_contests_async() -> list[ContestSummary]:
         for coro in asyncio.as_completed(tasks):
             html = await coro
             out.extend(_parse_archive_contests(html))
+        seen = {c.id for c in out}
+        for c in upcoming:
+            if c.id not in seen:
+                out.append(c)
         return out
 
 
@@ -319,12 +361,68 @@ class AtcoderScraper(BaseScraper):
                         "memory_mb": data.get("memory_mb", 0),
                         "interactive": bool(data.get("interactive")),
                         "multi_test": False,
+                        "precision": data.get("precision"),
                     }
                 ),
                 flush=True,
             )
 
         await asyncio.gather(*(emit(r) for r in rows))
+
+    async def submit(self, contest_id: str, problem_id: str, source_code: str, language_id: str, credentials: dict[str, str]) -> SubmitResult:
+        def _submit_sync() -> SubmitResult:
+            try:
+                login_page = _session.get(f"{BASE_URL}/login", headers=HEADERS, timeout=TIMEOUT_SECONDS)
+                login_page.raise_for_status()
+                soup = BeautifulSoup(login_page.text, "html.parser")
+                csrf_input = soup.find("input", {"name": "csrf_token"})
+                if not csrf_input:
+                    return SubmitResult(success=False, error="Could not find CSRF token on login page")
+                csrf_token = csrf_input.get("value", "")
+
+                login_resp = _session.post(
+                    f"{BASE_URL}/login",
+                    data={
+                        "username": credentials.get("username", ""),
+                        "password": credentials.get("password", ""),
+                        "csrf_token": csrf_token,
+                    },
+                    headers=HEADERS,
+                    timeout=TIMEOUT_SECONDS,
+                )
+                login_resp.raise_for_status()
+
+                submit_page = _session.get(
+                    f"{BASE_URL}/contests/{contest_id}/submit",
+                    headers=HEADERS,
+                    timeout=TIMEOUT_SECONDS,
+                )
+                submit_page.raise_for_status()
+                soup = BeautifulSoup(submit_page.text, "html.parser")
+                csrf_input = soup.find("input", {"name": "csrf_token"})
+                if not csrf_input:
+                    return SubmitResult(success=False, error="Could not find CSRF token on submit page")
+                csrf_token = csrf_input.get("value", "")
+
+                task_screen_name = f"{contest_id}_{problem_id}"
+                submit_resp = _session.post(
+                    f"{BASE_URL}/contests/{contest_id}/submit",
+                    data={
+                        "data.TaskScreenName": task_screen_name,
+                        "data.LanguageId": language_id,
+                        "sourceCode": source_code,
+                        "csrf_token": csrf_token,
+                    },
+                    headers=HEADERS,
+                    timeout=TIMEOUT_SECONDS,
+                )
+                submit_resp.raise_for_status()
+
+                return SubmitResult(success=True, error="", submission_id="", verdict="submitted")
+            except Exception as e:
+                return SubmitResult(success=False, error=str(e))
+
+        return await asyncio.to_thread(_submit_sync)
 
 
 async def main_async() -> int:
