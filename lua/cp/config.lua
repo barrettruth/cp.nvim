@@ -12,6 +12,7 @@
 ---@class CpPlatformOverrides
 ---@field extension? string
 ---@field commands? CpLangCommands
+---@field template? string
 
 ---@class CpPlatform
 ---@field enabled_languages string[]
@@ -258,6 +259,9 @@ local function merge_lang(base, ov)
   end
   if ov.commands then
     out.commands = vim.tbl_deep_extend('force', out.commands or {}, ov.commands or {})
+  end
+  if ov.template then
+    out.template = ov.template
   end
   return out
 end
