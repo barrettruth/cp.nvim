@@ -114,12 +114,13 @@ function M.start(platform, contest_id, language)
 end
 
 function M.stop()
-  if not race_state.timer then
+  local timer = race_state.timer
+  if not timer then
     logger.log('No active race', vim.log.levels.WARN)
     return
   end
-  race_state.timer:stop()
-  race_state.timer:close()
+  timer:stop()
+  timer:close()
   race_state.timer = nil
   race_state.platform = nil
   race_state.contest_id = nil
