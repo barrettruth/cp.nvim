@@ -33,12 +33,23 @@
 ---@class DiffConfig
 ---@field git DiffGitConfig
 
+---@class CpSetupIOHooks
+---@field input?  fun(bufnr: integer, state: cp.State)
+---@field output? fun(bufnr: integer, state: cp.State)
+
+---@class CpSetupHooks
+---@field contest? fun(state: cp.State)
+---@field code?    fun(state: cp.State)
+---@field io?      CpSetupIOHooks
+
+---@class CpOnHooks
+---@field enter? fun(state: cp.State)
+---@field run?   fun(state: cp.State)
+---@field debug? fun(state: cp.State)
+
 ---@class Hooks
----@field before_run? fun(state: cp.State)
----@field before_debug? fun(state: cp.State)
----@field setup_code? fun(state: cp.State)
----@field setup_io_input? fun(bufnr: integer, state: cp.State)
----@field setup_io_output? fun(bufnr: integer, state: cp.State)
+---@field setup? CpSetupHooks
+---@field on?    CpOnHooks
 
 ---@class VerdictFormatData
 ---@field index integer
@@ -156,11 +167,19 @@ M.defaults = {
     },
   },
   hooks = {
-    before_run = nil,
-    before_debug = nil,
-    setup_code = nil,
-    setup_io_input = helpers.clearcol,
-    setup_io_output = helpers.clearcol,
+    setup = {
+      contest = nil,
+      code    = nil,
+      io = {
+        input  = helpers.clearcol,
+        output = helpers.clearcol,
+      },
+    },
+    on = {
+      enter = nil,
+      run   = nil,
+      debug = nil,
+    },
   },
   debug = false,
   scrapers = constants.PLATFORMS,
@@ -352,12 +371,29 @@ function M.setup(user_config)
       end,
       ('one of {%s}'):format(table.concat(constants.PLATFORMS, ',')),
     },
-    before_run = { cfg.hooks.before_run, { 'function', 'nil' }, true },
-    before_debug = { cfg.hooks.before_debug, { 'function', 'nil' }, true },
-    setup_code = { cfg.hooks.setup_code, { 'function', 'nil' }, true },
-    setup_io_input = { cfg.hooks.setup_io_input, { 'function', 'nil' }, true },
-    setup_io_output = { cfg.hooks.setup_io_output, { 'function', 'nil' }, true },
   })
+  if cfg.hooks.setup ~= nil then
+    vim.validate({ setup = { cfg.hooks.setup, 'table' } })
+    vim.validate({
+      contest = { cfg.hooks.setup.contest, { 'function', 'nil' }, true },
+      code    = { cfg.hooks.setup.code,    { 'function', 'nil' }, true },
+    })
+    if cfg.hooks.setup.io ~= nil then
+      vim.validate({ io = { cfg.hooks.setup.io, 'table' } })
+      vim.validate({
+        input  = { cfg.hooks.setup.io.input,  { 'function', 'nil' }, true },
+        output = { cfg.hooks.setup.io.output, { 'function', 'nil' }, true },
+      })
+    end
+  end
+  if cfg.hooks.on ~= nil then
+    vim.validate({ on = { cfg.hooks.on, 'table' } })
+    vim.validate({
+      enter = { cfg.hooks.on.enter, { 'function', 'nil' }, true },
+      run   = { cfg.hooks.on.run,   { 'function', 'nil' }, true },
+      debug = { cfg.hooks.on.debug, { 'function', 'nil' }, true },
+    })
+  end
 
   local layouts = require('cp.ui.layouts')
   vim.validate({
