@@ -1,7 +1,19 @@
 local M = {}
 
 M.PLATFORMS = { 'atcoder', 'codechef', 'codeforces', 'cses', 'kattis', 'usaco' }
-M.ACTIONS = { 'run', 'panel', 'next', 'prev', 'pick', 'cache', 'interact', 'edit', 'race', 'stress', 'submit' }
+M.ACTIONS = {
+  'run',
+  'panel',
+  'next',
+  'prev',
+  'pick',
+  'cache',
+  'interact',
+  'edit',
+  'race',
+  'stress',
+  'submit',
+}
 
 M.PLATFORM_DISPLAY_NAMES = {
   atcoder = 'AtCoder',

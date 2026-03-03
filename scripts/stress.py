@@ -41,7 +41,10 @@ def main() -> None:
                 timeout=timeout,
             )
         except subprocess.TimeoutExpired:
-            print(f"[stress] generator timed out on iteration {iteration}", file=sys.stderr)
+            print(
+                f"[stress] generator timed out on iteration {iteration}",
+                file=sys.stderr,
+            )
             sys.exit(1)
 
         if gen_result.returncode != 0:
@@ -80,7 +83,10 @@ def main() -> None:
                 timeout=timeout,
             )
         except subprocess.TimeoutExpired:
-            print(f"[stress] candidate timed out on iteration {iteration}", file=sys.stderr)
+            print(
+                f"[stress] candidate timed out on iteration {iteration}",
+                file=sys.stderr,
+            )
             print(f"\n--- input ---\n{test_input}", end="")
             sys.exit(1)
 
