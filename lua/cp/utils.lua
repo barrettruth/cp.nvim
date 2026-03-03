@@ -175,7 +175,9 @@ function M.setup_python_env()
     return true
   end
 
-  if vim.fn.executable('uv') == 1 then
+  local on_nixos = vim.fn.filereadable('/etc/NIXOS') == 1
+
+  if not on_nixos and vim.fn.executable('uv') == 1 then
     local plugin_path = M.get_plugin_path()
     logger.log('Python env: uv sync (dir=' .. plugin_path .. ')')
     vim.notify('[cp.nvim] Setting up Python environment...', vim.log.levels.INFO)
