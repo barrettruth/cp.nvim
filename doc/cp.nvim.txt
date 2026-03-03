@@ -9,7 +9,7 @@ INTRODUCTION                                                         *cp.nvim*
 cp.nvim is a competitive programming plugin that automates problem setup,
 compilation, and testing workflow for online judges.
 
-Supported platforms (for now!): AtCoder, Codeforces, CSES
+Supported platforms: AtCoder, CodeChef, Codeforces, CSES, Kattis, USACO
 
 ==============================================================================
 REQUIREMENTS                                                 *cp-requirements*
@@ -65,6 +65,18 @@ Configuration is done via `vim.g.cp`. Set this before using the plugin:
           default_language  = 'cpp',
         },
         codeforces = {
+          enabled_languages = { 'cpp', 'python' },
+          default_language  = 'cpp',
+        },
+        codechef = {
+          enabled_languages = { 'cpp', 'python' },
+          default_language  = 'cpp',
+        },
+        usaco = {
+          enabled_languages = { 'cpp', 'python' },
+          default_language  = 'cpp',
+        },
+        kattis = {
           enabled_languages = { 'cpp', 'python' },
           default_language  = 'cpp',
         },
@@ -344,6 +356,13 @@ COMMANDS                                                         *cp-commands*
                                 *cp-interact*). Otherwise, runs the source
                                 file. Only valid for interactive problems.
 
+            :CP stress [generator] [brute]
+                                Start an automated stress test loop against a
+                                brute-force reference. Toggles off if already
+                                running. Without arguments, auto-detects a
+                                generator and brute script in the working
+                                directory. See |cp-stress|.
+
         Navigation Commands ~
             :CP next [--lang {language}]
                                 Navigate to next problem in current contest.
@@ -400,6 +419,25 @@ COMMANDS                                                         *cp-commands*
                                     :CP edit        " Edit all tests
                                     :CP edit 3      " Edit all, start at test 3
 <
+
+        Race Commands ~
+            :CP race {platform} {contest_id} [--lang {language}]
+                                Start a countdown to the contest's scheduled
+                                start time. At T=0, automatically runs:
+                                    :CP {platform} {contest_id} [--lang ...]
+                                Examples: >
+                                    :CP race atcoder abc400
+                                    :CP race codeforces 2100 --lang python
+<
+            :CP race stop
+                                Cancel an active race countdown.
+
+        Submit Commands ~
+            :CP submit [--lang {language}]
+                                Submit the current solution to the online
+                                judge. Prompts for credentials on first use
+                                and stores them for subsequent submissions.
+                                --lang: Submit solution for a specific language.
 
         State Restoration ~
             :CP                 Restore state from current file.
@@ -488,6 +526,15 @@ through the same code path as |:CP|.
                                                          *<Plug>(cp-interact)*
 <Plug>(cp-interact)     Open interactive mode. Equivalent to :CP interact.
 
+                                                           *<Plug>(cp-stress)*
+<Plug>(cp-stress)       Run stress test loop. Equivalent to :CP stress.
+
+                                                           *<Plug>(cp-submit)*
+<Plug>(cp-submit)       Submit current solution. Equivalent to :CP submit.
+
+                                                        *<Plug>(cp-race-stop)*
+<Plug>(cp-race-stop)    Cancel active race countdown. Equivalent to :CP race stop.
+
 Example configuration: >lua
     vim.keymap.set('n', '<leader>cr', '<Plug>(cp-run)')
     vim.keymap.set('n', '<leader>cp', '<Plug>(cp-panel)')
@@ -496,6 +543,9 @@ Example configuration: >lua
     vim.keymap.set('n', '<leader>cN', '<Plug>(cp-prev)')
     vim.keymap.set('n', '<leader>cc', '<Plug>(cp-pick)')
     vim.keymap.set('n', '<leader>ci', '<Plug>(cp-interact)')
+    vim.keymap.set('n', '<leader>cs', '<Plug>(cp-stress)')
+    vim.keymap.set('n', '<leader>cu', '<Plug>(cp-submit)')
+    vim.keymap.set('n', '<leader>cR', '<Plug>(cp-race-stop)')
 <
 
 ==============================================================================
@@ -575,6 +625,41 @@ URL format: https://cses.fi/problemset/task/{problem_id}
 Usage examples: >
     :CP cses dynamic_programming  " Set up all problems in dp category
 
+CodeChef ~
+                                                               *cp-codechef*
+URL format: https://www.codechef.com/{contest_id}/problems/{problem_id}
+
+The contest_id is the contest code from the URL (e.g. START209).
+
+Usage examples: >
+    :CP codechef START209         " Set up codechef.com/START209
+
+USACO ~
+                                                                    *cp-usaco*
+URL format: https://usaco.org/index.php?page=viewproblem2&cpid={cpid}
+
+The contest_id combines the abbreviated month, two-digit year, and division
+in lowercase, joined by underscores (e.g. dec24_gold, feb23_silver).
+
+Usage examples: >
+    :CP usaco dec24_gold          " Set up December 2024 Gold division
+    :CP usaco feb23_silver        " Set up February 2023 Silver division
+
+Kattis ~
+                                                                   *cp-kattis*
+Kattis supports single-problem and full-contest modes.
+
+Single problem — the contest_id is the problem slug from the URL:
+URL format: https://open.kattis.com/problems/{slug}
+
+Full contest — the contest_id is the contest ID from the URL. All problems
+are set up at once with :CP next/:CP prev navigation:
+URL format: https://open.kattis.com/contests/{id}
+
+Usage examples: >
+    :CP kattis primesieve         " Single problem
+    :CP kattis t8tnpe             " Full contest (all problems, A–H navigation)
+
 ==============================================================================
 
 COMPLETE WORKFLOW EXAMPLE                                         *cp-example*
@@ -609,7 +694,9 @@ Example: Setting up and solving AtCoder contest ABC324
     :CP
 <   Automatically restores abc323 contest context
 
-8. Submit solutions on AtCoder website
+8. Submit solution: >
+    :CP submit
+<   Prompts for credentials on first use and submits to AtCoder.
 
 ==============================================================================
 I/O VIEW                                                          *cp-io-view*
@@ -821,6 +908,55 @@ Keymaps ~
     <c-q>   Close the terminal and restore the previous layout.
 
 ==============================================================================
+STRESS TESTING                                                     *cp-stress*
+
+Start an automated stress test loop to find inputs where your solution
+disagrees with a brute-force reference.
+
+:CP stress [generator] [brute]
+        Start the stress loop. Toggles off if the loop is already running.
+        {generator}     Generator script path (default: auto-detected).
+        {brute}         Brute-force solution path (default: auto-detected).
+        Auto-detection looks for files named gen.* and brute.* in the CWD.
+
+        The stress panel opens and streams results for each iteration.
+        On a mismatch, the failing input is displayed in the panel.
+
+Keymaps ~
+    <c-q>   Close the stress panel and restore the previous layout.
+
+==============================================================================
+RACE                                                                  *cp-race*
+
+Count down to a contest's start time and automatically run setup at T=0.
+
+:CP race {platform} {contest_id} [--lang {language}]
+        Start a countdown timer. At T=0, automatically runs:
+            :CP {platform} {contest_id} [--lang {language}]
+        Examples: >
+            :CP race atcoder abc400
+            :CP race codeforces 2100 --lang python
+<
+:CP race stop
+        Cancel an active race countdown.
+
+Statusline integration: see |cp-race-status|.
+
+==============================================================================
+SUBMIT                                                               *cp-submit*
+
+Submit the current solution to the online judge.
+
+:CP submit [--lang {language}]
+        Submit the current solution. Prompts for credentials on first use
+        and stores them for subsequent submissions.
+        --lang: Override the language to submit.
+
+        Platform support:
+            AtCoder     Fully implemented.
+            Others      Not yet implemented.
+
+==============================================================================
 ANSI COLORS AND HIGHLIGHTING                                         *cp-ansi*
 
 cp.nvim provides comprehensive ANSI color support and highlighting for
@@ -930,7 +1066,15 @@ The following getters are available for statusline use:
     get_language()      (string?) Language id. e.g. "cpp", "python"
     get_base_name()     (string?) Derived filename stem. e.g. "1933a"
     get_source_file()   (string?) Full source filename. e.g. "1933a.cc"
-    get_active_panel()  (string?) Non-nil when the test panel is open.
+    get_active_panel()  (string?) One of 'run', 'interactive', 'stress', or
+                        nil when no panel is open.
+
+Race API ~
+                                                               *cp-race-status*
+    require('cp.race').status() returns a table describing the race state:
+        { active = false }
+        { active = true, platform = string, contest_id = string,
+          remaining_seconds = number }
 
 Recipe: vanilla statusline ~
 
