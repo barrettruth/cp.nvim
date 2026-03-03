@@ -19,7 +19,7 @@
 ---@class ProblemConstraints
 ---@field timeout_ms number
 ---@field memory_mb number
----@field epsilon number?
+---@field precision number?
 
 ---@class PanelState
 ---@field test_cases RanTestCase[]
@@ -57,8 +57,8 @@ local function load_constraints_from_cache(platform, contest_id, problem_id)
   cache.load()
   local timeout_ms, memory_mb = cache.get_constraints(platform, contest_id, problem_id)
   if timeout_ms and memory_mb then
-    local epsilon = cache.get_epsilon(platform, contest_id, problem_id)
-    return { timeout_ms = timeout_ms, memory_mb = memory_mb, epsilon = epsilon }
+    local precision = cache.get_precision(platform, contest_id, problem_id)
+    return { timeout_ms = timeout_ms, memory_mb = memory_mb, precision = precision }
   end
   return nil
 end
@@ -103,13 +103,13 @@ end
 
 ---@param actual string
 ---@param expected string
----@param epsilon number?
+---@param precision number?
 ---@return boolean
-local function compare_outputs(actual, expected, epsilon)
+local function compare_outputs(actual, expected, precision)
   local norm_actual = normalize_lines(actual)
   local norm_expected = normalize_lines(expected)
 
-  if epsilon == nil or epsilon == 0 then
+  if precision == nil or precision == 0 then
     return norm_actual == norm_expected
   end
 
@@ -134,7 +134,7 @@ local function compare_outputs(actual, expected, epsilon)
       local e_num = tonumber(e_tok)
 
       if a_num ~= nil and e_num ~= nil then
-        if math.abs(a_num - e_num) > epsilon then
+        if math.abs(a_num - e_num) > precision then
           return false
         end
       else
@@ -192,9 +192,9 @@ local function run_single_test_case(test_case, debug, on_complete)
     end
 
     local expected = test_case.expected or ''
-    local epsilon = (panel_state.constraints and panel_state.constraints.epsilon)
-      or config.ui.panel.epsilon
-    local ok = compare_outputs(out, expected, epsilon)
+    local precision = (panel_state.constraints and panel_state.constraints.precision)
+      or config.ui.panel.precision
+    local ok = compare_outputs(out, expected, precision)
 
     local signal = r.signal
     if not signal and r.code and r.code >= 128 then
