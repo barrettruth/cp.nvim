@@ -25,7 +25,7 @@
 ---@class PanelConfig
 ---@field diff_modes string[]
 ---@field max_output_lines integer
----@field epsilon number?
+---@field precision number?
 
 ---@class DiffGitConfig
 ---@field args string[]
@@ -165,6 +165,14 @@ M.defaults = {
       enabled_languages = { 'cpp', 'python' },
       default_language = 'cpp',
     },
+    kattis = {
+      enabled_languages = { 'cpp', 'python' },
+      default_language = 'cpp',
+    },
+    usaco = {
+      enabled_languages = { 'cpp', 'python' },
+      default_language = 'cpp',
+    },
   },
   hooks = {
     setup = {
@@ -199,7 +207,11 @@ M.defaults = {
       add_test_key = 'ga',
       save_and_exit_key = 'q',
     },
-    panel = { diff_modes = { 'side-by-side', 'git', 'vim' }, max_output_lines = 50, epsilon = nil },
+    panel = {
+      diff_modes = { 'side-by-side', 'git', 'vim' },
+      max_output_lines = 50,
+      precision = nil,
+    },
     diff = {
       git = {
         args = { 'diff', '--no-index', '--word-diff=plain', '--word-diff-regex=.', '--no-prefix' },
@@ -420,8 +432,8 @@ function M.setup(user_config)
       end,
       'positive integer',
     },
-    epsilon = {
-      cfg.ui.panel.epsilon,
+    precision = {
+      cfg.ui.panel.precision,
       function(v)
         return v == nil or (type(v) == 'number' and v >= 0)
       end,
