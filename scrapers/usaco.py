@@ -3,7 +3,7 @@
 import asyncio
 import json
 import re
-from typing import Any
+from typing import Any, cast
 
 import httpx
 
@@ -253,7 +253,7 @@ class USACOScraper(BaseScraper):
                             "interactive": False,
                         }
 
-                    tests: list[TestCase] = info["tests"]
+                    tests = cast(list[TestCase], info["tests"])
                     combined_input = "\n".join(t.input for t in tests) if tests else ""
                     combined_expected = (
                         "\n".join(t.expected for t in tests) if tests else ""

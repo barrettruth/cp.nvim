@@ -232,10 +232,17 @@ class CSESScraper(BaseScraper):
                     try:
                         html = await fetch_text(client, task_path(pid))
                         tests = parse_tests(html)
-                        timeout_ms, memory_mb, interactive = _extract_problem_info(html)
+                        timeout_ms, memory_mb, interactive, precision = (
+                            _extract_problem_info(html)
+                        )
                     except Exception:
                         tests = []
-                        timeout_ms, memory_mb, interactive = 0, 0, False
+                        timeout_ms, memory_mb, interactive, precision = (
+                            0,
+                            0,
+                            False,
+                            None,
+                        )
 
                     combined_input = "\n".join(t.input for t in tests) if tests else ""
                     combined_expected = (
@@ -255,6 +262,7 @@ class CSESScraper(BaseScraper):
                         "memory_mb": memory_mb,
                         "interactive": interactive,
                         "multi_test": False,
+                        "precision": precision,
                     }
 
             tasks = [run_one(p.id) for p in problems]

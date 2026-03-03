@@ -15,6 +15,7 @@
 ---@field display_name string
 ---@field name string
 ---@field id string
+---@field start_time? integer
 
 ---@class CombinedTest
 ---@field input string
