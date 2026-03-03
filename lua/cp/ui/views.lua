@@ -26,6 +26,8 @@ function M.disable()
     M.toggle_panel()
   elseif active_panel == 'interactive' then
     M.toggle_interactive()
+  elseif active_panel == 'stress' then
+    require('cp.stress').toggle()
   else
     logger.log(('Unknown panel type: %s'):format(tostring(active_panel)))
   end
@@ -67,11 +69,11 @@ function M.toggle_interactive(interactor_cmd)
   cache.load()
   local contest_data = cache.get_contest_data(platform, contest_id)
   if
-    not contest_data
-    or not contest_data.index_map
-    or not contest_data.problems[contest_data.index_map[problem_id]].interactive
+    contest_data
+    and contest_data.index_map
+    and not contest_data.problems[contest_data.index_map[problem_id]].interactive
   then
-    logger.log('This problem is interactive. Use :CP interact.', vim.log.levels.ERROR)
+    logger.log('This problem is not interactive. Use :CP {run,panel}.', vim.log.levels.ERROR)
     return
   end
 
@@ -830,6 +832,7 @@ function M.toggle_panel(panel_opts)
   local contest_data = cache.get_contest_data(platform, contest_id)
   if
     contest_data
+    and contest_data.index_map
     and contest_data.problems[contest_data.index_map[state.get_problem_id()]].interactive
   then
     logger.log('This is an interactive problem. Use :CP interact instead.', vim.log.levels.WARN)
