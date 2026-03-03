@@ -220,38 +220,60 @@ run CSES problems with Rust using the single schema:
 
                                                                     *cp.Hooks*
     Fields: ~
-        {before_run}       (function, optional) Called before test panel opens.
-                           function(state: cp.State)
-        {before_debug}     (function, optional) Called before debug build/run.
-                           function(state: cp.State)
-        {setup_code}       (function, optional) Called after source file is opened.
-                           function(state: cp.State)
-        {setup_io_input}   (function, optional) Called when I/O input buffer created.
-                           function(bufnr: integer, state: cp.State)
-                           Default: helpers.clearcol (removes line numbers/columns)
-        {setup_io_output}  (function, optional) Called when I/O output buffer created.
-                           function(bufnr: integer, state: cp.State)
-                           Default: helpers.clearcol (removes line numbers/columns)
+        {setup}  (|cp.CpSetupHooks|, optional) One-time initialization hooks.
+        {on}     (|cp.CpOnHooks|, optional) Recurring event hooks.
 
-    Hook functions receive the cp.nvim state object (|cp.State|). See
+                                                             *cp.CpSetupHooks*
+    Fields: ~
+        {contest}  (function, optional) Called once when a contest directory
+                   is first created (not on subsequent visits).
+                   function(state: cp.State)
+        {code}     (function, optional) Called after the source buffer is
+                   opened for the first time (guarded by cp_setup_done).
+                   function(state: cp.State)
+        {io}       (|cp.CpSetupIOHooks|, optional) I/O buffer hooks.
+
+                                                           *cp.CpSetupIOHooks*
+    Fields: ~
+        {input}   (function, optional) Called when the I/O input buffer is
+                  created. function(bufnr: integer, state: cp.State)
+                  Default: helpers.clearcol
+        {output}  (function, optional) Called when the I/O output buffer is
+                  created. function(bufnr: integer, state: cp.State)
+                  Default: helpers.clearcol
+
+                                                               *cp.CpOnHooks*
+    Fields: ~
+        {enter}  (function, optional) Called on every BufEnter on the
+                 solution buffer. Registered as a buffer-scoped autocmd and
+                 fired immediately after setup.code.
+                 function(state: cp.State)
+        {run}    (function, optional) Called before the test panel opens.
+                 function(state: cp.State)
+        {debug}  (function, optional) Called before a debug run.
+                 function(state: cp.State)
+
+    All hook functions receive the cp.nvim state object (|cp.State|). See
     |lua/cp/state.lua| for available methods and fields.
 
-    The I/O buffer hooks are called once when the buffers are first created
-    during problem setup. Use these to customize buffer appearance (e.g.,
-    remove line numbers, set custom options). Access helpers via:
->lua
-        local helpers = require('cp').helpers
-<
     Example usage:
 >lua
         hooks = {
-          setup_code = function(state)
-            print("Setting up " .. state.get_base_name())
-            print("Source file: " .. state.get_source_file())
-          end,
-          setup_io_input = function(bufnr, state)
-            vim.api.nvim_set_option_value('number', false, { buf = bufnr })
-          end
+          setup = {
+            contest = function(state)
+              local dir = vim.fn.fnamemodify(
+                state.get_source_file(state.get_language()), ':h')
+              vim.fn.system({ 'cp', '~/.clang-format', dir .. '/.clang-format' })
+            end,
+            code = function(state)
+              vim.opt_local.foldmethod = 'marker'
+              vim.diagnostic.enable(false)
+            end,
+          },
+          on = {
+            enter = function(state) vim.opt_local.winbar = '' end,
+            run   = function(state) require('config.lsp').format() end,
+          },
         }
 <
 
@@ -657,9 +679,9 @@ While in the I/O view buffers, use the configured keymaps to cycle through tests
 
 Buffer Customization ~
 
-Use the setup_io_input and setup_io_output hooks (see |cp.Hooks|) to customize
-buffer appearance. By default, line numbers and columns are removed via
-helpers.clearcol (see |cp-helpers|).
+Use the hooks.setup.io.input and hooks.setup.io.output hooks (see |cp.Hooks|)
+to customize buffer appearance. By default, line numbers and columns are
+removed via helpers.clearcol (see |cp-helpers|).
 
 ==============================================================================
 VERDICT FORMATTING                                           *cp-verdict-format*
