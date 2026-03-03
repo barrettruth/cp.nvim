@@ -385,11 +385,11 @@ class AtcoderScraper(BaseScraper):
                 login_page.raise_for_status()
                 soup = BeautifulSoup(login_page.text, "html.parser")
                 csrf_input = soup.find("input", {"name": "csrf_token"})
-                if not csrf_input:
+                if not csrf_input or not hasattr(csrf_input, "get"):
                     return SubmitResult(
                         success=False, error="Could not find CSRF token on login page"
                     )
-                csrf_token = csrf_input.get("value", "")
+                csrf_token = csrf_input.get("value", "") or ""  # type: ignore[union-attr]
 
                 login_resp = _session.post(
                     f"{BASE_URL}/login",
@@ -411,11 +411,11 @@ class AtcoderScraper(BaseScraper):
                 submit_page.raise_for_status()
                 soup = BeautifulSoup(submit_page.text, "html.parser")
                 csrf_input = soup.find("input", {"name": "csrf_token"})
-                if not csrf_input:
+                if not csrf_input or not hasattr(csrf_input, "get"):
                     return SubmitResult(
                         success=False, error="Could not find CSRF token on submit page"
                     )
-                csrf_token = csrf_input.get("value", "")
+                csrf_token = csrf_input.get("value", "") or ""  # type: ignore[union-attr]
 
                 task_screen_name = f"{contest_id}_{problem_id}"
                 submit_resp = _session.post(
