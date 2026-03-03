@@ -7,10 +7,7 @@ local state = require('cp.state')
 function M.set(platform)
   platform = platform or state.get_platform()
   if not platform then
-    logger.log(
-      'No platform specified. Usage: :CP credentials set <platform>',
-      vim.log.levels.ERROR
-    )
+    logger.log('No platform specified. Usage: :CP credentials set <platform>', vim.log.levels.ERROR)
     return
   end
 
