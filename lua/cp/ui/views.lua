@@ -960,10 +960,14 @@ function M.toggle_panel(panel_opts)
 
   local o = config.hooks and config.hooks.on
   if o and o.run then
-    vim.schedule(function() o.run(state) end)
+    vim.schedule(function()
+      o.run(state)
+    end)
   end
   if panel_opts and panel_opts.debug and o and o.debug then
-    vim.schedule(function() o.debug(state) end)
+    vim.schedule(function()
+      o.debug(state)
+    end)
   end
 
   vim.api.nvim_set_current_win(test_windows.tab_win)

@@ -169,15 +169,15 @@ M.defaults = {
   hooks = {
     setup = {
       contest = nil,
-      code    = nil,
+      code = nil,
       io = {
-        input  = helpers.clearcol,
+        input = helpers.clearcol,
         output = helpers.clearcol,
       },
     },
     on = {
       enter = nil,
-      run   = nil,
+      run = nil,
       debug = nil,
     },
   },
@@ -376,12 +376,12 @@ function M.setup(user_config)
     vim.validate({ setup = { cfg.hooks.setup, 'table' } })
     vim.validate({
       contest = { cfg.hooks.setup.contest, { 'function', 'nil' }, true },
-      code    = { cfg.hooks.setup.code,    { 'function', 'nil' }, true },
+      code = { cfg.hooks.setup.code, { 'function', 'nil' }, true },
     })
     if cfg.hooks.setup.io ~= nil then
       vim.validate({ io = { cfg.hooks.setup.io, 'table' } })
       vim.validate({
-        input  = { cfg.hooks.setup.io.input,  { 'function', 'nil' }, true },
+        input = { cfg.hooks.setup.io.input, { 'function', 'nil' }, true },
         output = { cfg.hooks.setup.io.output, { 'function', 'nil' }, true },
       })
     end
@@ -390,7 +390,7 @@ function M.setup(user_config)
     vim.validate({ on = { cfg.hooks.on, 'table' } })
     vim.validate({
       enter = { cfg.hooks.on.enter, { 'function', 'nil' }, true },
-      run   = { cfg.hooks.on.run,   { 'function', 'nil' }, true },
+      run = { cfg.hooks.on.run, { 'function', 'nil' }, true },
       debug = { cfg.hooks.on.debug, { 'function', 'nil' }, true },
     })
   end

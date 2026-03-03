@@ -306,7 +306,9 @@ function M.setup_problem(problem_id, language)
           local s = config.hooks and config.hooks.setup
           if s and s.code then
             local ok = pcall(s.code, state)
-            if ok then vim.b[prov.bufnr].cp_setup_done = true end
+            if ok then
+              vim.b[prov.bufnr].cp_setup_done = true
+            end
           else
             helpers.clearcol(prov.bufnr)
             vim.b[prov.bufnr].cp_setup_done = true
@@ -316,7 +318,9 @@ function M.setup_problem(problem_id, language)
             local bufnr = prov.bufnr
             vim.api.nvim_create_autocmd('BufEnter', {
               buffer = bufnr,
-              callback = function() pcall(o.enter, state) end,
+              callback = function()
+                pcall(o.enter, state)
+              end,
             })
             pcall(o.enter, state)
           end
@@ -351,7 +355,9 @@ function M.setup_problem(problem_id, language)
     local s = config.hooks and config.hooks.setup
     if s and s.code then
       local ok = pcall(s.code, state)
-      if ok then vim.b[bufnr].cp_setup_done = true end
+      if ok then
+        vim.b[bufnr].cp_setup_done = true
+      end
     else
       helpers.clearcol(bufnr)
       vim.b[bufnr].cp_setup_done = true
@@ -360,7 +366,9 @@ function M.setup_problem(problem_id, language)
     if o and o.enter then
       vim.api.nvim_create_autocmd('BufEnter', {
         buffer = bufnr,
-        callback = function() pcall(o.enter, state) end,
+        callback = function()
+          pcall(o.enter, state)
+        end,
       })
       pcall(o.enter, state)
     end
