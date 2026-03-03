@@ -16,6 +16,8 @@ local actions = constants.ACTIONS
 ---@field platform? string
 ---@field problem_id? string
 ---@field interactor_cmd? string
+---@field generator_cmd? string
+---@field brute_cmd? string
 ---@field test_index? integer
 ---@field test_indices? integer[]
 ---@field mode? string
@@ -53,6 +55,27 @@ local function parse_command(args)
       else
         return { type = 'error', message = 'unknown cache subcommand: ' .. subcommand }
       end
+    elseif first == 'race' then
+      if args[2] == 'stop' then
+        return { type = 'action', action = 'race_stop' }
+      end
+      if not args[2] or not args[3] then
+        return {
+          type = 'error',
+          message = 'Usage: :CP race <platform> <contest_id> [--lang <lang>]',
+        }
+      end
+      local language = nil
+      if args[4] == '--lang' and args[5] then
+        language = args[5]
+      end
+      return {
+        type = 'action',
+        action = 'race',
+        platform = args[2],
+        contest = args[3],
+        language = language,
+      }
     elseif first == 'interact' then
       local inter = args[2]
       if inter and inter ~= '' then
@@ -60,6 +83,13 @@ local function parse_command(args)
       else
         return { type = 'action', action = 'interact' }
       end
+    elseif first == 'stress' then
+      return {
+        type = 'action',
+        action = 'stress',
+        generator_cmd = args[2],
+        brute_cmd = args[3],
+      }
     elseif first == 'edit' then
       local test_index = nil
       if #args >= 2 then
@@ -285,6 +315,14 @@ function M.handle_command(opts)
     elseif cmd.action == 'edit' then
       local edit = require('cp.ui.edit')
       edit.toggle_edit(cmd.test_index)
+    elseif cmd.action == 'stress' then
+      require('cp.stress').toggle(cmd.generator_cmd, cmd.brute_cmd)
+    elseif cmd.action == 'submit' then
+      require('cp.submit').submit({ language = cmd.language })
+    elseif cmd.action == 'race' then
+      require('cp.race').start(cmd.platform, cmd.contest, cmd.language)
+    elseif cmd.action == 'race_stop' then
+      require('cp.race').stop()
     end
   elseif cmd.type == 'problem_jump' then
     local platform = state.get_platform()

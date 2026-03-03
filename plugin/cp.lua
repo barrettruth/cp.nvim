@@ -66,7 +66,7 @@ end, {
         return filter_candidates(contests)
       elseif args[2] == 'cache' then
         return filter_candidates({ 'clear', 'read' })
-      elseif args[2] == 'interact' then
+      elseif args[2] == 'stress' or args[2] == 'interact' then
         local utils = require('cp.utils')
         return filter_candidates(utils.cwd_executables())
       elseif args[2] == 'edit' then
@@ -103,6 +103,10 @@ end, {
           end
         end
         return filter_candidates(candidates)
+      elseif args[2] == 'race' then
+        local candidates = { 'stop' }
+        vim.list_extend(candidates, platforms)
+        return filter_candidates(candidates)
       elseif args[2] == 'next' or args[2] == 'prev' or args[2] == 'pick' then
         return filter_candidates({ '--lang' })
       else
@@ -112,7 +116,15 @@ end, {
         end
       end
     elseif num_args == 4 then
-      if args[2] == 'cache' and args[3] == 'clear' then
+      if args[2] == 'stress' then
+        local utils = require('cp.utils')
+        return filter_candidates(utils.cwd_executables())
+      elseif args[2] == 'race' and vim.tbl_contains(platforms, args[3]) then
+        local cache = require('cp.cache')
+        cache.load()
+        local contests = cache.get_cached_contest_ids(args[3])
+        return filter_candidates(contests)
+      elseif args[2] == 'cache' and args[3] == 'clear' then
         local candidates = vim.list_extend({}, platforms)
         table.insert(candidates, '')
         return filter_candidates(candidates)
@@ -134,7 +146,9 @@ end, {
         return filter_candidates(candidates)
       end
     elseif num_args == 5 then
-      if args[2] == 'cache' and args[3] == 'clear' and vim.tbl_contains(platforms, args[4]) then
+      if args[2] == 'race' and vim.tbl_contains(platforms, args[3]) then
+        return filter_candidates({ '--lang' })
+      elseif args[2] == 'cache' and args[3] == 'clear' and vim.tbl_contains(platforms, args[4]) then
         local cache = require('cp.cache')
         cache.load()
         local contests = cache.get_cached_contest_ids(args[4])
@@ -147,7 +161,9 @@ end, {
         end
       end
     elseif num_args == 6 then
-      if vim.tbl_contains(platforms, args[2]) and args[5] == '--lang' then
+      if args[2] == 'race' and vim.tbl_contains(platforms, args[3]) and args[5] == '--lang' then
+        return filter_candidates(get_enabled_languages(args[3]))
+      elseif vim.tbl_contains(platforms, args[2]) and args[5] == '--lang' then
         return filter_candidates(get_enabled_languages(args[2]))
       end
     end
@@ -168,3 +184,8 @@ vim.keymap.set('n', '<Plug>(cp-next)', cp_action('next'), { desc = 'CP next prob
 vim.keymap.set('n', '<Plug>(cp-prev)', cp_action('prev'), { desc = 'CP previous problem' })
 vim.keymap.set('n', '<Plug>(cp-pick)', cp_action('pick'), { desc = 'CP pick contest' })
 vim.keymap.set('n', '<Plug>(cp-interact)', cp_action('interact'), { desc = 'CP interactive mode' })
+vim.keymap.set('n', '<Plug>(cp-stress)', cp_action('stress'), { desc = 'CP stress test' })
+vim.keymap.set('n', '<Plug>(cp-submit)', cp_action('submit'), { desc = 'CP submit solution' })
+vim.keymap.set('n', '<Plug>(cp-race-stop)', function()
+  require('cp.race').stop()
+end, { desc = 'CP stop race countdown' })
