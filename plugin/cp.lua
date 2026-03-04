@@ -103,8 +103,8 @@ end, {
           end
         end
         return filter_candidates(candidates)
-      elseif args[2] == 'credentials' then
-        return filter_candidates({ 'login', 'logout', 'clear' })
+      elseif args[2] == 'login' or args[2] == 'logout' then
+        return filter_candidates(platforms)
       elseif args[2] == 'race' then
         local candidates = { 'stop' }
         vim.list_extend(candidates, platforms)
@@ -126,8 +126,6 @@ end, {
         cache.load()
         local contests = cache.get_cached_contest_ids(args[3])
         return filter_candidates(contests)
-      elseif args[2] == 'credentials' and vim.tbl_contains({ 'login', 'logout' }, args[3]) then
-        return filter_candidates(platforms)
       elseif args[2] == 'cache' and args[3] == 'clear' then
         local candidates = vim.list_extend({}, platforms)
         table.insert(candidates, '')
