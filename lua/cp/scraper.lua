@@ -45,7 +45,12 @@ local function run_scraper(platform, subcommand, args, opts)
   end
 
   local plugin_path = utils.get_plugin_path()
-  local cmd = utils.get_python_cmd(platform, plugin_path)
+  local cmd
+  if subcommand == 'submit' then
+    cmd = utils.get_python_submit_cmd(platform, plugin_path)
+  else
+    cmd = utils.get_python_cmd(platform, plugin_path)
+  end
   vim.list_extend(cmd, { subcommand })
   vim.list_extend(cmd, args)
 
@@ -60,6 +65,10 @@ local function run_scraper(platform, subcommand, args, opts)
     for k, v in pairs(opts.env_extra) do
       env[k] = v
     end
+  end
+
+  if subcommand == 'submit' and utils.is_nix_build() then
+    env.UV_PROJECT_ENVIRONMENT = vim.fn.stdpath('cache') .. '/cp-nvim/submit-env'
   end
 
   if opts and opts.ndjson then
@@ -131,7 +140,12 @@ local function run_scraper(platform, subcommand, args, opts)
     return
   end
 
-  local sysopts = { text = true, timeout = 30000, env = env, cwd = plugin_path }
+  local sysopts = {
+    text = true,
+    timeout = (subcommand == 'submit') and 120000 or 30000,
+    env = env,
+    cwd = plugin_path,
+  }
   if opts and opts.stdin then
     sysopts.stdin = opts.stdin
   end

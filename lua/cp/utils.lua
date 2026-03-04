@@ -3,6 +3,7 @@ local M = {}
 local logger = require('cp.log')
 
 local _nix_python = nil
+local _nix_submit_cmd = nil
 local _nix_discovered = false
 
 local uname = vim.uv.os_uname()
@@ -109,6 +110,16 @@ function M.get_python_cmd(module, plugin_path)
     return { _nix_python, '-m', 'scrapers.' .. module }
   end
   return { 'uv', 'run', '--directory', plugin_path, '-m', 'scrapers.' .. module }
+end
+
+---@param module string
+---@param plugin_path string
+---@return string[]
+function M.get_python_submit_cmd(module, plugin_path)
+  if _nix_submit_cmd then
+    return { _nix_submit_cmd, 'run', '--directory', plugin_path, '-m', 'scrapers.' .. module }
+  end
+  return M.get_python_cmd(module, plugin_path)
 end
 
 local python_env_setup = false

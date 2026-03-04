@@ -380,41 +380,34 @@ class AtcoderScraper(BaseScraper):
         credentials: dict[str, str],
     ) -> SubmitResult:
         def _submit_sync() -> SubmitResult:
+            try:
+                from camoufox.sync_api import Camoufox
+            except ImportError:
+                return SubmitResult(
+                    success=False,
+                    error="camoufox is required for AtCoder login. Install it: uv add 'camoufox[geoip]'",
+                )
+
             from curl_cffi import requests as curl_requests
 
             try:
+                with Camoufox(headless=True) as browser:
+                    page = browser.new_page()
+                    page.goto(f"{BASE_URL}/login", wait_until="domcontentloaded")
+                    page.wait_for_load_state("networkidle")
+                    page.fill('input[name="username"]', credentials.get("username", ""))
+                    page.fill('input[name="password"]', credentials.get("password", ""))
+                    page.click('#submit')
+                    page.wait_for_url(lambda url: "/login" not in url, timeout=30000)
+                    cookies = page.context.cookies()
+
                 session = curl_requests.Session(impersonate="chrome")
-
-                login_page = session.get(f"{BASE_URL}/login", timeout=TIMEOUT_SECONDS)
-                login_page.raise_for_status()
-                soup = BeautifulSoup(login_page.text, "html.parser")
-                csrf_input = soup.find("input", {"name": "csrf_token"})
-                if not csrf_input or not hasattr(csrf_input, "get"):
-                    return SubmitResult(
-                        success=False, error="Could not find CSRF token on login page"
+                for cookie in cookies:
+                    session.cookies.set(
+                        cookie["name"],
+                        cookie["value"],
+                        domain=cookie.get("domain", ""),
                     )
-                csrf_token = csrf_input.get("value", "") or ""  # type: ignore[union-attr]
-
-                login_resp = session.post(
-                    f"{BASE_URL}/login",
-                    data={
-                        "username": credentials.get("username", ""),
-                        "password": credentials.get("password", ""),
-                        "csrf_token": csrf_token,
-                    },
-                    timeout=TIMEOUT_SECONDS,
-                    allow_redirects=False,
-                )
-                if login_resp.status_code in (301, 302):
-                    location = login_resp.headers.get("Location", "")
-                    if "/login" in location:
-                        return SubmitResult(
-                            success=False,
-                            error="Login failed: incorrect username or password",
-                        )
-                    session.get(BASE_URL + location, timeout=TIMEOUT_SECONDS)
-                else:
-                    login_resp.raise_for_status()
 
                 submit_page = session.get(
                     f"{BASE_URL}/contests/{contest_id}/submit",

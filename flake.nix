@@ -26,10 +26,46 @@
           ps.requests
         ]);
 
+      mkSubmitEnv =
+        pkgs:
+        pkgs.buildFHSEnv {
+          name = "cp-nvim-submit";
+          targetPkgs =
+            pkgs: with pkgs; [
+              uv
+              alsa-lib
+              at-spi2-atk
+              cairo
+              cups
+              dbus
+              fontconfig
+              freetype
+              gdk-pixbuf
+              glib
+              gtk3
+              libdrm
+              libGL
+              libxkbcommon
+              mesa
+              nspr
+              nss
+              pango
+              xorg.libX11
+              xorg.libXcomposite
+              xorg.libXdamage
+              xorg.libXext
+              xorg.libXfixes
+              xorg.libXrandr
+              xorg.libxcb
+            ];
+          runScript = "${pkgs.uv}/bin/uv";
+        };
+
       mkPlugin =
         pkgs:
         let
           pythonEnv = mkPythonEnv pkgs;
+          submitEnv = mkSubmitEnv pkgs;
         in
         pkgs.vimUtils.buildVimPlugin {
           pname = "cp-nvim";
@@ -39,12 +75,15 @@
             substituteInPlace lua/cp/utils.lua \
               --replace-fail "local _nix_python = nil" \
               "local _nix_python = '${pythonEnv.interpreter}'"
+            substituteInPlace lua/cp/utils.lua \
+              --replace-fail "local _nix_submit_cmd = nil" \
+              "local _nix_submit_cmd = '${submitEnv}/bin/cp-nvim-submit'"
           '';
           nvimSkipModule = [
             "cp.pickers.telescope"
             "cp.version"
           ];
-          passthru = { inherit pythonEnv; };
+          passthru = { inherit pythonEnv submitEnv; };
           meta.description = "Competitive programming plugin for Neovim";
         };
     in
@@ -58,6 +97,7 @@
       packages = eachSystem (system: {
         default = mkPlugin (pkgsFor system);
         pythonEnv = mkPythonEnv (pkgsFor system);
+        submitEnv = mkSubmitEnv (pkgsFor system);
       });
 
       devShells = eachSystem (system: {
