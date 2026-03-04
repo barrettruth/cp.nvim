@@ -397,7 +397,7 @@ class AtcoderScraper(BaseScraper):
                     page.wait_for_load_state("networkidle")
                     page.fill('input[name="username"]', credentials.get("username", ""))
                     page.fill('input[name="password"]', credentials.get("password", ""))
-                    page.click('#submit')
+                    page.click("#submit")
                     page.wait_for_url(lambda url: "/login" not in url, timeout=30000)
                     cookies = page.context.cookies()
 
