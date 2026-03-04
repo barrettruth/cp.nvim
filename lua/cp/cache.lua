@@ -40,7 +40,7 @@
 
 local M = {}
 
-local CACHE_VERSION = 1
+local CACHE_VERSION = 2
 
 local cache_file = vim.fn.stdpath('data') .. '/cp-nvim.json'
 local cache_data = {}
@@ -67,13 +67,27 @@ function M.load()
   end
 
   local ok, decoded = pcall(vim.json.decode, table.concat(content, '\n'))
-  if ok then
-    if decoded._version ~= CACHE_VERSION then
-      cache_data = {}
-      M.save()
-    else
-      cache_data = decoded
+  if not ok then
+    cache_data = {}
+    M.save()
+    loaded = true
+    return
+  end
+
+  if decoded._version == 1 then
+    local old_creds = decoded._credentials
+    decoded._credentials = nil
+    if old_creds then
+      for platform, creds in pairs(old_creds) do
+        decoded[platform] = decoded[platform] or {}
+        decoded[platform]._credentials = creds
+      end
     end
+    decoded._version = CACHE_VERSION
+    cache_data = decoded
+    M.save()
+  elseif decoded._version == CACHE_VERSION then
+    cache_data = decoded
   else
     cache_data = {}
     M.save()
@@ -122,7 +136,9 @@ function M.get_cached_contest_ids(platform)
 
   local contest_ids = {}
   for contest_id, _ in pairs(cache_data[platform]) do
-    table.insert(contest_ids, contest_id)
+    if contest_id:sub(1, 1) ~= '_' then
+      table.insert(contest_ids, contest_id)
+    end
   end
   table.sort(contest_ids)
   return contest_ids
@@ -336,11 +352,13 @@ end
 function M.get_contest_summaries(platform)
   local contest_list = {}
   for contest_id, contest_data in pairs(cache_data[platform] or {}) do
-    table.insert(contest_list, {
-      id = contest_id,
-      name = contest_data.name,
-      display_name = contest_data.display_name,
-    })
+    if contest_id:sub(1, 1) ~= '_' then
+      table.insert(contest_list, {
+        id = contest_id,
+        name = contest_data.name,
+        display_name = contest_data.display_name,
+      })
+    end
   end
   return contest_list
 end
@@ -374,38 +392,30 @@ end
 ---@param platform string
 ---@return table?
 function M.get_credentials(platform)
-  if not cache_data._credentials then
+  if not cache_data[platform] then
     return nil
   end
-  return cache_data._credentials[platform]
+  return cache_data[platform]._credentials
 end
 
 ---@param platform string
 ---@param creds table
 function M.set_credentials(platform, creds)
-  cache_data._credentials = cache_data._credentials or {}
-  cache_data._credentials[platform] = creds
+  cache_data[platform] = cache_data[platform] or {}
+  cache_data[platform]._credentials = creds
   M.save()
 end
 
----@param platform string?
+---@param platform string
 function M.clear_credentials(platform)
-  if platform then
-    if cache_data._credentials then
-      cache_data._credentials[platform] = nil
-    end
-  else
-    cache_data._credentials = nil
+  if cache_data[platform] then
+    cache_data[platform]._credentials = nil
   end
   M.save()
 end
 
 function M.clear_all()
-  local creds = cache_data._credentials
   cache_data = {}
-  if creds then
-    cache_data._credentials = creds
-  end
   M.save()
 end
 
