@@ -240,7 +240,6 @@ local function get_or_create_io_buffers()
   state.set_io_view_state({
     output_buf = output_buf,
     input_buf = input_buf,
-    current_test_index = 1,
     source_buf = current_source_buf,
   })
 
@@ -304,49 +303,6 @@ local function get_or_create_io_buffers()
       end)
     end,
   })
-
-  local cfg = config_module.get_config()
-  local platform = state.get_platform()
-  local contest_id = state.get_contest_id()
-  local problem_id = state.get_problem_id()
-
-  local function navigate_test(delta)
-    local io_view_state = state.get_io_view_state()
-    if not io_view_state then
-      return
-    end
-    if not platform or not contest_id or not problem_id then
-      return
-    end
-    local test_cases = cache.get_test_cases(platform, contest_id, problem_id)
-    if not test_cases or #test_cases == 0 then
-      return
-    end
-    local new_index = (io_view_state.current_test_index or 1) + delta
-    if new_index < 1 or new_index > #test_cases then
-      return
-    end
-    io_view_state.current_test_index = new_index
-    M.run_io_view(new_index)
-  end
-
-  if cfg.ui.run.next_test_key then
-    vim.keymap.set('n', cfg.ui.run.next_test_key, function()
-      navigate_test(1)
-    end, { buffer = output_buf, silent = true, desc = 'Next test' })
-    vim.keymap.set('n', cfg.ui.run.next_test_key, function()
-      navigate_test(1)
-    end, { buffer = input_buf, silent = true, desc = 'Next test' })
-  end
-
-  if cfg.ui.run.prev_test_key then
-    vim.keymap.set('n', cfg.ui.run.prev_test_key, function()
-      navigate_test(-1)
-    end, { buffer = output_buf, silent = true, desc = 'Previous test' })
-    vim.keymap.set('n', cfg.ui.run.prev_test_key, function()
-      navigate_test(-1)
-    end, { buffer = input_buf, silent = true, desc = 'Previous test' })
-  end
 
   return output_buf, input_buf
 end
