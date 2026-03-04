@@ -5,19 +5,19 @@ local logger = require('cp.log')
 local utils = require('cp.utils')
 
 local function syshandle(result)
+  local ok, data = pcall(vim.json.decode, result.stdout or '')
+  if ok then
+    return { success = true, data = data }
+  end
+
   if result.code ~= 0 then
     local msg = 'Scraper failed: ' .. (result.stderr or 'Unknown error')
     return { success = false, error = msg }
   end
 
-  local ok, data = pcall(vim.json.decode, result.stdout)
-  if not ok then
-    local msg = 'Failed to parse scraper output: ' .. tostring(data)
-    logger.log(msg, vim.log.levels.ERROR)
-    return { success = false, error = msg }
-  end
-
-  return { success = true, data = data }
+  local msg = 'Failed to parse scraper output: ' .. tostring(data)
+  logger.log(msg, vim.log.levels.ERROR)
+  return { success = false, error = msg }
 end
 
 ---@param env_map table<string, string>

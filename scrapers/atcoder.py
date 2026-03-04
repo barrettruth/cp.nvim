@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import os
 import re
 import sys
 import time
@@ -15,6 +16,7 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 from .base import BaseScraper, extract_precision
+from .language_ids import get_language_id
 from .models import (
     CombinedTest,
     ContestListResult,
@@ -378,9 +380,13 @@ class AtcoderScraper(BaseScraper):
         credentials: dict[str, str],
     ) -> SubmitResult:
         def _submit_sync() -> SubmitResult:
+            from curl_cffi import requests as curl_requests
+
             try:
-                login_page = _session.get(
-                    f"{BASE_URL}/login", headers=HEADERS, timeout=TIMEOUT_SECONDS
+                session = curl_requests.Session(impersonate="chrome")
+
+                login_page = session.get(
+                    f"{BASE_URL}/login", timeout=TIMEOUT_SECONDS
                 )
                 login_page.raise_for_status()
                 soup = BeautifulSoup(login_page.text, "html.parser")
@@ -391,21 +397,31 @@ class AtcoderScraper(BaseScraper):
                     )
                 csrf_token = csrf_input.get("value", "") or ""  # type: ignore[union-attr]
 
-                login_resp = _session.post(
+                login_resp = session.post(
                     f"{BASE_URL}/login",
                     data={
                         "username": credentials.get("username", ""),
                         "password": credentials.get("password", ""),
                         "csrf_token": csrf_token,
                     },
-                    headers=HEADERS,
                     timeout=TIMEOUT_SECONDS,
+                    allow_redirects=False,
                 )
-                login_resp.raise_for_status()
+                if login_resp.status_code in (301, 302):
+                    location = login_resp.headers.get("Location", "")
+                    if "/login" in location:
+                        return SubmitResult(
+                            success=False,
+                            error="Login failed: incorrect username or password",
+                        )
+                    session.get(
+                        BASE_URL + location, timeout=TIMEOUT_SECONDS
+                    )
+                else:
+                    login_resp.raise_for_status()
 
-                submit_page = _session.get(
+                submit_page = session.get(
                     f"{BASE_URL}/contests/{contest_id}/submit",
-                    headers=HEADERS,
                     timeout=TIMEOUT_SECONDS,
                 )
                 submit_page.raise_for_status()
@@ -418,7 +434,7 @@ class AtcoderScraper(BaseScraper):
                 csrf_token = csrf_input.get("value", "") or ""  # type: ignore[union-attr]
 
                 task_screen_name = f"{contest_id}_{problem_id}"
-                submit_resp = _session.post(
+                submit_resp = session.post(
                     f"{BASE_URL}/contests/{contest_id}/submit",
                     data={
                         "data.TaskScreenName": task_screen_name,
@@ -426,13 +442,26 @@ class AtcoderScraper(BaseScraper):
                         "sourceCode": source_code,
                         "csrf_token": csrf_token,
                     },
-                    headers=HEADERS,
                     timeout=TIMEOUT_SECONDS,
+                    allow_redirects=False,
                 )
+                if submit_resp.status_code in (301, 302):
+                    location = submit_resp.headers.get("Location", "")
+                    if "/submissions/me" in location:
+                        return SubmitResult(
+                            success=True,
+                            error="",
+                            submission_id="",
+                            verdict="submitted",
+                        )
+                    return SubmitResult(
+                        success=False,
+                        error=f"Submit may have failed: redirected to {location}",
+                    )
                 submit_resp.raise_for_status()
-
                 return SubmitResult(
-                    success=True, error="", submission_id="", verdict="submitted"
+                    success=False,
+                    error="Unexpected response from submit (expected redirect)",
                 )
             except Exception as e:
                 return SubmitResult(success=False, error=str(e))
@@ -495,9 +524,31 @@ async def main_async() -> int:
         print(contest_result.model_dump_json())
         return 0 if contest_result.success else 1
 
+    if mode == "submit":
+        if len(sys.argv) != 5:
+            print(
+                SubmitResult(
+                    success=False,
+                    error="Usage: atcoder.py submit <contest_id> <problem_id> <language>",
+                ).model_dump_json()
+            )
+            return 1
+        source_code = sys.stdin.read()
+        creds_raw = os.environ.get("CP_CREDENTIALS", "{}")
+        try:
+            credentials = json.loads(creds_raw)
+        except json.JSONDecodeError:
+            credentials = {}
+        language_id = get_language_id("atcoder", sys.argv[4]) or sys.argv[4]
+        submit_result = await scraper.submit(
+            sys.argv[2], sys.argv[3], source_code, language_id, credentials
+        )
+        print(submit_result.model_dump_json())
+        return 0 if submit_result.success else 1
+
     result = MetadataResult(
         success=False,
-        error="Unknown mode. Use 'metadata <contest_id>', 'tests <contest_id>', or 'contests'",
+        error="Unknown mode. Use 'metadata <contest_id>', 'tests <contest_id>', 'contests', or 'submit <contest_id> <problem_id> <language>'",
         url="",
     )
     print(result.model_dump_json())
