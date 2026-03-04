@@ -2,6 +2,7 @@ local M = {}
 
 ---@class PanelOpts
 ---@field debug? boolean
+---@field test_index? integer
 
 local cache = require('cp.cache')
 local config_module = require('cp.config')
@@ -804,6 +805,13 @@ function M.toggle_panel(panel_opts)
   if not run.load_test_cases() then
     logger.log('no test cases found', vim.log.levels.WARN)
     return
+  end
+
+  if panel_opts and panel_opts.test_index then
+    local test_state = run.get_panel_state()
+    if panel_opts.test_index >= 1 and panel_opts.test_index <= #test_state.test_cases then
+      test_state.current_index = panel_opts.test_index
+    end
   end
 
   local io_state = state.get_io_view_state()
