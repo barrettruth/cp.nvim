@@ -78,8 +78,6 @@
 
 ---@class RunConfig
 ---@field width number
----@field next_test_key string|nil
----@field prev_test_key string|nil
 ---@field format_verdict VerdictFormatter
 
 ---@class EditConfig
@@ -196,8 +194,6 @@ M.defaults = {
     ansi = true,
     run = {
       width = 0.3,
-      next_test_key = '<c-n>',
-      prev_test_key = '<c-p>',
       format_verdict = helpers.default_verdict_formatter,
     },
     edit = {
@@ -447,20 +443,6 @@ function M.setup(user_config)
         return type(v) == 'number' and v > 0 and v <= 1
       end,
       'decimal between 0 and 1',
-    },
-    next_test_key = {
-      cfg.ui.run.next_test_key,
-      function(v)
-        return v == nil or (type(v) == 'string' and #v > 0)
-      end,
-      'nil or non-empty string',
-    },
-    prev_test_key = {
-      cfg.ui.run.prev_test_key,
-      function(v)
-        return v == nil or (type(v) == 'string' and #v > 0)
-      end,
-      'nil or non-empty string',
     },
     format_verdict = {
       cfg.ui.run.format_verdict,
