@@ -83,28 +83,8 @@ local function parse_command(args)
       else
         return { type = 'action', action = 'interact' }
       end
-    elseif first == 'credentials' then
-      local subcommand = args[2]
-      if not subcommand then
-        return {
-          type = 'error',
-          message = 'credentials command requires subcommand (login, logout, clear)',
-        }
-      end
-      if vim.tbl_contains({ 'login', 'logout' }, subcommand) then
-        return {
-          type = 'credentials',
-          subcommand = subcommand,
-          platform = args[3],
-        }
-      elseif subcommand == 'clear' then
-        return {
-          type = 'credentials',
-          subcommand = 'clear',
-        }
-      else
-        return { type = 'error', message = 'unknown credentials subcommand: ' .. subcommand }
-      end
+    elseif first == 'login' or first == 'logout' then
+      return { type = 'action', action = first, platform = args[2] }
     elseif first == 'stress' then
       return {
         type = 'action',
@@ -345,6 +325,10 @@ function M.handle_command(opts)
       require('cp.race').start(cmd.platform, cmd.contest, cmd.language)
     elseif cmd.action == 'race_stop' then
       require('cp.race').stop()
+    elseif cmd.action == 'login' then
+      require('cp.credentials').login(cmd.platform)
+    elseif cmd.action == 'logout' then
+      require('cp.credentials').logout(cmd.platform)
     end
   elseif cmd.type == 'problem_jump' then
     local platform = state.get_platform()
@@ -374,15 +358,6 @@ function M.handle_command(opts)
 
     local setup = require('cp.setup')
     setup.setup_contest(platform, contest_id, problem_id, cmd.language)
-  elseif cmd.type == 'credentials' then
-    local creds = require('cp.credentials')
-    if cmd.subcommand == 'login' then
-      creds.login(cmd.platform)
-    elseif cmd.subcommand == 'logout' then
-      creds.logout(cmd.platform)
-    elseif cmd.subcommand == 'clear' then
-      creds.clear()
-    end
   elseif cmd.type == 'cache' then
     local cache_commands = require('cp.commands.cache')
     cache_commands.handle_cache_command(cmd)
