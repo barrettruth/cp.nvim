@@ -385,9 +385,7 @@ class AtcoderScraper(BaseScraper):
             try:
                 session = curl_requests.Session(impersonate="chrome")
 
-                login_page = session.get(
-                    f"{BASE_URL}/login", timeout=TIMEOUT_SECONDS
-                )
+                login_page = session.get(f"{BASE_URL}/login", timeout=TIMEOUT_SECONDS)
                 login_page.raise_for_status()
                 soup = BeautifulSoup(login_page.text, "html.parser")
                 csrf_input = soup.find("input", {"name": "csrf_token"})
@@ -414,9 +412,7 @@ class AtcoderScraper(BaseScraper):
                             success=False,
                             error="Login failed: incorrect username or password",
                         )
-                    session.get(
-                        BASE_URL + location, timeout=TIMEOUT_SECONDS
-                    )
+                    session.get(BASE_URL + location, timeout=TIMEOUT_SECONDS)
                 else:
                     login_resp.raise_for_status()
 
