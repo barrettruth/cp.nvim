@@ -328,7 +328,6 @@ setup_keybindings = function(buf)
   })
 end
 
-
 function M.toggle_edit(test_index)
   if edit_state then
     save_all_tests()
