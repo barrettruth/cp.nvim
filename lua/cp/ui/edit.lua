@@ -144,7 +144,7 @@ local function add_new_test()
   vim.api.nvim_win_set_buf(input_win, input_buf)
   vim.bo[input_buf].modifiable = true
   vim.bo[input_buf].readonly = false
-  vim.bo[input_buf].buftype = 'nofile'
+  vim.bo[input_buf].buftype = 'acwrite'
   vim.bo[input_buf].buflisted = false
   helpers.clearcol(input_buf)
 
@@ -155,7 +155,7 @@ local function add_new_test()
   vim.api.nvim_win_set_buf(expected_win, expected_buf)
   vim.bo[expected_buf].modifiable = true
   vim.bo[expected_buf].readonly = false
-  vim.bo[expected_buf].buftype = 'nofile'
+  vim.bo[expected_buf].buftype = 'acwrite'
   vim.bo[expected_buf].buflisted = false
   helpers.clearcol(expected_buf)
 
@@ -175,6 +175,80 @@ local function add_new_test()
 
   vim.api.nvim_set_current_win(input_win)
   logger.log(('Added test %d'):format(new_index))
+end
+
+local function save_all_tests()
+  if not edit_state then
+    return
+  end
+
+  local platform = state.get_platform()
+  local contest_id = state.get_contest_id()
+  local problem_id = state.get_problem_id()
+
+  if not platform or not contest_id or not problem_id then
+    return
+  end
+
+  for i, pair in ipairs(edit_state.test_buffers) do
+    if
+      vim.api.nvim_buf_is_valid(pair.input_buf) and vim.api.nvim_buf_is_valid(pair.expected_buf)
+    then
+      local input_lines = vim.api.nvim_buf_get_lines(pair.input_buf, 0, -1, false)
+      local expected_lines = vim.api.nvim_buf_get_lines(pair.expected_buf, 0, -1, false)
+
+      edit_state.test_cases[i].input = table.concat(input_lines, '\n')
+      edit_state.test_cases[i].expected = table.concat(expected_lines, '\n')
+    end
+  end
+
+  local contest_data = cache.get_contest_data(platform, contest_id)
+  local is_multi_test = contest_data.problems[contest_data.index_map[problem_id]].multi_test
+    or false
+
+  local combined_input = table.concat(
+    vim.tbl_map(function(tc)
+      return tc.input
+    end, edit_state.test_cases),
+    '\n'
+  )
+  local combined_expected = table.concat(
+    vim.tbl_map(function(tc)
+      return tc.expected
+    end, edit_state.test_cases),
+    '\n'
+  )
+
+  cache.set_test_cases(
+    platform,
+    contest_id,
+    problem_id,
+    { input = combined_input, expected = combined_expected },
+    edit_state.test_cases,
+    edit_state.constraints and edit_state.constraints.timeout_ms or 0,
+    edit_state.constraints and edit_state.constraints.memory_mb or 0,
+    false,
+    is_multi_test
+  )
+
+  local config = config_module.get_config()
+  local base_name = config.filename and config.filename(platform, contest_id, problem_id, config)
+    or config_module.default_filename(contest_id, problem_id)
+
+  vim.fn.mkdir('io', 'p')
+
+  for i, tc in ipairs(edit_state.test_cases) do
+    local input_file = string.format('io/%s.%d.cpin', base_name, i)
+    local expected_file = string.format('io/%s.%d.cpout', base_name, i)
+
+    local input_content = (tc.input or ''):gsub('\r', '')
+    local expected_content = (tc.expected or ''):gsub('\r', '')
+
+    vim.fn.writefile(vim.split(input_content, '\n', { trimempty = true }), input_file)
+    vim.fn.writefile(vim.split(expected_content, '\n', { trimempty = true }), expected_file)
+  end
+
+  logger.log('Saved all test cases')
 end
 
 ---@param buf integer
@@ -243,86 +317,31 @@ setup_keybindings = function(buf)
       end)
     end,
   })
+
+  vim.api.nvim_create_autocmd('BufWriteCmd', {
+    group = augroup,
+    buffer = buf,
+    callback = function()
+      save_all_tests()
+      vim.bo[buf].modified = false
+    end,
+  })
 end
 
-local function save_all_tests()
-  if not edit_state then
-    return
-  end
-
-  local platform = state.get_platform()
-  local contest_id = state.get_contest_id()
-  local problem_id = state.get_problem_id()
-
-  if not platform or not contest_id or not problem_id then
-    return
-  end
-
-  for i, pair in ipairs(edit_state.test_buffers) do
-    if
-      vim.api.nvim_buf_is_valid(pair.input_buf) and vim.api.nvim_buf_is_valid(pair.expected_buf)
-    then
-      local input_lines = vim.api.nvim_buf_get_lines(pair.input_buf, 0, -1, false)
-      local expected_lines = vim.api.nvim_buf_get_lines(pair.expected_buf, 0, -1, false)
-
-      edit_state.test_cases[i].input = table.concat(input_lines, '\n')
-      edit_state.test_cases[i].expected = table.concat(expected_lines, '\n')
-    end
-  end
-
-  local contest_data = cache.get_contest_data(platform, contest_id)
-  local is_multi_test = contest_data.problems[contest_data.index_map[problem_id]].multi_test
-    or false
-
-  -- Generate combined test from individual test cases
-  local combined_input = table.concat(
-    vim.tbl_map(function(tc)
-      return tc.input
-    end, edit_state.test_cases),
-    '\n'
-  )
-  local combined_expected = table.concat(
-    vim.tbl_map(function(tc)
-      return tc.expected
-    end, edit_state.test_cases),
-    '\n'
-  )
-
-  cache.set_test_cases(
-    platform,
-    contest_id,
-    problem_id,
-    { input = combined_input, expected = combined_expected },
-    edit_state.test_cases,
-    edit_state.constraints and edit_state.constraints.timeout_ms or 0,
-    edit_state.constraints and edit_state.constraints.memory_mb or 0,
-    false,
-    is_multi_test
-  )
-
-  local config = config_module.get_config()
-  local base_name = config.filename and config.filename(platform, contest_id, problem_id, config)
-    or config_module.default_filename(contest_id, problem_id)
-
-  vim.fn.mkdir('io', 'p')
-
-  for i, tc in ipairs(edit_state.test_cases) do
-    local input_file = string.format('io/%s.%d.cpin', base_name, i)
-    local expected_file = string.format('io/%s.%d.cpout', base_name, i)
-
-    local input_content = (tc.input or ''):gsub('\r', '')
-    local expected_content = (tc.expected or ''):gsub('\r', '')
-
-    vim.fn.writefile(vim.split(input_content, '\n', { trimempty = true }), input_file)
-    vim.fn.writefile(vim.split(expected_content, '\n', { trimempty = true }), expected_file)
-  end
-
-  logger.log('Saved all test cases')
-end
 
 function M.toggle_edit(test_index)
   if edit_state then
     save_all_tests()
+
+    for _, pair in ipairs(edit_state.test_buffers) do
+      if vim.api.nvim_buf_is_valid(pair.input_buf) then
+        vim.api.nvim_buf_delete(pair.input_buf, { force = true })
+      end
+      if vim.api.nvim_buf_is_valid(pair.expected_buf) then
+        vim.api.nvim_buf_delete(pair.expected_buf, { force = true })
+      end
+    end
+
     edit_state = nil
 
     pcall(vim.api.nvim_clear_autocmds, { group = 'cp_edit_guard' })
@@ -411,7 +430,7 @@ function M.toggle_edit(test_index)
     vim.api.nvim_win_set_buf(input_win, input_buf)
     vim.bo[input_buf].modifiable = true
     vim.bo[input_buf].readonly = false
-    vim.bo[input_buf].buftype = 'nofile'
+    vim.bo[input_buf].buftype = 'acwrite'
     vim.bo[input_buf].buflisted = false
     helpers.clearcol(input_buf)
 
@@ -421,7 +440,7 @@ function M.toggle_edit(test_index)
     vim.api.nvim_win_set_buf(expected_win, expected_buf)
     vim.bo[expected_buf].modifiable = true
     vim.bo[expected_buf].readonly = false
-    vim.bo[expected_buf].buftype = 'nofile'
+    vim.bo[expected_buf].buftype = 'acwrite'
     vim.bo[expected_buf].buflisted = false
     helpers.clearcol(expected_buf)
 
