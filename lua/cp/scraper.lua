@@ -237,7 +237,7 @@ function M.scrape_all_tests(platform, contest_id, callback)
             memory_mb = ev.memory_mb or 0,
             interactive = ev.interactive or false,
             multi_test = ev.multi_test or false,
-            precision = ev.precision,
+            precision = ev.precision ~= vim.NIL and ev.precision or nil,
             problem_id = ev.problem_id,
           })
         end
