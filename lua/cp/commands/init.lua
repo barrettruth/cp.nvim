@@ -86,13 +86,21 @@ local function parse_command(args)
     elseif first == 'credentials' then
       local subcommand = args[2]
       if not subcommand then
-        return { type = 'error', message = 'credentials command requires subcommand (set, clear)' }
+        return {
+          type = 'error',
+          message = 'credentials command requires subcommand (login, logout, clear)',
+        }
       end
-      if vim.tbl_contains({ 'set', 'clear' }, subcommand) then
+      if vim.tbl_contains({ 'login', 'logout' }, subcommand) then
         return {
           type = 'credentials',
           subcommand = subcommand,
           platform = args[3],
+        }
+      elseif subcommand == 'clear' then
+        return {
+          type = 'credentials',
+          subcommand = 'clear',
         }
       else
         return { type = 'error', message = 'unknown credentials subcommand: ' .. subcommand }
@@ -368,10 +376,12 @@ function M.handle_command(opts)
     setup.setup_contest(platform, contest_id, problem_id, cmd.language)
   elseif cmd.type == 'credentials' then
     local creds = require('cp.credentials')
-    if cmd.subcommand == 'set' then
-      creds.set(cmd.platform)
+    if cmd.subcommand == 'login' then
+      creds.login(cmd.platform)
+    elseif cmd.subcommand == 'logout' then
+      creds.logout(cmd.platform)
     elseif cmd.subcommand == 'clear' then
-      creds.clear(cmd.platform)
+      creds.clear()
     end
   elseif cmd.type == 'cache' then
     local cache_commands = require('cp.commands.cache')

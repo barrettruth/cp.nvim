@@ -4,10 +4,13 @@ local cache = require('cp.cache')
 local logger = require('cp.log')
 local state = require('cp.state')
 
-function M.set(platform)
+function M.login(platform)
   platform = platform or state.get_platform()
   if not platform then
-    logger.log('No platform specified. Usage: :CP credentials set <platform>', vim.log.levels.ERROR)
+    logger.log(
+      'No platform specified. Usage: :CP credentials login <platform>',
+      vim.log.levels.ERROR
+    )
     return
   end
 
@@ -29,14 +32,24 @@ function M.set(platform)
   end)
 end
 
-function M.clear(platform)
+function M.logout(platform)
+  platform = platform or state.get_platform()
+  if not platform then
+    logger.log(
+      'No platform specified. Usage: :CP credentials logout <platform>',
+      vim.log.levels.ERROR
+    )
+    return
+  end
   cache.load()
   cache.clear_credentials(platform)
-  if platform then
-    logger.log(platform .. ' credentials cleared', vim.log.levels.INFO, true)
-  else
-    logger.log('all credentials cleared', vim.log.levels.INFO, true)
-  end
+  logger.log(platform .. ' credentials cleared', vim.log.levels.INFO, true)
+end
+
+function M.clear()
+  cache.load()
+  cache.clear_credentials(nil)
+  logger.log('all credentials cleared', vim.log.levels.INFO, true)
 end
 
 return M

@@ -433,27 +433,29 @@ COMMANDS                                                         *cp-commands*
                                 Cancel an active race countdown.
 
         Credential Commands ~
-            :CP credentials set [platform]
+            :CP credentials login [platform]
                                 Set or update stored credentials for a platform.
                                 Always prompts for username and password,
                                 overwriting any previously saved credentials.
                                 If [platform] is omitted, uses the active platform.
                                 Examples: >
-                                    :CP credentials set atcoder
-                                    :CP credentials set codeforces
+                                    :CP credentials login atcoder
+                                    :CP credentials login codeforces
 <
-            :CP credentials clear [platform]
-                                Remove stored credentials. Without [platform],
-                                clears credentials for all platforms.
+            :CP credentials logout [platform]
+                                Remove stored credentials for a platform.
+                                If [platform] is omitted, uses the active platform.
                                 Examples: >
-                                    :CP credentials clear atcoder
-                                    :CP credentials clear
+                                    :CP credentials logout atcoder
+<
+            :CP credentials clear
+                                Remove stored credentials for all platforms.
 <
         Submit Commands ~
             :CP submit [--lang {language}]
                                 Submit the current solution to the online
                                 judge. Uses stored credentials (set via
-                                :CP credentials set). Prompts on first use
+                                :CP credentials login). Prompts on first use
                                 if no credentials are saved.
                                 --lang: Submit solution for a specific language.
 
@@ -714,7 +716,7 @@ Example: Setting up and solving AtCoder contest ABC324
 
 8. Submit solution: >
     :CP submit
-<   Prompts for credentials on first use and submits to AtCoder.
+<   Uses stored credentials and submits to AtCoder.
 
 ==============================================================================
 I/O VIEW                                                          *cp-io-view*
@@ -968,13 +970,17 @@ Manage stored login credentials for platform submission.
 Credentials are stored under _credentials in the main cache file
 (stdpath('data')/cp-nvim.json). Use :CP cache read to inspect them.
 
-:CP credentials set [platform]
+:CP credentials login [platform]
         Set or update credentials for a platform. Always prompts for
         username and password, overwriting any previously saved values.
         Omit [platform] to use the currently active platform.
 
-:CP credentials clear [platform]
-        Remove stored credentials. Without [platform], clears all platforms.
+:CP credentials logout [platform]
+        Remove stored credentials for a platform.
+        Omit [platform] to use the currently active platform.
+
+:CP credentials clear
+        Remove stored credentials for all platforms.
 
 ==============================================================================
 SUBMIT                                                               *cp-submit*
@@ -983,7 +989,7 @@ Submit the current solution to the online judge.
 
 :CP submit [--lang {language}]
         Submit the current solution. Uses stored credentials (set via
-        :CP credentials set). Prompts on first use if no credentials
+        :CP credentials login). Prompts on first use if no credentials
         are saved.
         --lang: Override the language to submit.
 
