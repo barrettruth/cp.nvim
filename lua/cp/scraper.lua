@@ -298,9 +298,12 @@ function M.submit(
     stdin = source_code,
     env_extra = { CP_CREDENTIALS = vim.json.encode(credentials) },
     on_event = function(ev)
+      if ev.credentials ~= nil then
+        require('cp.cache').set_credentials(platform, ev.credentials)
+      end
       if ev.status ~= nil then
         if type(on_status) == 'function' then
-          on_status(ev.status)
+          on_status(ev)
         end
       elseif ev.success ~= nil then
         done = true
