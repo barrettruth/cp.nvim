@@ -9,6 +9,7 @@ from .language_ids import get_language_id
 from .models import (
     CombinedTest,
     ContestListResult,
+    LoginResult,
     MetadataResult,
     SubmitResult,
     TestsResult,
@@ -58,9 +59,12 @@ class BaseScraper(ABC):
         credentials: dict[str, str],
     ) -> SubmitResult: ...
 
+    @abstractmethod
+    async def login(self, credentials: dict[str, str]) -> LoginResult: ...
+
     def _usage(self) -> str:
         name = self.platform_name
-        return f"Usage: {name}.py metadata <id> | tests <id> | contests"
+        return f"Usage: {name}.py metadata <id> | tests <id> | contests | login"
 
     def _metadata_error(self, msg: str) -> MetadataResult:
         return MetadataResult(success=False, error=msg, url="")
@@ -81,6 +85,9 @@ class BaseScraper(ABC):
 
     def _submit_error(self, msg: str) -> SubmitResult:
         return SubmitResult(success=False, error=msg)
+
+    def _login_error(self, msg: str) -> LoginResult:
+        return LoginResult(success=False, error=msg)
 
     async def _run_cli_async(self, args: list[str]) -> int:
         if len(args) < 2:
@@ -130,6 +137,16 @@ class BaseScraper(ABC):
                 result = await self.submit(
                     args[2], args[3], args[5], language_id, credentials
                 )
+                print(result.model_dump_json())
+                return 0 if result.success else 1
+
+            case "login":
+                creds_raw = os.environ.get("CP_CREDENTIALS", "{}")
+                try:
+                    credentials = json.loads(creds_raw)
+                except json.JSONDecodeError:
+                    credentials = {}
+                result = await self.login(credentials)
                 print(result.model_dump_json())
                 return 0 if result.success else 1
 
