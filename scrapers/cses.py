@@ -352,8 +352,12 @@ class CSESScraper(BaseScraper):
             f"{API_URL}/login", headers=HEADERS, timeout=HTTP_TIMEOUT
         )
         api_data = api_resp.json()
-        token: str = api_data["X-Auth-Token"]
-        auth_url: str = api_data["authentication_url"]
+        token: str | None = api_data.get("X-Auth-Token")
+        auth_url: str | None = api_data.get("authentication_url")
+        if not token:
+            raise RuntimeError("CSES API login response missing 'X-Auth-Token'")
+        if not auth_url:
+            raise RuntimeError("CSES API login response missing 'authentication_url'")
 
         auth_page = await client.get(auth_url, headers=HEADERS, timeout=HTTP_TIMEOUT)
         auth_csrf = re.search(r'name="csrf_token" value="([^"]+)"', auth_page.text)
@@ -388,8 +392,8 @@ class CSESScraper(BaseScraper):
                 timeout=HTTP_TIMEOUT,
             )
             return r.status_code == 200
-        except Exception:
-            return False
+        except (httpx.ConnectError, httpx.TimeoutException, httpx.NetworkError):
+            raise
 
     async def submit(
         self,

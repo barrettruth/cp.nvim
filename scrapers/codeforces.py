@@ -401,7 +401,8 @@ def _login_headless_cf(credentials: dict[str, str]) -> LoginResult:
 
             try:
                 browser_cookies = session.context.cookies()
-                cookie_cache.write_text(json.dumps(browser_cookies))
+                if any(c.get("name") == "X-User-Handle" for c in browser_cookies):
+                    cookie_cache.write_text(json.dumps(browser_cookies))
             except Exception:
                 pass
 
@@ -478,10 +479,7 @@ def _submit_headless(
         if "/enter" in page.url or "/login" in page.url:
             needs_relogin = True
             return
-        try:
-            _solve_turnstile(page)
-        except Exception:
-            pass
+        _solve_turnstile(page)
         try:
             page.select_option(
                 'select[name="submittedProblemIndex"]',
@@ -550,7 +548,7 @@ def _submit_headless(
 
             try:
                 browser_cookies = session.context.cookies()
-                if browser_cookies:
+                if any(c.get("name") == "X-User-Handle" for c in browser_cookies):
                     cookie_cache.write_text(json.dumps(browser_cookies))
             except Exception:
                 pass
