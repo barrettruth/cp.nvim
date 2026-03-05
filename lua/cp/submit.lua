@@ -25,6 +25,7 @@ local function prompt_credentials(platform, callback)
     vim.fn.inputsave()
     local password = vim.fn.inputsecret(platform .. ' password: ')
     vim.fn.inputrestore()
+    vim.cmd.redraw()
     if not password or password == '' then
       logger.log('Submit cancelled', vim.log.levels.WARN)
       return
@@ -64,9 +65,9 @@ function M.submit(opts)
       language,
       source_code,
       creds,
-      function(status)
+      function(ev)
         vim.schedule(function()
-          vim.notify('[cp.nvim] ' .. (STATUS_MSGS[status] or status), vim.log.levels.INFO)
+          vim.notify('[cp.nvim] ' .. (STATUS_MSGS[ev.status] or ev.status), vim.log.levels.INFO)
         end)
       end,
       function(result)
