@@ -294,7 +294,6 @@ function M.setup_problem(problem_id, language)
         state.set_provisional(nil)
       else
         vim.api.nvim_buf_set_name(prov.bufnr, source_file)
-        vim.bo[prov.bufnr].swapfile = true
         -- selene: allow(mixed_table)
         vim.cmd.write({
           vim.fn.fnameescape(source_file),
@@ -343,7 +342,10 @@ function M.setup_problem(problem_id, language)
   end
 
   vim.cmd.only({ mods = { silent = true } })
-  vim.cmd.e(source_file)
+  local current_file = vim.fn.expand('%:p')
+  if current_file ~= vim.fn.fnamemodify(source_file, ':p') then
+    vim.cmd.e(source_file)
+  end
   local bufnr = vim.api.nvim_get_current_buf()
   state.set_solution_win(vim.api.nvim_get_current_win())
   require('cp.ui.views').ensure_io_view()
