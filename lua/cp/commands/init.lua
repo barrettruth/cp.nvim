@@ -29,9 +29,13 @@ local actions = constants.ACTIONS
 ---@return string
 local function canonicalize_cf_contest(str)
   local id = str:match('/contest/(%d+)') or str:match('/problemset/problem/(%d+)')
-  if id then return id end
+  if id then
+    return id
+  end
   local num = str:match('^(%d+)[A-Za-z]')
-  if num then return num end
+  if num then
+    return num
+  end
   return str
 end
 
@@ -314,7 +318,8 @@ function M.handle_command(opts)
     local restore = require('cp.restore')
     restore.restore_from_current_file()
   elseif cmd.type == 'action' then
-    local CONTEST_ACTIONS = { 'run', 'panel', 'edit', 'interact', 'stress', 'submit', 'next', 'prev', 'pick' }
+    local CONTEST_ACTIONS =
+      { 'run', 'panel', 'edit', 'interact', 'stress', 'submit', 'next', 'prev', 'pick' }
     if vim.tbl_contains(CONTEST_ACTIONS, cmd.action) and not state.get_platform() then
       local restore = require('cp.restore')
       if not restore.restore_from_current_file() then
