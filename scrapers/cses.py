@@ -292,9 +292,7 @@ class CSESScraper(BaseScraper):
         login_page = await client.get(
             f"{BASE_URL}/login", headers=HEADERS, timeout=TIMEOUT_S
         )
-        csrf_match = re.search(
-            r'name="csrf_token" value="([^"]+)"', login_page.text
-        )
+        csrf_match = re.search(r'name="csrf_token" value="([^"]+)"', login_page.text)
         if not csrf_match:
             return None
 
@@ -319,15 +317,9 @@ class CSESScraper(BaseScraper):
         token: str = api_data["X-Auth-Token"]
         auth_url: str = api_data["authentication_url"]
 
-        auth_page = await client.get(
-            auth_url, headers=HEADERS, timeout=TIMEOUT_S
-        )
-        auth_csrf = re.search(
-            r'name="csrf_token" value="([^"]+)"', auth_page.text
-        )
-        form_token = re.search(
-            r'name="token" value="([^"]+)"', auth_page.text
-        )
+        auth_page = await client.get(auth_url, headers=HEADERS, timeout=TIMEOUT_S)
+        auth_csrf = re.search(r'name="csrf_token" value="([^"]+)"', auth_page.text)
+        form_token = re.search(r'name="token" value="([^"]+)"', auth_page.text)
         if not auth_csrf or not form_token:
             return None
 
@@ -361,9 +353,7 @@ class CSESScraper(BaseScraper):
         username = credentials.get("username", "")
         password = credentials.get("password", "")
         if not username or not password:
-            return self._submit_error(
-                "Missing credentials. Use :CP login cses"
-            )
+            return self._submit_error("Missing credentials. Use :CP login cses")
 
         async with httpx.AsyncClient(follow_redirects=True) as client:
             print(json.dumps({"status": "logging_in"}), flush=True)
