@@ -13,6 +13,7 @@ from .timeouts import HTTP_TIMEOUT, SUBMIT_POLL_TIMEOUT
 from .models import (
     ContestListResult,
     ContestSummary,
+    LoginResult,
     MetadataResult,
     ProblemSummary,
     SubmitResult,
@@ -228,6 +229,43 @@ class CSESScraper(BaseScraper):
                 success=False, error=f"{self.platform_name}: No contests found"
             )
         return ContestListResult(success=True, error="", contests=cats)
+
+    async def login(self, credentials: dict[str, str]) -> LoginResult:
+        username = credentials.get("username", "")
+        password = credentials.get("password", "")
+        if not username or not password:
+            return self._login_error("Missing username or password")
+
+        async with httpx.AsyncClient(follow_redirects=True) as client:
+            token = credentials.get("token")
+
+            if token:
+                print(json.dumps({"status": "checking_login"}), flush=True)
+                if await self._check_token(client, token):
+                    return LoginResult(
+                        success=True,
+                        error="",
+                        credentials={
+                            "username": username,
+                            "password": password,
+                            "token": token,
+                        },
+                    )
+
+            print(json.dumps({"status": "logging_in"}), flush=True)
+            token = await self._web_login(client, username, password)
+            if not token:
+                return self._login_error("Login failed (bad credentials?)")
+
+            return LoginResult(
+                success=True,
+                error="",
+                credentials={
+                    "username": username,
+                    "password": password,
+                    "token": token,
+                },
+            )
 
     async def stream_tests_for_category_async(self, category_id: str) -> None:
         async with httpx.AsyncClient(
