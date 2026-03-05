@@ -328,9 +328,7 @@ def _submit_headless(
 
     _ensure_browser()
 
-    cookie_cache = (
-        Path.home() / ".cache" / "cp-nvim" / "codeforces-cookies.json"
-    )
+    cookie_cache = Path.home() / ".cache" / "cp-nvim" / "codeforces-cookies.json"
     cookie_cache.parent.mkdir(parents=True, exist_ok=True)
     saved_cookies: list[dict[str, Any]] = []
     if cookie_cache.exists():
@@ -372,9 +370,7 @@ def _submit_headless(
                     'input[name="password"]',
                     credentials.get("password", ""),
                 )
-                page.locator(
-                    '#enterForm input[type="submit"]'
-                ).click()
+                page.locator('#enterForm input[type="submit"]').click()
                 page.wait_for_url(
                     lambda url: "/enter" not in url, timeout=BROWSER_NAV_TIMEOUT
                 )
@@ -394,24 +390,20 @@ def _submit_headless(
                 'select[name="submittedProblemIndex"]',
                 problem_id.upper(),
             )
-            page.select_option(
-                'select[name="programTypeId"]', language_id
-            )
+            page.select_option('select[name="programTypeId"]', language_id)
             with tempfile.NamedTemporaryFile(
                 mode="w", suffix=".cpp", delete=False, prefix="cf_"
             ) as tf:
                 tf.write(source_code)
                 tmp_path = tf.name
             try:
-                page.set_input_files(
-                    'input[name="sourceFile"]', tmp_path
-                )
+                page.set_input_files('input[name="sourceFile"]', tmp_path)
                 page.wait_for_timeout(BROWSER_SETTLE_DELAY)
             except Exception:
                 page.fill('textarea[name="source"]', source_code)
             finally:
                 os.unlink(tmp_path)
-            page.locator('form.submit-form input.submit').click()
+            page.locator("form.submit-form input.submit").click()
             page.wait_for_url(
                 lambda url: "/my" in url or "/status" in url,
                 timeout=BROWSER_NAV_TIMEOUT,
@@ -435,17 +427,13 @@ def _submit_headless(
 
             try:
                 browser_cookies = session.context.cookies()
-                if any(
-                    c["name"] == "JSESSIONID" for c in browser_cookies
-                ):
+                if any(c["name"] == "JSESSIONID" for c in browser_cookies):
                     cookie_cache.write_text(json.dumps(browser_cookies))
             except Exception:
                 pass
 
             if login_error:
-                return SubmitResult(
-                    success=False, error=f"Login failed: {login_error}"
-                )
+                return SubmitResult(success=False, error=f"Login failed: {login_error}")
             if submit_error:
                 return SubmitResult(success=False, error=submit_error)
 

@@ -342,9 +342,7 @@ class CSESScraper(BaseScraper):
             return None
         return token
 
-    async def _check_token(
-        self, client: httpx.AsyncClient, token: str
-    ) -> bool:
+    async def _check_token(self, client: httpx.AsyncClient, token: str) -> bool:
         try:
             r = await client.get(
                 f"{API_URL}/login",

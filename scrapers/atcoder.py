@@ -338,7 +338,9 @@ def _submit_headless(
             page.fill('input[name="username"]', credentials.get("username", ""))
             page.fill('input[name="password"]', credentials.get("password", ""))
             page.click("#submit")
-            page.wait_for_url(lambda url: "/login" not in url, timeout=BROWSER_NAV_TIMEOUT)
+            page.wait_for_url(
+                lambda url: "/login" not in url, timeout=BROWSER_NAV_TIMEOUT
+            )
         except Exception as e:
             login_error = str(e)
 
@@ -365,7 +367,9 @@ def _submit_headless(
             finally:
                 os.unlink(tmp_path)
             page.locator('button[type="submit"]').click()
-            page.wait_for_url(lambda url: "/submissions/me" in url, timeout=BROWSER_NAV_TIMEOUT)
+            page.wait_for_url(
+                lambda url: "/submissions/me" in url, timeout=BROWSER_NAV_TIMEOUT
+            )
         except Exception as e:
             submit_error = str(e)
 

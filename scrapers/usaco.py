@@ -58,7 +58,9 @@ RESULTS_PAGE_RE = re.compile(
 
 
 async def _fetch_text(client: httpx.AsyncClient, url: str) -> str:
-    r = await client.get(url, headers=HEADERS, timeout=HTTP_TIMEOUT, follow_redirects=True)
+    r = await client.get(
+        url, headers=HEADERS, timeout=HTTP_TIMEOUT, follow_redirects=True
+    )
     r.raise_for_status()
     return r.text
 
