@@ -73,6 +73,10 @@ local function run_scraper(platform, subcommand, args, opts)
 
   if opts and opts.ndjson then
     local uv = vim.uv
+    local stdin_pipe = nil
+    if opts.stdin then
+      stdin_pipe = uv.new_pipe(false)
+    end
     local stdout = uv.new_pipe(false)
     local stderr = uv.new_pipe(false)
     local buf = ''
@@ -80,7 +84,7 @@ local function run_scraper(platform, subcommand, args, opts)
     local handle
     handle = uv.spawn(cmd[1], {
       args = vim.list_slice(cmd, 2),
-      stdio = { nil, stdout, stderr },
+      stdio = { stdin_pipe, stdout, stderr },
       env = spawn_env_list(env),
       cwd = plugin_path,
     }, function(code, signal)
@@ -94,6 +98,9 @@ local function run_scraper(platform, subcommand, args, opts)
       if opts.on_exit then
         opts.on_exit({ success = (code == 0), code = code, signal = signal })
       end
+      if stdin_pipe and not stdin_pipe:is_closing() then
+        stdin_pipe:close()
+      end
       if not stdout:is_closing() then
         stdout:close()
       end
@@ -106,8 +113,19 @@ local function run_scraper(platform, subcommand, args, opts)
     end)
 
     if not handle then
+      if stdin_pipe and not stdin_pipe:is_closing() then
+        stdin_pipe:close()
+      end
       logger.log('Failed to start scraper process', vim.log.levels.ERROR)
       return { success = false, error = 'spawn failed' }
+    end
+
+    if stdin_pipe then
+      uv.write(stdin_pipe, opts.stdin, function()
+        uv.shutdown(stdin_pipe, function()
+          stdin_pipe:close()
+        end)
+      end)
     end
 
     uv.read_start(stdout, function(_, data)
@@ -260,18 +278,23 @@ function M.scrape_all_tests(platform, contest_id, callback)
   })
 end
 
-function M.submit(platform, contest_id, problem_id, language, source_code, credentials, callback)
-  local creds_json = vim.json.encode(credentials)
+function M.submit(platform, contest_id, problem_id, language, source_code, credentials, on_status, callback)
+  local done = false
   run_scraper(platform, 'submit', { contest_id, problem_id, language }, {
+    ndjson = true,
     stdin = source_code,
-    env_extra = { CP_CREDENTIALS = creds_json },
-    on_exit = function(result)
-      if type(callback) == 'function' then
-        if result and result.success then
-          callback(result.data or { success = true })
-        else
-          callback({ success = false, error = result and result.error or 'unknown' })
-        end
+    env_extra = { CP_CREDENTIALS = vim.json.encode(credentials) },
+    on_event = function(ev)
+      if ev.status ~= nil then
+        if type(on_status) == 'function' then on_status(ev.status) end
+      elseif ev.success ~= nil then
+        done = true
+        if type(callback) == 'function' then callback(ev) end
+      end
+    end,
+    on_exit = function(proc)
+      if not done and type(callback) == 'function' then
+        callback({ success = false, error = 'submit process exited (code=' .. tostring(proc.code) .. ')' })
       end
     end,
   })
