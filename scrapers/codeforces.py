@@ -22,6 +22,7 @@ from .models import (
     TestCase,
 )
 from .timeouts import (
+    BROWSER_ELEMENT_WAIT,
     BROWSER_NAV_TIMEOUT,
     BROWSER_SESSION_TIMEOUT,
     BROWSER_SETTLE_DELAY,
@@ -307,6 +308,18 @@ class CodeforcesScraper(BaseScraper):
         )
 
 
+def _wait_for_gate_reload(page, wait_selector: str) -> None:
+    from .atcoder import _solve_turnstile
+
+    if "Verification" not in page.title():
+        return
+    _solve_turnstile(page)
+    page.wait_for_function(
+        f"() => !!document.querySelector('{wait_selector}')",
+        timeout=BROWSER_ELEMENT_WAIT,
+    )
+
+
 def _submit_headless(
     contest_id: str,
     problem_id: str,
@@ -337,54 +350,46 @@ def _submit_headless(
         except Exception:
             pass
 
+    logged_in = False
     login_error: str | None = None
     submit_error: str | None = None
 
-    def do_login_and_submit(page):
-        nonlocal login_error, submit_error
-
-        has_submit_form = page.evaluate(
-            "() => !!document.querySelector('form.submit-form')"
+    def check_login(page):
+        nonlocal logged_in
+        logged_in = page.evaluate(
+            "() => Array.from(document.querySelectorAll('a'))"
+            ".some(a => a.textContent.includes('Logout'))"
         )
 
-        if not has_submit_form:
-            if "/enter" not in page.url:
-                page.goto(
-                    f"{BASE_URL}/enter",
-                    wait_until="domcontentloaded",
-                    timeout=BROWSER_NAV_TIMEOUT,
-                )
-
-            try:
-                _solve_turnstile(page)
-            except Exception:
-                pass
-
-            print(json.dumps({"status": "logging_in"}), flush=True)
-            try:
-                page.fill(
-                    'input[name="handleOrEmail"]',
-                    credentials.get("username", ""),
-                )
-                page.fill(
-                    'input[name="password"]',
-                    credentials.get("password", ""),
-                )
-                page.locator('#enterForm input[type="submit"]').click()
-                page.wait_for_url(
-                    lambda url: "/enter" not in url, timeout=BROWSER_NAV_TIMEOUT
-                )
-            except Exception as e:
-                login_error = str(e)
-                return
-
-            page.goto(
-                f"{BASE_URL}/contest/{contest_id}/submit",
-                wait_until="domcontentloaded",
-                timeout=BROWSER_NAV_TIMEOUT,
+    def login_action(page):
+        nonlocal login_error
+        try:
+            _wait_for_gate_reload(page, "#enterForm")
+        except Exception:
+            pass
+        try:
+            page.fill(
+                'input[name="handleOrEmail"]',
+                credentials.get("username", ""),
             )
+            page.fill(
+                'input[name="password"]',
+                credentials.get("password", ""),
+            )
+            page.locator('#enterForm input[type="submit"]').click()
+            page.wait_for_url(
+                lambda url: "/enter" not in url, timeout=BROWSER_NAV_TIMEOUT
+            )
+        except Exception as e:
+            login_error = str(e)
 
-        print(json.dumps({"status": "submitting"}), flush=True)
+    def submit_action(page):
+        nonlocal submit_error
+        try:
+            _solve_turnstile(page)
+        except Exception:
+            pass
+        tmp_path: str | None = None
         try:
             page.select_option(
                 'select[name="submittedProblemIndex"]',
@@ -401,15 +406,26 @@ def _submit_headless(
                 page.wait_for_timeout(BROWSER_SETTLE_DELAY)
             except Exception:
                 page.fill('textarea[name="source"]', source_code)
-            finally:
-                os.unlink(tmp_path)
-            page.locator("form.submit-form input.submit").click()
-            page.wait_for_url(
-                lambda url: "/my" in url or "/status" in url,
-                timeout=BROWSER_NAV_TIMEOUT,
-            )
+            page.locator("form.submit-form input.submit").click(no_wait_after=True)
+            try:
+                page.wait_for_url(
+                    lambda url: "/my" in url or "/status" in url,
+                    timeout=BROWSER_NAV_TIMEOUT * 2,
+                )
+            except Exception:
+                err_el = page.query_selector("span.error")
+                if err_el:
+                    submit_error = err_el.inner_text().strip()
+                else:
+                    submit_error = "Submit failed: page did not navigate"
         except Exception as e:
             submit_error = str(e)
+        finally:
+            if tmp_path:
+                try:
+                    os.unlink(tmp_path)
+                except OSError:
+                    pass
 
     try:
         with StealthySession(
@@ -420,8 +436,27 @@ def _submit_headless(
         ) as session:
             print(json.dumps({"status": "checking_login"}), flush=True)
             session.fetch(
+                f"{BASE_URL}/",
+                page_action=check_login,
+                network_idle=True,
+            )
+
+            if not logged_in:
+                print(json.dumps({"status": "logging_in"}), flush=True)
+                session.fetch(
+                    f"{BASE_URL}/enter",
+                    page_action=login_action,
+                    solve_cloudflare=True,
+                )
+                if login_error:
+                    return SubmitResult(
+                        success=False, error=f"Login failed: {login_error}"
+                    )
+
+            print(json.dumps({"status": "submitting"}), flush=True)
+            session.fetch(
                 f"{BASE_URL}/contest/{contest_id}/submit",
-                page_action=do_login_and_submit,
+                page_action=submit_action,
                 solve_cloudflare=True,
             )
 
@@ -432,8 +467,6 @@ def _submit_headless(
             except Exception:
                 pass
 
-            if login_error:
-                return SubmitResult(success=False, error=f"Login failed: {login_error}")
             if submit_error:
                 return SubmitResult(success=False, error=submit_error)
 
