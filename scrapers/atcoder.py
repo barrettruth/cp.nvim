@@ -6,7 +6,6 @@ import os
 import re
 import subprocess
 import sys
-import tempfile
 import time
 from typing import Any
 
@@ -37,6 +36,11 @@ from .timeouts import (
     BROWSER_TURNSTILE_POLL,
     HTTP_TIMEOUT,
 )
+
+_LANGUAGE_ID_EXTENSION = {
+    "6017": "cc",
+    "6082": "py",
+}
 
 MIB_TO_MB = 1.048576
 BASE_URL = "https://atcoder.jp"
@@ -274,23 +278,20 @@ def _ensure_browser() -> None:
         from patchright._impl._driver import compute_driver_executable  # type: ignore[import-untyped,unresolved-import]
 
         node, cli = compute_driver_executable()
-        browser_info = subprocess.run(
-            [node, cli, "install", "--dry-run", "chromium"],
-            capture_output=True,
-            text=True,
-        )
-        for line in browser_info.stdout.splitlines():
-            if "Install location:" in line:
-                install_dir = line.split(":", 1)[1].strip()
-                if not os.path.isdir(install_dir):
-                    print(json.dumps({"status": "installing_browser"}), flush=True)
-                    subprocess.run(
-                        [node, cli, "install", "chromium"],
-                        check=True,
-                    )
-                break
     except Exception:
-        pass
+        return
+    browser_info = subprocess.run(
+        [node, cli, "install", "--dry-run", "chromium"],
+        capture_output=True,
+        text=True,
+    )
+    for line in browser_info.stdout.splitlines():
+        if "Install location:" in line:
+            install_dir = line.split(":", 1)[1].strip()
+            if not os.path.isdir(install_dir):
+                print(json.dumps({"status": "installing_browser"}), flush=True)
+                subprocess.run([node, cli, "install", "chromium"], check=True)
+            break
 
 
 def _submit_headless(
@@ -299,6 +300,7 @@ def _submit_headless(
     source_code: str,
     language_id: str,
     credentials: dict[str, str],
+    _retried: bool = False,
 ) -> "SubmitResult":
     from pathlib import Path
 
@@ -321,9 +323,10 @@ def _submit_headless(
         except Exception:
             pass
 
-    logged_in = False
+    logged_in = cookie_cache.exists() and not _retried
     login_error: str | None = None
     submit_error: str | None = None
+    needs_relogin = False
 
     def check_login(page):
         nonlocal logged_in
@@ -345,7 +348,10 @@ def _submit_headless(
             login_error = str(e)
 
     def submit_action(page):
-        nonlocal submit_error
+        nonlocal submit_error, needs_relogin
+        if "/login" in page.url:
+            needs_relogin = True
+            return
         try:
             _solve_turnstile(page)
             page.select_option(
@@ -356,16 +362,16 @@ def _submit_headless(
                 f'select[name="data.LanguageId"] option[value="{language_id}"]'
             ).wait_for(state="attached", timeout=BROWSER_ELEMENT_WAIT)
             page.select_option('select[name="data.LanguageId"]', language_id)
-            with tempfile.NamedTemporaryFile(
-                mode="w", suffix=".cpp", delete=False, prefix="atcoder_"
-            ) as tf:
-                tf.write(source_code)
-                tmp_path = tf.name
-            try:
-                page.set_input_files("#input-open-file", tmp_path)
-                page.wait_for_timeout(BROWSER_SETTLE_DELAY)
-            finally:
-                os.unlink(tmp_path)
+            ext = _LANGUAGE_ID_EXTENSION.get(language_id, "txt")
+            page.set_input_files(
+                "#input-open-file",
+                {
+                    "name": f"solution.{ext}",
+                    "mimeType": "text/plain",
+                    "buffer": source_code.encode(),
+                },
+            )
+            page.wait_for_timeout(BROWSER_SETTLE_DELAY)
             page.locator('button[type="submit"]').click()
             page.wait_for_url(
                 lambda url: "/submissions/me" in url, timeout=BROWSER_NAV_TIMEOUT
@@ -378,14 +384,13 @@ def _submit_headless(
             headless=True,
             timeout=BROWSER_SESSION_TIMEOUT,
             google_search=False,
-            cookies=saved_cookies,
+            cookies=saved_cookies if (cookie_cache.exists() and not _retried) else [],
         ) as session:
-            print(json.dumps({"status": "checking_login"}), flush=True)
-            session.fetch(
-                f"{BASE_URL}/home",
-                page_action=check_login,
-                network_idle=True,
-            )
+            if not (cookie_cache.exists() and not _retried):
+                print(json.dumps({"status": "checking_login"}), flush=True)
+                session.fetch(
+                    f"{BASE_URL}/home", page_action=check_login, network_idle=True
+                )
 
             if not logged_in:
                 print(json.dumps({"status": "logging_in"}), flush=True)
@@ -413,12 +418,23 @@ def _submit_headless(
             except Exception:
                 pass
 
-            if submit_error:
-                return SubmitResult(success=False, error=submit_error)
-
-            return SubmitResult(
-                success=True, error="", submission_id="", verdict="submitted"
+        if needs_relogin and not _retried:
+            cookie_cache.unlink(missing_ok=True)
+            return _submit_headless(
+                contest_id,
+                problem_id,
+                source_code,
+                language_id,
+                credentials,
+                _retried=True,
             )
+
+        if submit_error:
+            return SubmitResult(success=False, error=submit_error)
+
+        return SubmitResult(
+            success=True, error="", submission_id="", verdict="submitted"
+        )
     except Exception as e:
         return SubmitResult(success=False, error=str(e))
 
