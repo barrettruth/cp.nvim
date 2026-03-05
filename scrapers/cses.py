@@ -342,6 +342,19 @@ class CSESScraper(BaseScraper):
             return None
         return token
 
+    async def _check_token(
+        self, client: httpx.AsyncClient, token: str
+    ) -> bool:
+        try:
+            r = await client.get(
+                f"{API_URL}/login",
+                headers={"X-Auth-Token": token, **HEADERS},
+                timeout=TIMEOUT_S,
+            )
+            return r.status_code == 200
+        except Exception:
+            return False
+
     async def submit(
         self,
         contest_id: str,
@@ -356,11 +369,30 @@ class CSESScraper(BaseScraper):
             return self._submit_error("Missing credentials. Use :CP login cses")
 
         async with httpx.AsyncClient(follow_redirects=True) as client:
-            print(json.dumps({"status": "logging_in"}), flush=True)
+            token = credentials.get("token")
 
-            token = await self._web_login(client, username, password)
+            if token:
+                print(json.dumps({"status": "checking_login"}), flush=True)
+                if not await self._check_token(client, token):
+                    token = None
+
             if not token:
-                return self._submit_error("Login failed (bad credentials?)")
+                print(json.dumps({"status": "logging_in"}), flush=True)
+                token = await self._web_login(client, username, password)
+                if not token:
+                    return self._submit_error("Login failed (bad credentials?)")
+                print(
+                    json.dumps(
+                        {
+                            "credentials": {
+                                "username": username,
+                                "password": password,
+                                "token": token,
+                            }
+                        }
+                    ),
+                    flush=True,
+                )
 
             print(json.dumps({"status": "submitting"}), flush=True)
 
