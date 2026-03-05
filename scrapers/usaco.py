@@ -8,6 +8,7 @@ from typing import Any, cast
 import httpx
 
 from .base import BaseScraper
+from .timeouts import HTTP_TIMEOUT
 from .models import (
     ContestListResult,
     ContestSummary,
@@ -21,7 +22,6 @@ BASE_URL = "http://www.usaco.org"
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 }
-TIMEOUT_S = 15.0
 CONNECTIONS = 4
 
 MONTHS = [
@@ -58,7 +58,7 @@ RESULTS_PAGE_RE = re.compile(
 
 
 async def _fetch_text(client: httpx.AsyncClient, url: str) -> str:
-    r = await client.get(url, headers=HEADERS, timeout=TIMEOUT_S, follow_redirects=True)
+    r = await client.get(url, headers=HEADERS, timeout=HTTP_TIMEOUT, follow_redirects=True)
     r.raise_for_status()
     return r.text
 

@@ -21,10 +21,15 @@ from .models import (
     SubmitResult,
     TestCase,
 )
+from .timeouts import (
+    BROWSER_NAV_TIMEOUT,
+    BROWSER_SESSION_TIMEOUT,
+    BROWSER_SETTLE_DELAY,
+    HTTP_TIMEOUT,
+)
 
 BASE_URL = "https://codeforces.com"
 API_CONTEST_LIST_URL = f"{BASE_URL}/api/contest.list"
-TIMEOUT_SECONDS = 30
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
 }
@@ -139,7 +144,7 @@ def _is_interactive(block: Tag) -> bool:
 
 def _fetch_problems_html(contest_id: str) -> str:
     url = f"{BASE_URL}/contest/{contest_id}/problems"
-    response = curl_requests.get(url, impersonate="chrome", timeout=TIMEOUT_SECONDS)
+    response = curl_requests.get(url, impersonate="chrome", timeout=HTTP_TIMEOUT)
     response.raise_for_status()
     return response.text
 
@@ -226,7 +231,7 @@ class CodeforcesScraper(BaseScraper):
 
     async def scrape_contest_list(self) -> ContestListResult:
         try:
-            r = requests.get(API_CONTEST_LIST_URL, timeout=TIMEOUT_SECONDS)
+            r = requests.get(API_CONTEST_LIST_URL, timeout=HTTP_TIMEOUT)
             r.raise_for_status()
             data = r.json()
             if data.get("status") != "OK":
@@ -349,7 +354,7 @@ def _submit_headless(
                 page.goto(
                     f"{BASE_URL}/enter",
                     wait_until="domcontentloaded",
-                    timeout=10000,
+                    timeout=BROWSER_NAV_TIMEOUT,
                 )
 
             try:
@@ -371,7 +376,7 @@ def _submit_headless(
                     '#enterForm input[type="submit"]'
                 ).click()
                 page.wait_for_url(
-                    lambda url: "/enter" not in url, timeout=10000
+                    lambda url: "/enter" not in url, timeout=BROWSER_NAV_TIMEOUT
                 )
             except Exception as e:
                 login_error = str(e)
@@ -380,7 +385,7 @@ def _submit_headless(
             page.goto(
                 f"{BASE_URL}/contest/{contest_id}/submit",
                 wait_until="domcontentloaded",
-                timeout=10000,
+                timeout=BROWSER_NAV_TIMEOUT,
             )
 
         print(json.dumps({"status": "submitting"}), flush=True)
@@ -401,7 +406,7 @@ def _submit_headless(
                 page.set_input_files(
                     'input[name="sourceFile"]', tmp_path
                 )
-                page.wait_for_timeout(500)
+                page.wait_for_timeout(BROWSER_SETTLE_DELAY)
             except Exception:
                 page.fill('textarea[name="source"]', source_code)
             finally:
@@ -409,7 +414,7 @@ def _submit_headless(
             page.locator('form.submit-form input.submit').click()
             page.wait_for_url(
                 lambda url: "/my" in url or "/status" in url,
-                timeout=10000,
+                timeout=BROWSER_NAV_TIMEOUT,
             )
         except Exception as e:
             submit_error = str(e)
@@ -417,7 +422,7 @@ def _submit_headless(
     try:
         with StealthySession(
             headless=True,
-            timeout=15000,
+            timeout=BROWSER_SESSION_TIMEOUT,
             google_search=False,
             cookies=saved_cookies,
         ) as session:
