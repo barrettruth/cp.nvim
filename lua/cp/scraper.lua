@@ -85,6 +85,7 @@ local function run_scraper(platform, subcommand, args, opts)
     local stderr = uv.new_pipe(false)
     local buf = ''
 
+    local timer = nil
     local handle
     handle = uv.spawn(cmd[1], {
       args = vim.list_slice(cmd, 2),
@@ -128,7 +129,6 @@ local function run_scraper(platform, subcommand, args, opts)
       return { success = false, error = 'spawn failed' }
     end
 
-    local timer = nil
     if subcommand == 'submit' then
       timer = uv.new_timer()
       timer:start(120000, 0, function()
