@@ -119,7 +119,7 @@ function M.get_python_submit_cmd(module, plugin_path)
   if _nix_submit_cmd then
     return { _nix_submit_cmd, 'run', '--directory', plugin_path, '-m', 'scrapers.' .. module }
   end
-  return M.get_python_cmd(module, plugin_path)
+  return { 'uv', 'run', '--directory', plugin_path, '-m', 'scrapers.' .. module }
 end
 
 local python_env_setup = false
