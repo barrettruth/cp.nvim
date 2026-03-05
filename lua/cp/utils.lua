@@ -141,7 +141,8 @@ local function discover_nix_submit_cmd()
   end
 
   local plugin_path = M.get_plugin_path()
-  vim.notify('[cp.nvim] Building submit environment with nix...', vim.log.levels.INFO)
+  vim.cmd.redraw()
+  vim.notify('Building submit environment...', vim.log.levels.INFO)
   vim.cmd.redraw()
   local result = vim
     .system(
