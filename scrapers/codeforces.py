@@ -379,7 +379,17 @@ def _submit_headless(
                 problem_id.upper(),
             )
             page.select_option('select[name="programTypeId"]', language_id)
-            page.fill('textarea[name="source"]', source_code)
+            page.evaluate(
+                """(code) => {
+                    const cm = document.querySelector('.CodeMirror');
+                    if (cm && cm.CodeMirror) {
+                        cm.CodeMirror.setValue(code);
+                    }
+                    const ta = document.querySelector('textarea[name="source"]');
+                    if (ta) ta.value = code;
+                }""",
+                source_code,
+            )
             page.locator("form.submit-form input.submit").click(no_wait_after=True)
             try:
                 page.wait_for_url(
