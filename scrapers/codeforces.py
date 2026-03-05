@@ -397,7 +397,7 @@ def _submit_headless(
             try:
                 page.wait_for_url(
                     lambda url: "/my" in url or "/status" in url,
-                    timeout=BROWSER_SUBMIT_NAV_TIMEOUT,
+                    timeout=BROWSER_SUBMIT_NAV_TIMEOUT["codeforces"],
                 )
             except Exception:
                 err_el = page.query_selector("span.error")

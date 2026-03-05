@@ -33,6 +33,7 @@ from .timeouts import (
     BROWSER_NAV_TIMEOUT,
     BROWSER_SESSION_TIMEOUT,
     BROWSER_SETTLE_DELAY,
+    BROWSER_SUBMIT_NAV_TIMEOUT,
     BROWSER_TURNSTILE_POLL,
     HTTP_TIMEOUT,
 )
@@ -361,7 +362,7 @@ def _submit_headless(
             page.wait_for_timeout(BROWSER_SETTLE_DELAY)
             page.locator('button[type="submit"]').click()
             page.wait_for_url(
-                lambda url: "/submissions/me" in url, timeout=BROWSER_NAV_TIMEOUT
+                lambda url: "/submissions/me" in url, timeout=BROWSER_SUBMIT_NAV_TIMEOUT["atcoder"]
             )
         except Exception as e:
             submit_error = str(e)
