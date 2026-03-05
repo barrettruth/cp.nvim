@@ -75,10 +75,11 @@ function M.submit(opts)
           if result and result.success then
             logger.log('Submitted successfully', { level = vim.log.levels.INFO, override = true })
           else
-            logger.log(
-              'Submit failed: ' .. (result and result.error or 'unknown error'),
-              { level = vim.log.levels.ERROR }
-            )
+            local err = result and result.error or 'unknown error'
+            if err:match('^Login failed') then
+              cache.clear_credentials(platform)
+            end
+            logger.log('Submit failed: ' .. err, { level = vim.log.levels.ERROR })
           end
         end)
       end
