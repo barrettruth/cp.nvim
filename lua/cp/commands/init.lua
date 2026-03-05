@@ -83,8 +83,6 @@ local function parse_command(args)
       else
         return { type = 'action', action = 'interact' }
       end
-    elseif first == 'login' or first == 'logout' then
-      return { type = 'action', action = first, platform = args[2] }
     elseif first == 'stress' then
       return {
         type = 'action',
@@ -245,6 +243,9 @@ local function parse_command(args)
         message = 'Too few arguments - specify a contest.',
       }
     elseif #args == 2 then
+      if args[2] == 'login' or args[2] == 'logout' then
+        return { type = 'action', action = args[2], platform = first }
+      end
       return {
         type = 'contest_setup',
         platform = first,
