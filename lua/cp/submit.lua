@@ -4,6 +4,13 @@ local cache = require('cp.cache')
 local logger = require('cp.log')
 local state = require('cp.state')
 
+local STATUS_MSGS = {
+  installing_browser = 'Installing browser (first time setup)...',
+  checking_login = 'Checking login...',
+  logging_in = 'Logging in...',
+  submitting = 'Submitting...',
+}
+
 local function prompt_credentials(platform, callback)
   local saved = cache.get_credentials(platform)
   if saved and saved.username and saved.password then
@@ -48,6 +55,8 @@ function M.submit(opts)
     local source_lines = vim.fn.readfile(source_file)
     local source_code = table.concat(source_lines, '\n')
 
+    vim.notify('[cp.nvim] Submitting...', vim.log.levels.INFO)
+
     require('cp.scraper').submit(
       platform,
       contest_id,
@@ -55,6 +64,11 @@ function M.submit(opts)
       language,
       source_code,
       creds,
+      function(status)
+        vim.schedule(function()
+          vim.notify('[cp.nvim] ' .. (STATUS_MSGS[status] or status), vim.log.levels.INFO)
+        end)
+      end,
       function(result)
         vim.schedule(function()
           if result and result.success then
