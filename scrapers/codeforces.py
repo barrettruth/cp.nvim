@@ -12,7 +12,6 @@ from bs4 import BeautifulSoup, Tag
 from curl_cffi import requests as curl_requests
 
 from .base import BaseScraper, extract_precision
-from .language_ids import get_language_id
 from .models import (
     ContestListResult,
     ContestSummary,

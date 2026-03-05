@@ -37,7 +37,7 @@ constexpr T MAX = std::numeric_limits<T>::max();
 //  }}}
 
 void solve() {
-  cout << "hi\n";
+  std::cout << "change\n";
 }
 
 int main() {  // {{{
@@ -49,6 +49,10 @@ int main() {  // {{{
 #else
   std::cin.tie(nullptr)->sync_with_stdio(false);
 #endif
-  solve();
+  u32 tc = 1;
+  std::cin >> tc;
+  for (u32 t = 0; t < tc; ++t) {
+    solve();
+  }
   return 0;
 }  // }}}
