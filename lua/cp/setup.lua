@@ -278,6 +278,19 @@ function M.setup_problem(problem_id, language)
     return
   end
 
+  if vim.fn.filereadable(source_file) == 1 then
+    local existing = cache.get_file_state(vim.fn.fnamemodify(source_file, ':p'))
+    if existing and (existing.platform ~= platform or existing.contest_id ~= (state.get_contest_id() or '') or existing.problem_id ~= problem_id) then
+      logger.log(
+        ('File %q already exists for %s/%s %s.'):format(
+          source_file, existing.platform, existing.contest_id, existing.problem_id
+        ),
+        { level = vim.log.levels.ERROR }
+      )
+      return
+    end
+  end
+
   local contest_dir = vim.fn.fnamemodify(source_file, ':h')
   local is_new_dir = vim.fn.isdirectory(contest_dir) == 0
   vim.fn.mkdir(contest_dir, 'p')
