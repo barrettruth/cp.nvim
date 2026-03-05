@@ -36,7 +36,7 @@ local function compile_cpp(source, output)
   if result.code ~= 0 then
     logger.log(
       ('Failed to compile %s: %s'):format(source, result.stderr or ''),
-      vim.log.levels.ERROR
+      { level = vim.log.levels.ERROR }
     )
     return false
   end
@@ -76,7 +76,7 @@ function M.toggle(generator_cmd, brute_cmd)
   end
 
   if state.get_active_panel() then
-    logger.log('Another panel is already active.', vim.log.levels.WARN)
+    logger.log('Another panel is already active.', { level = vim.log.levels.WARN })
     return
   end
 
@@ -93,14 +93,14 @@ function M.toggle(generator_cmd, brute_cmd)
   if not gen_file then
     logger.log(
       'No generator found. Pass generator as first arg or add gen.{py,cc,cpp}.',
-      vim.log.levels.ERROR
+      { level = vim.log.levels.ERROR }
     )
     return
   end
   if not brute_file then
     logger.log(
       'No brute solution found. Pass brute as second arg or add brute.{py,cc,cpp}.',
-      vim.log.levels.ERROR
+      { level = vim.log.levels.ERROR }
     )
     return
   end
@@ -140,7 +140,7 @@ function M.toggle(generator_cmd, brute_cmd)
 
     local binary = state.get_binary_file()
     if not binary or binary == '' then
-      logger.log('No binary produced.', vim.log.levels.ERROR)
+      logger.log('No binary produced.', { level = vim.log.levels.ERROR })
       restore_session()
       return
     end

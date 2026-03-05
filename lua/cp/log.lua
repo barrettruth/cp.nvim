@@ -1,12 +1,27 @@
 local M = {}
 
-function M.log(msg, level, override)
+---@class LogOpts
+---@field level? integer
+---@field override? boolean
+---@field sync? boolean
+
+---@param msg string
+---@param opts? LogOpts
+function M.log(msg, opts)
   local debug = require('cp.config').get_config().debug or false
-  level = level or vim.log.levels.INFO
+  opts = opts or {}
+  local level = opts.level or vim.log.levels.INFO
+  local override = opts.override or false
+  local sync = opts.sync or false
   if level >= vim.log.levels.WARN or override or debug then
-    vim.schedule(function()
+    local notify = function()
       vim.notify(('[cp.nvim]: %s'):format(msg), level)
-    end)
+    end
+    if sync then
+      notify()
+    else
+      vim.schedule(notify)
+    end
   end
 end
 

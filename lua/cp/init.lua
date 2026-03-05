@@ -7,7 +7,7 @@ local logger = require('cp.log')
 M.helpers = helpers
 
 if vim.fn.has('nvim-0.10.0') == 0 then
-  logger.log('Requires nvim-0.10.0+', vim.log.levels.ERROR)
+  logger.log('Requires nvim-0.10.0+', { level = vim.log.levels.ERROR })
   return {}
 end
 

@@ -287,7 +287,7 @@ function M.handle_command(opts)
   local cmd = parse_command(opts.fargs)
 
   if cmd.type == 'error' then
-    logger.log(cmd.message, vim.log.levels.ERROR)
+    logger.log(cmd.message, { level = vim.log.levels.ERROR })
     return
   end
 
@@ -336,7 +336,7 @@ function M.handle_command(opts)
     local problem_id = cmd.problem_id
 
     if not (platform and contest_id) then
-      logger.log('No contest is currently active.', vim.log.levels.ERROR)
+      logger.log('No contest is currently active.', { level = vim.log.levels.ERROR })
       return
     end
 
@@ -351,7 +351,7 @@ function M.handle_command(opts)
           contest_id,
           problem_id
         ),
-        vim.log.levels.ERROR
+        { level = vim.log.levels.ERROR }
       )
       return
     end
