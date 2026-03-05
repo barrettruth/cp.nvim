@@ -25,6 +25,16 @@ local actions = constants.ACTIONS
 ---@field language? string
 ---@field subcommand? string
 
+---@param str string
+---@return string
+local function canonicalize_cf_contest(str)
+  local id = str:match('/contest/(%d+)') or str:match('/problemset/problem/(%d+)')
+  if id then return id end
+  local num = str:match('^(%d+)[A-Za-z]')
+  if num then return num end
+  return str
+end
+
 --- Turn raw args into normalized structure to later dispatch
 ---@param args string[] The raw command-line mode args
 ---@return ParsedCommand
@@ -246,16 +256,24 @@ local function parse_command(args)
       if args[2] == 'login' or args[2] == 'logout' then
         return { type = 'action', action = args[2], platform = first }
       end
+      local contest = args[2]
+      if first == 'codeforces' then
+        contest = canonicalize_cf_contest(contest)
+      end
       return {
         type = 'contest_setup',
         platform = first,
-        contest = args[2],
+        contest = contest,
       }
     elseif #args == 4 and args[3] == '--lang' then
+      local contest = args[2]
+      if first == 'codeforces' then
+        contest = canonicalize_cf_contest(contest)
+      end
       return {
         type = 'contest_setup',
         platform = first,
-        contest = args[2],
+        contest = contest,
         language = args[4],
       }
     else
@@ -296,6 +314,14 @@ function M.handle_command(opts)
     local restore = require('cp.restore')
     restore.restore_from_current_file()
   elseif cmd.type == 'action' then
+    local CONTEST_ACTIONS = { 'run', 'panel', 'edit', 'interact', 'stress', 'submit', 'next', 'prev', 'pick' }
+    if vim.tbl_contains(CONTEST_ACTIONS, cmd.action) and not state.get_platform() then
+      local restore = require('cp.restore')
+      if not restore.restore_from_current_file() then
+        return
+      end
+    end
+
     local setup = require('cp.setup')
     local ui = require('cp.ui.views')
 
