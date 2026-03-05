@@ -5,7 +5,6 @@ import json
 import os
 import re
 import subprocess
-import sys
 import time
 from pathlib import Path
 from typing import Any
@@ -18,9 +17,7 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 from .base import BaseScraper, extract_precision
-from .language_ids import get_language_id
 from .models import (
-    CombinedTest,
     ContestListResult,
     ContestSummary,
     LoginResult,
@@ -28,7 +25,6 @@ from .models import (
     ProblemSummary,
     SubmitResult,
     TestCase,
-    TestsResult,
 )
 from .timeouts import (
     BROWSER_ELEMENT_WAIT,
@@ -681,94 +677,5 @@ class AtcoderScraper(BaseScraper):
         return await asyncio.to_thread(_login_headless, credentials)
 
 
-async def main_async() -> int:
-    if len(sys.argv) < 2:
-        result = MetadataResult(
-            success=False,
-            error="Usage: atcoder.py metadata <contest_id> OR atcoder.py tests <contest_id> OR atcoder.py contests",
-            url="",
-        )
-        print(result.model_dump_json())
-        return 1
-
-    mode: str = sys.argv[1]
-    scraper = AtcoderScraper()
-
-    if mode == "metadata":
-        if len(sys.argv) != 3:
-            result = MetadataResult(
-                success=False,
-                error="Usage: atcoder.py metadata <contest_id>",
-                url="",
-            )
-            print(result.model_dump_json())
-            return 1
-        contest_id = sys.argv[2]
-        result = await scraper.scrape_contest_metadata(contest_id)
-        print(result.model_dump_json())
-        return 0 if result.success else 1
-
-    if mode == "tests":
-        if len(sys.argv) != 3:
-            tests_result = TestsResult(
-                success=False,
-                error="Usage: atcoder.py tests <contest_id>",
-                problem_id="",
-                combined=CombinedTest(input="", expected=""),
-                tests=[],
-                timeout_ms=0,
-                memory_mb=0,
-            )
-            print(tests_result.model_dump_json())
-            return 1
-        contest_id = sys.argv[2]
-        await scraper.stream_tests_for_category_async(contest_id)
-        return 0
-
-    if mode == "contests":
-        if len(sys.argv) != 2:
-            contest_result = ContestListResult(
-                success=False, error="Usage: atcoder.py contests"
-            )
-            print(contest_result.model_dump_json())
-            return 1
-        contest_result = await scraper.scrape_contest_list()
-        print(contest_result.model_dump_json())
-        return 0 if contest_result.success else 1
-
-    if mode == "submit":
-        if len(sys.argv) != 6:
-            print(
-                SubmitResult(
-                    success=False,
-                    error="Usage: atcoder.py submit <contest_id> <problem_id> <language> <file_path>",
-                ).model_dump_json()
-            )
-            return 1
-        creds_raw = os.environ.get("CP_CREDENTIALS", "{}")
-        try:
-            credentials = json.loads(creds_raw)
-        except json.JSONDecodeError:
-            credentials = {}
-        language_id = get_language_id("atcoder", sys.argv[4]) or sys.argv[4]
-        submit_result = await scraper.submit(
-            sys.argv[2], sys.argv[3], sys.argv[5], language_id, credentials
-        )
-        print(submit_result.model_dump_json())
-        return 0 if submit_result.success else 1
-
-    result = MetadataResult(
-        success=False,
-        error="Unknown mode. Use 'metadata <contest_id>', 'tests <contest_id>', 'contests', or 'submit <contest_id> <problem_id> <language>'",
-        url="",
-    )
-    print(result.model_dump_json())
-    return 1
-
-
-def main() -> None:
-    sys.exit(asyncio.run(main_async()))
-
-
 if __name__ == "__main__":
-    main()
+    AtcoderScraper().run_cli()
