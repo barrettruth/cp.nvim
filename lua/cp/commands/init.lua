@@ -95,7 +95,12 @@ local function parse_command(args)
     elseif first == 'interact' then
       local inter = args[2]
       if inter and inter ~= '' then
-        return { type = 'action', action = 'interact', requires_context = true, interactor_cmd = inter }
+        return {
+          type = 'action',
+          action = 'interact',
+          requires_context = true,
+          interactor_cmd = inter,
+        }
       else
         return { type = 'action', action = 'interact', requires_context = true }
       end
