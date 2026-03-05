@@ -52,7 +52,7 @@ function M.compile(compile_cmd, substitutions, on_complete)
     r.stdout = ansi.bytes_to_string(r.stdout or '')
 
     if r.code == 0 then
-      logger.log(('Compilation successful in %.1fms.'):format(dt), vim.log.levels.INFO)
+      logger.log(('Compilation successful in %.1fms.'):format(dt), { level = vim.log.levels.INFO })
     else
       logger.log(('Compilation failed in %.1fms.'):format(dt))
     end

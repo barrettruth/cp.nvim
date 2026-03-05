@@ -16,7 +16,7 @@ local function apply_template(bufnr, lang_id, platform)
   end
   local path = vim.fn.expand(eff.template)
   if vim.fn.filereadable(path) ~= 1 then
-    logger.log(('[cp.nvim] template not readable: %s'):format(path), vim.log.levels.WARN)
+    logger.log(('[cp.nvim] template not readable: %s'):format(path), { level = vim.log.levels.WARN })
     return
   end
   local lines = vim.fn.readfile(path)
@@ -112,11 +112,12 @@ local function start_tests(platform, contest_id, problems)
     return not vim.tbl_isempty(cache.get_test_cases(platform, contest_id, p.id))
   end, problems)
   if cached_len ~= #problems then
+    local to_fetch = #problems - cached_len
     logger.log(('Fetching %s/%s problem tests...'):format(cached_len, #problems))
     scraper.scrape_all_tests(platform, contest_id, function(ev)
       local cached_tests = {}
       if not ev.interactive and vim.tbl_isempty(ev.tests) then
-        logger.log(("No tests found for problem '%s'."):format(ev.problem_id), vim.log.levels.WARN)
+        logger.log(("No tests found for problem '%s'."):format(ev.problem_id), { level = vim.log.levels.WARN })
       end
       for i, t in ipairs(ev.tests) do
         cached_tests[i] = { index = i, input = t.input, expected = t.expected }
@@ -142,6 +143,8 @@ local function start_tests(platform, contest_id, problems)
           require('cp.utils').update_buffer_content(io_state.input_buf, input_lines, nil, nil)
         end
       end
+    end, function()
+      logger.log(('Loaded %d test%s.'):format(to_fetch, to_fetch == 1 and '' or 's'), { level = vim.log.levels.INFO, override = true })
     end)
   end
 end
@@ -160,7 +163,7 @@ function M.setup_contest(platform, contest_id, problem_id, language)
   if language then
     local lang_result = config_module.get_language_for_platform(platform, language)
     if not lang_result.valid then
-      logger.log(lang_result.error, vim.log.levels.ERROR)
+      logger.log(lang_result.error, { level = vim.log.levels.ERROR })
       return
     end
   end
@@ -206,7 +209,7 @@ function M.setup_contest(platform, contest_id, problem_id, language)
       token = vim.uv.hrtime(),
     })
 
-    logger.log('Fetching contests problems...', vim.log.levels.INFO, true)
+    logger.log('Fetching contests problems...', { level = vim.log.levels.INFO, override = true })
     scraper.scrape_contest_metadata(
       platform,
       contest_id,
@@ -242,7 +245,7 @@ end
 function M.setup_problem(problem_id, language)
   local platform = state.get_platform()
   if not platform then
-    logger.log('No platform/contest/problem configured.', vim.log.levels.ERROR)
+    logger.log('No platform/contest/problem configured.', { level = vim.log.levels.ERROR })
     return
   end
 
@@ -263,7 +266,7 @@ function M.setup_problem(problem_id, language)
   if language then
     local lang_result = config_module.get_language_for_platform(platform, language)
     if not lang_result.valid then
-      logger.log(lang_result.error, vim.log.levels.ERROR)
+      logger.log(lang_result.error, { level = vim.log.levels.ERROR })
       return
     end
   end
@@ -273,6 +276,19 @@ function M.setup_problem(problem_id, language)
   local source_file = state.get_source_file(lang)
   if not source_file then
     return
+  end
+
+  if vim.fn.filereadable(source_file) == 1 then
+    local existing = cache.get_file_state(vim.fn.fnamemodify(source_file, ':p'))
+    if existing and (existing.platform ~= platform or existing.contest_id ~= (state.get_contest_id() or '') or existing.problem_id ~= problem_id) then
+      logger.log(
+        ('File %q already exists for %s/%s %s.'):format(
+          source_file, existing.platform, existing.contest_id, existing.problem_id
+        ),
+        { level = vim.log.levels.ERROR }
+      )
+      return
+    end
   end
 
   local contest_dir = vim.fn.fnamemodify(source_file, ':h')
@@ -397,7 +413,7 @@ function M.navigate_problem(direction, language)
   local contest_id = state.get_contest_id()
   local current_problem_id = state.get_problem_id()
   if not platform or not contest_id or not current_problem_id then
-    logger.log('No platform configured.', vim.log.levels.ERROR)
+    logger.log('No platform configured.', { level = vim.log.levels.ERROR })
     return
   end
 
@@ -409,7 +425,7 @@ function M.navigate_problem(direction, language)
         constants.PLATFORM_DISPLAY_NAMES[platform],
         contest_id
       ),
-      vim.log.levels.ERROR
+      { level = vim.log.levels.ERROR }
     )
     return
   end
@@ -433,7 +449,7 @@ function M.navigate_problem(direction, language)
   if language then
     local lang_result = config_module.get_language_for_platform(platform, language)
     if not lang_result.valid then
-      logger.log(lang_result.error, vim.log.levels.ERROR)
+      logger.log(lang_result.error, { level = vim.log.levels.ERROR })
       return
     end
     lang = language

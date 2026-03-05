@@ -38,6 +38,11 @@ from .timeouts import (
     HTTP_TIMEOUT,
 )
 
+_LANGUAGE_ID_EXTENSION = {
+    "6017": "cc",
+    "6082": "py",
+}
+
 MIB_TO_MB = 1.048576
 BASE_URL = "https://atcoder.jp"
 ARCHIVE_URL = f"{BASE_URL}/contests/archive"

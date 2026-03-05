@@ -47,26 +47,24 @@ function M.handle_cache_command(cmd)
             constants.PLATFORM_DISPLAY_NAMES[cmd.platform],
             cmd.contest
           ),
-          vim.log.levels.INFO,
-          true
+          { level = vim.log.levels.INFO, override = true }
         )
       else
-        logger.log(("Unknown platform '%s'."):format(cmd.platform), vim.log.levels.ERROR)
+        logger.log(("Unknown platform '%s'."):format(cmd.platform), { level = vim.log.levels.ERROR })
       end
     elseif cmd.platform then
       if vim.tbl_contains(platforms, cmd.platform) then
         cache.clear_platform(cmd.platform)
         logger.log(
           ("Cache cleared for platform '%s'"):format(constants.PLATFORM_DISPLAY_NAMES[cmd.platform]),
-          vim.log.levels.INFO,
-          true
+          { level = vim.log.levels.INFO, override = true }
         )
       else
-        logger.log(("Unknown platform '%s'."):format(cmd.platform), vim.log.levels.ERROR)
+        logger.log(("Unknown platform '%s'."):format(cmd.platform), { level = vim.log.levels.ERROR })
       end
     else
       cache.clear_all()
-      logger.log('Cache cleared', vim.log.levels.INFO, true)
+      logger.log('Cache cleared', { level = vim.log.levels.INFO, override = true })
     end
   end
 end

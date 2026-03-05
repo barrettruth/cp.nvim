@@ -53,7 +53,7 @@ function M.toggle_interactive(interactor_cmd)
   end
 
   if state.get_active_panel() then
-    logger.log('Another panel is already active.', vim.log.levels.WARN)
+    logger.log('Another panel is already active.', { level = vim.log.levels.WARN })
     return
   end
 
@@ -62,7 +62,7 @@ function M.toggle_interactive(interactor_cmd)
   if not platform or not contest_id or not problem_id then
     logger.log(
       'No platform/contest/problem configured. Use :CP <platform> <contest> [...] first.',
-      vim.log.levels.ERROR
+      { level = vim.log.levels.ERROR }
     )
     return
   end
@@ -74,7 +74,7 @@ function M.toggle_interactive(interactor_cmd)
     and contest_data.index_map
     and not contest_data.problems[contest_data.index_map[problem_id]].interactive
   then
-    logger.log('This problem is not interactive. Use :CP {run,panel}.', vim.log.levels.ERROR)
+    logger.log('This problem is not interactive. Use :CP {run,panel}.', { level = vim.log.levels.ERROR })
     return
   end
 
@@ -103,7 +103,7 @@ function M.toggle_interactive(interactor_cmd)
 
     local binary = state.get_binary_file()
     if not binary or binary == '' then
-      logger.log('No binary produced.', vim.log.levels.ERROR)
+      logger.log('No binary produced.', { level = vim.log.levels.ERROR })
       restore_session()
       return
     end
@@ -117,7 +117,7 @@ function M.toggle_interactive(interactor_cmd)
       if vim.fn.executable(interactor) ~= 1 then
         logger.log(
           ("Interactor '%s' is not executable."):format(interactor_cmd),
-          vim.log.levels.ERROR
+          { level = vim.log.levels.ERROR }
         )
         restore_session()
         return
@@ -354,7 +354,7 @@ function M.ensure_io_view()
   if not platform or not contest_id or not problem_id then
     logger.log(
       'No platform/contest/problem configured. Use :CP <platform> <contest> [...] first.',
-      vim.log.levels.ERROR
+      { level = vim.log.levels.ERROR }
     )
     return
   end
@@ -383,7 +383,7 @@ function M.ensure_io_view()
     and contest_data.index_map
     and contest_data.problems[contest_data.index_map[problem_id]].interactive
   then
-    logger.log('This problem is not interactive. Use :CP {run,panel}.', vim.log.levels.ERROR)
+    logger.log('This problem is not interactive. Use :CP {run,panel}.', { level = vim.log.levels.ERROR })
     return
   end
 
@@ -594,12 +594,12 @@ end
 
 function M.run_io_view(test_indices_arg, debug, mode)
   if io_view_running then
-    logger.log('Tests already running', vim.log.levels.WARN)
+    logger.log('Tests already running', { level = vim.log.levels.WARN })
     return
   end
   io_view_running = true
 
-  logger.log(('%s tests...'):format(debug and 'Debugging' or 'Running'), vim.log.levels.INFO, true)
+  logger.log(('%s tests...'):format(debug and 'Debugging' or 'Running'), { level = vim.log.levels.INFO, override = true })
 
   mode = mode or 'combined'
 
@@ -608,7 +608,7 @@ function M.run_io_view(test_indices_arg, debug, mode)
   if not platform or not contest_id or not problem_id then
     logger.log(
       'No platform/contest/problem configured. Use :CP <platform> <contest> [...] first.',
-      vim.log.levels.ERROR
+      { level = vim.log.levels.ERROR }
     )
     io_view_running = false
     return
@@ -617,7 +617,7 @@ function M.run_io_view(test_indices_arg, debug, mode)
   cache.load()
   local contest_data = cache.get_contest_data(platform, contest_id)
   if not contest_data or not contest_data.index_map then
-    logger.log('No test cases available.', vim.log.levels.ERROR)
+    logger.log('No test cases available.', { level = vim.log.levels.ERROR })
     io_view_running = false
     return
   end
@@ -634,13 +634,13 @@ function M.run_io_view(test_indices_arg, debug, mode)
   if mode == 'combined' then
     local combined = cache.get_combined_test(platform, contest_id, problem_id)
     if not combined then
-      logger.log('No combined test available', vim.log.levels.ERROR)
+      logger.log('No combined test available', { level = vim.log.levels.ERROR })
       io_view_running = false
       return
     end
   else
     if not run.load_test_cases() then
-      logger.log('No test cases available', vim.log.levels.ERROR)
+      logger.log('No test cases available', { level = vim.log.levels.ERROR })
       io_view_running = false
       return
     end
@@ -660,7 +660,7 @@ function M.run_io_view(test_indices_arg, debug, mode)
               idx,
               #test_state.test_cases
             ),
-            vim.log.levels.WARN
+            { level = vim.log.levels.WARN }
           )
           io_view_running = false
           return
@@ -721,7 +721,7 @@ function M.run_io_view(test_indices_arg, debug, mode)
     if mode == 'combined' then
       local combined = cache.get_combined_test(platform, contest_id, problem_id)
       if not combined then
-        logger.log('No combined test found', vim.log.levels.ERROR)
+        logger.log('No combined test found', { level = vim.log.levels.ERROR })
         io_view_running = false
         return
       end
@@ -730,7 +730,7 @@ function M.run_io_view(test_indices_arg, debug, mode)
 
       run.run_combined_test(debug, function(result)
         if not result then
-          logger.log('Failed to run combined test', vim.log.levels.ERROR)
+          logger.log('Failed to run combined test', { level = vim.log.levels.ERROR })
           io_view_running = false
           return
         end
@@ -771,7 +771,7 @@ function M.toggle_panel(panel_opts)
   end
 
   if state.get_active_panel() then
-    logger.log('another panel is already active', vim.log.levels.ERROR)
+    logger.log('another panel is already active', { level = vim.log.levels.ERROR })
     return
   end
 
@@ -780,7 +780,7 @@ function M.toggle_panel(panel_opts)
   if not platform or not contest_id then
     logger.log(
       'No platform/contest configured. Use :CP <platform> <contest> [...] first.',
-      vim.log.levels.ERROR
+      { level = vim.log.levels.ERROR }
     )
     return
   end
@@ -792,7 +792,7 @@ function M.toggle_panel(panel_opts)
     and contest_data.index_map
     and contest_data.problems[contest_data.index_map[state.get_problem_id()]].interactive
   then
-    logger.log('This is an interactive problem. Use :CP interact instead.', vim.log.levels.WARN)
+    logger.log('This is an interactive problem. Use :CP interact instead.', { level = vim.log.levels.WARN })
     return
   end
 
@@ -803,7 +803,7 @@ function M.toggle_panel(panel_opts)
   logger.log(('run panel: checking test cases for %s'):format(input_file or 'none'))
 
   if not run.load_test_cases() then
-    logger.log('no test cases found', vim.log.levels.WARN)
+    logger.log('no test cases found', { level = vim.log.levels.WARN })
     return
   end
 

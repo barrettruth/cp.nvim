@@ -11,7 +11,7 @@ function M.restore_from_current_file()
   local current_file = (vim.uv.fs_realpath(vim.fn.expand('%:p')) or vim.fn.expand('%:p'))
   local file_state = cache.get_file_state(current_file)
   if not file_state then
-    logger.log('No cached state found for current file.', vim.log.levels.ERROR)
+    logger.log('No cached state found for current file.', { level = vim.log.levels.ERROR })
     return false
   end
 
