@@ -44,6 +44,10 @@ local function run_scraper(platform, subcommand, args, opts)
     return { success = false, error = msg }
   end
 
+  if subcommand == 'submit' then
+    utils.setup_nix_submit_env()
+  end
+
   local plugin_path = utils.get_plugin_path()
   local cmd
   if subcommand == 'submit' then
