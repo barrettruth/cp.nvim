@@ -477,9 +477,15 @@ function M.navigate_problem(direction, language)
 
   logger.log(('navigate_problem: %s -> %s'):format(current_problem_id, problems[new_index].id))
 
+  local views = require('cp.ui.views')
+  views.cancel_io_view()
   local active_panel = state.get_active_panel()
   if active_panel == 'run' then
-    require('cp.ui.views').disable()
+    views.disable()
+  elseif active_panel == 'interactive' then
+    views.cancel_interactive()
+  elseif active_panel == 'stress' then
+    require('cp.stress').cancel()
   end
 
   local lang = nil
