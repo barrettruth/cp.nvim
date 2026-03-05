@@ -9,6 +9,7 @@ import httpx
 from curl_cffi import requests as curl_requests
 
 from .base import BaseScraper, extract_precision
+from .timeouts import HTTP_TIMEOUT
 from .models import (
     ContestListResult,
     ContestSummary,
@@ -26,7 +27,6 @@ PROBLEM_URL = "https://www.codechef.com/problems/{problem_id}"
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 }
-TIMEOUT_S = 15.0
 CONNECTIONS = 8
 MEMORY_LIMIT_RE = re.compile(
     r"Memory\s+[Ll]imit.*?([0-9.]+)\s*(MB|GB)", re.IGNORECASE | re.DOTALL
@@ -34,7 +34,7 @@ MEMORY_LIMIT_RE = re.compile(
 
 
 async def fetch_json(client: httpx.AsyncClient, path: str) -> dict:
-    r = await client.get(BASE_URL + path, headers=HEADERS, timeout=TIMEOUT_S)
+    r = await client.get(BASE_URL + path, headers=HEADERS, timeout=HTTP_TIMEOUT)
     r.raise_for_status()
     return r.json()
 
@@ -51,7 +51,7 @@ def _extract_memory_limit(html: str) -> float:
 
 
 def _fetch_html_sync(url: str) -> str:
-    response = curl_requests.get(url, impersonate="chrome", timeout=TIMEOUT_S)
+    response = curl_requests.get(url, impersonate="chrome", timeout=HTTP_TIMEOUT)
     response.raise_for_status()
     return response.text
 

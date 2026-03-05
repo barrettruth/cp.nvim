@@ -29,11 +29,18 @@ from .models import (
     TestCase,
     TestsResult,
 )
+from .timeouts import (
+    BROWSER_ELEMENT_WAIT,
+    BROWSER_NAV_TIMEOUT,
+    BROWSER_SESSION_TIMEOUT,
+    BROWSER_SETTLE_DELAY,
+    BROWSER_TURNSTILE_POLL,
+    HTTP_TIMEOUT,
+)
 
 MIB_TO_MB = 1.048576
 BASE_URL = "https://atcoder.jp"
 ARCHIVE_URL = f"{BASE_URL}/contests/archive"
-TIMEOUT_SECONDS = 30
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
 }
@@ -76,7 +83,7 @@ def _retry_after_requests(details):
     on_backoff=_retry_after_requests,
 )
 def _fetch(url: str) -> str:
-    r = _session.get(url, headers=HEADERS, timeout=TIMEOUT_SECONDS)
+    r = _session.get(url, headers=HEADERS, timeout=HTTP_TIMEOUT)
     if r.status_code in RETRY_STATUS:
         raise requests.HTTPError(response=r)
     r.raise_for_status()
@@ -99,7 +106,7 @@ def _giveup_httpx(exc: Exception) -> bool:
     giveup=_giveup_httpx,
 )
 async def _get_async(client: httpx.AsyncClient, url: str) -> str:
-    r = await client.get(url, headers=HEADERS, timeout=TIMEOUT_SECONDS)
+    r = await client.get(url, headers=HEADERS, timeout=HTTP_TIMEOUT)
     r.raise_for_status()
     return r.text
 
@@ -239,14 +246,14 @@ _TURNSTILE_JS = "() => { const el = document.querySelector('[name=\"cf-turnstile
 
 
 def _solve_turnstile(page) -> None:
+    if page.evaluate(_TURNSTILE_JS):
+        return
+    iframe_loc = page.locator('iframe[src*="challenges.cloudflare.com"]')
+    if not iframe_loc.count():
+        return
     for _ in range(6):
-        has_token = page.evaluate(_TURNSTILE_JS)
-        if has_token:
-            return
         try:
-            box = page.locator(
-                'iframe[src*="challenges.cloudflare.com"]'
-            ).first.bounding_box()
+            box = iframe_loc.first.bounding_box()
             if box:
                 page.mouse.click(
                     box["x"] + box["width"] * 0.15,
@@ -255,7 +262,7 @@ def _solve_turnstile(page) -> None:
         except Exception:
             pass
         try:
-            page.wait_for_function(_TURNSTILE_JS, timeout=5000)
+            page.wait_for_function(_TURNSTILE_JS, timeout=BROWSER_TURNSTILE_POLL)
             return
         except Exception:
             pass
@@ -331,7 +338,9 @@ def _submit_headless(
             page.fill('input[name="username"]', credentials.get("username", ""))
             page.fill('input[name="password"]', credentials.get("password", ""))
             page.click("#submit")
-            page.wait_for_url(lambda url: "/login" not in url, timeout=60000)
+            page.wait_for_url(
+                lambda url: "/login" not in url, timeout=BROWSER_NAV_TIMEOUT
+            )
         except Exception as e:
             login_error = str(e)
 
@@ -345,7 +354,7 @@ def _submit_headless(
             )
             page.locator(
                 f'select[name="data.LanguageId"] option[value="{language_id}"]'
-            ).wait_for(state="attached", timeout=15000)
+            ).wait_for(state="attached", timeout=BROWSER_ELEMENT_WAIT)
             page.select_option('select[name="data.LanguageId"]', language_id)
             with tempfile.NamedTemporaryFile(
                 mode="w", suffix=".cpp", delete=False, prefix="atcoder_"
@@ -354,18 +363,20 @@ def _submit_headless(
                 tmp_path = tf.name
             try:
                 page.set_input_files("#input-open-file", tmp_path)
-                page.wait_for_timeout(500)
+                page.wait_for_timeout(BROWSER_SETTLE_DELAY)
             finally:
                 os.unlink(tmp_path)
             page.locator('button[type="submit"]').click()
-            page.wait_for_url(lambda url: "/submissions/me" in url, timeout=60000)
+            page.wait_for_url(
+                lambda url: "/submissions/me" in url, timeout=BROWSER_NAV_TIMEOUT
+            )
         except Exception as e:
             submit_error = str(e)
 
     try:
         with StealthySession(
             headless=True,
-            timeout=60000,
+            timeout=BROWSER_SESSION_TIMEOUT,
             google_search=False,
             cookies=saved_cookies,
         ) as session:
