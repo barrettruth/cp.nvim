@@ -83,8 +83,6 @@ local function parse_command(args)
       else
         return { type = 'action', action = 'interact' }
       end
-    elseif first == 'login' or first == 'logout' then
-      return { type = 'action', action = first, platform = args[2] }
     elseif first == 'stress' then
       return {
         type = 'action',
@@ -245,6 +243,9 @@ local function parse_command(args)
         message = 'Too few arguments - specify a contest.',
       }
     elseif #args == 2 then
+      if args[2] == 'login' or args[2] == 'logout' then
+        return { type = 'action', action = args[2], platform = first }
+      end
       return {
         type = 'contest_setup',
         platform = first,
@@ -287,7 +288,7 @@ function M.handle_command(opts)
   local cmd = parse_command(opts.fargs)
 
   if cmd.type == 'error' then
-    logger.log(cmd.message, vim.log.levels.ERROR)
+    logger.log(cmd.message, { level = vim.log.levels.ERROR })
     return
   end
 
@@ -336,7 +337,7 @@ function M.handle_command(opts)
     local problem_id = cmd.problem_id
 
     if not (platform and contest_id) then
-      logger.log('No contest is currently active.', vim.log.levels.ERROR)
+      logger.log('No contest is currently active.', { level = vim.log.levels.ERROR })
       return
     end
 
@@ -351,7 +352,7 @@ function M.handle_command(opts)
           contest_id,
           problem_id
         ),
-        vim.log.levels.ERROR
+        { level = vim.log.levels.ERROR }
       )
       return
     end

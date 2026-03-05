@@ -53,7 +53,7 @@ class BaseScraper(ABC):
         self,
         contest_id: str,
         problem_id: str,
-        source_code: str,
+        file_path: str,
         language_id: str,
         credentials: dict[str, str],
     ) -> SubmitResult: ...
@@ -114,14 +114,13 @@ class BaseScraper(ABC):
                 return 0 if result.success else 1
 
             case "submit":
-                if len(args) != 5:
+                if len(args) != 6:
                     print(
                         self._submit_error(
-                            "Usage: <platform> submit <contest_id> <problem_id> <language_id>"
+                            "Usage: <platform> submit <contest_id> <problem_id> <language_id> <file_path>"
                         ).model_dump_json()
                     )
                     return 1
-                source_code = sys.stdin.read()
                 creds_raw = os.environ.get("CP_CREDENTIALS", "{}")
                 try:
                     credentials = json.loads(creds_raw)
@@ -129,7 +128,7 @@ class BaseScraper(ABC):
                     credentials = {}
                 language_id = get_language_id(self.platform_name, args[4]) or args[4]
                 result = await self.submit(
-                    args[2], args[3], source_code, language_id, credentials
+                    args[2], args[3], args[5], language_id, credentials
                 )
                 print(result.model_dump_json())
                 return 0 if result.success else 1

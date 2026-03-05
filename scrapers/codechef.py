@@ -33,7 +33,7 @@ MEMORY_LIMIT_RE = re.compile(
 )
 
 
-async def fetch_json(client: httpx.AsyncClient, path: str) -> dict:
+async def fetch_json(client: httpx.AsyncClient, path: str) -> dict[str, Any]:
     r = await client.get(BASE_URL + path, headers=HEADERS, timeout=HTTP_TIMEOUT)
     r.raise_for_status()
     return r.json()
@@ -256,7 +256,7 @@ class CodeChefScraper(BaseScraper):
         self,
         contest_id: str,
         problem_id: str,
-        source_code: str,
+        file_path: str,
         language_id: str,
         credentials: dict[str, str],
     ) -> SubmitResult:

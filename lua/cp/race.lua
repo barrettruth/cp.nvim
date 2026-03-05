@@ -22,15 +22,15 @@ end
 
 function M.start(platform, contest_id, language)
   if not platform or not vim.tbl_contains(constants.PLATFORMS, platform) then
-    logger.log('Invalid platform', vim.log.levels.ERROR)
+    logger.log('Invalid platform', { level = vim.log.levels.ERROR })
     return
   end
   if not contest_id or contest_id == '' then
-    logger.log('Contest ID required', vim.log.levels.ERROR)
+    logger.log('Contest ID required', { level = vim.log.levels.ERROR })
     return
   end
   if race_state.timer then
-    logger.log('Race already active. Use :CP race stop first.', vim.log.levels.WARN)
+    logger.log('Race already active. Use :CP race stop first.', { level = vim.log.levels.WARN })
     return
   end
 
@@ -38,7 +38,7 @@ function M.start(platform, contest_id, language)
   local start_time = cache.get_contest_start_time(platform, contest_id)
 
   if not start_time then
-    logger.log('Fetching contest list...', vim.log.levels.INFO, true)
+    logger.log('Fetching contest list...', { level = vim.log.levels.INFO, override = true })
     local contests = scraper.scrape_contest_list(platform)
     if contests and #contests > 0 then
       cache.set_contest_summaries(platform, contests)
@@ -52,14 +52,17 @@ function M.start(platform, contest_id, language)
         constants.PLATFORM_DISPLAY_NAMES[platform] or platform,
         contest_id
       ),
-      vim.log.levels.ERROR
+      { level = vim.log.levels.ERROR }
     )
     return
   end
 
   local remaining = start_time - os.time()
   if remaining <= 0 then
-    logger.log('Contest has already started, setting up...', vim.log.levels.INFO, true)
+    logger.log(
+      'Contest has already started, setting up...',
+      { level = vim.log.levels.INFO, override = true }
+    )
     require('cp.setup').setup_contest(platform, contest_id, nil, language)
     return
   end
@@ -75,8 +78,7 @@ function M.start(platform, contest_id, language)
       contest_id,
       format_countdown(remaining)
     ),
-    vim.log.levels.INFO,
-    true
+    { level = vim.log.levels.INFO, override = true }
   )
 
   local timer = vim.uv.new_timer()
@@ -97,7 +99,7 @@ function M.start(platform, contest_id, language)
         race_state.contest_id = nil
         race_state.language = nil
         race_state.start_time = nil
-        logger.log('Contest started!', vim.log.levels.INFO, true)
+        logger.log('Contest started!', { level = vim.log.levels.INFO, override = true })
         require('cp.setup').setup_contest(p, c, nil, l)
       else
         vim.notify(
@@ -116,7 +118,7 @@ end
 function M.stop()
   local timer = race_state.timer
   if not timer then
-    logger.log('No active race', vim.log.levels.WARN)
+    logger.log('No active race', { level = vim.log.levels.WARN })
     return
   end
   timer:stop()
@@ -126,7 +128,7 @@ function M.stop()
   race_state.contest_id = nil
   race_state.language = nil
   race_state.start_time = nil
-  logger.log('Race cancelled', vim.log.levels.INFO, true)
+  logger.log('Race cancelled', { level = vim.log.levels.INFO, override = true })
 end
 
 function M.status()

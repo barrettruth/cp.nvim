@@ -73,8 +73,11 @@ def _parse_results_page(html: str) -> dict[str, list[tuple[str, str]]]:
     for part in parts:
         heading_m = DIVISION_HEADING_RE.search(part)
         if heading_m:
-            current_div = heading_m.group(3).lower()
-            sections.setdefault(current_div, [])
+            div = heading_m.group(3)
+            if div:
+                key = div.lower()
+                current_div = key
+                sections.setdefault(key, [])
             continue
         if current_div is not None:
             for m in PROBLEM_BLOCK_RE.finditer(part):
@@ -285,7 +288,7 @@ class USACOScraper(BaseScraper):
         self,
         contest_id: str,
         problem_id: str,
-        source_code: str,
+        file_path: str,
         language_id: str,
         credentials: dict[str, str],
     ) -> SubmitResult:

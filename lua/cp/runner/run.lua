@@ -245,7 +245,7 @@ function M.load_test_cases()
     state.get_problem_id()
   )
 
-  logger.log(('Loaded %d test case(s)'):format(#tcs), vim.log.levels.INFO)
+  logger.log(('Loaded %d test case(s)'):format(#tcs), { level = vim.log.levels.INFO })
   return #tcs > 0
 end
 
@@ -259,7 +259,7 @@ function M.run_combined_test(debug, on_complete)
   )
 
   if not combined then
-    logger.log('No combined test found', vim.log.levels.ERROR)
+    logger.log('No combined test found', { level = vim.log.levels.ERROR })
     on_complete(nil)
     return
   end
@@ -330,8 +330,7 @@ function M.run_all_test_cases(indices, debug, on_each, on_done)
   if #to_run == 0 then
     logger.log(
       ('Finished %s %d test cases.'):format(debug and 'debugging' or 'running', 0),
-      vim.log.levels.INFO,
-      true
+      { level = vim.log.levels.INFO, override = true }
     )
     on_done(panel_state.test_cases)
     return
@@ -349,8 +348,7 @@ function M.run_all_test_cases(indices, debug, on_each, on_done)
       if remaining == 0 then
         logger.log(
           ('Finished %s %d test cases.'):format(debug and 'debugging' or 'running', total),
-          vim.log.levels.INFO,
-          true
+          { level = vim.log.levels.INFO, override = true }
         )
         on_done(panel_state.test_cases)
       end

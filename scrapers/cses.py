@@ -357,10 +357,13 @@ class CSESScraper(BaseScraper):
         self,
         contest_id: str,
         problem_id: str,
-        source_code: str,
+        file_path: str,
         language_id: str,
         credentials: dict[str, str],
     ) -> SubmitResult:
+        from pathlib import Path
+
+        source_code = Path(file_path).read_text()
         username = credentials.get("username", "")
         password = credentials.get("password", "")
         if not username or not password:

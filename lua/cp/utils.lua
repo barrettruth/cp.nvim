@@ -152,7 +152,10 @@ local function discover_nix_submit_cmd()
     :wait()
 
   if result.code ~= 0 then
-    logger.log('nix build #submitEnv failed: ' .. (result.stderr or ''), vim.log.levels.WARN)
+    logger.log(
+      'nix build #submitEnv failed: ' .. (result.stderr or ''),
+      { level = vim.log.levels.WARN }
+    )
     return false
   end
 
@@ -160,7 +163,7 @@ local function discover_nix_submit_cmd()
   local submit_cmd = store_path .. '/bin/cp-nvim-submit'
 
   if vim.fn.executable(submit_cmd) ~= 1 then
-    logger.log('nix submit cmd not executable at ' .. submit_cmd, vim.log.levels.WARN)
+    logger.log('nix submit cmd not executable at ' .. submit_cmd, { level = vim.log.levels.WARN })
     return false
   end
 
@@ -216,7 +219,10 @@ local function discover_nix_python()
     :wait()
 
   if result.code ~= 0 then
-    logger.log('nix build #pythonEnv failed: ' .. (result.stderr or ''), vim.log.levels.WARN)
+    logger.log(
+      'nix build #pythonEnv failed: ' .. (result.stderr or ''),
+      { level = vim.log.levels.WARN }
+    )
     return false
   end
 
@@ -224,7 +230,7 @@ local function discover_nix_python()
   local python_path = store_path .. '/bin/python3'
 
   if vim.fn.executable(python_path) ~= 1 then
-    logger.log('nix python not executable at ' .. python_path, vim.log.levels.WARN)
+    logger.log('nix python not executable at ' .. python_path, { level = vim.log.levels.WARN })
     return false
   end
 
@@ -270,7 +276,7 @@ function M.setup_python_env()
     if result.code ~= 0 then
       logger.log(
         'Failed to setup Python environment: ' .. (result.stderr or ''),
-        vim.log.levels.ERROR
+        { level = vim.log.levels.ERROR }
       )
       return false
     end
@@ -292,7 +298,7 @@ function M.setup_python_env()
 
   logger.log(
     'No Python environment available. Install uv (https://docs.astral.sh/uv/) or use nix.',
-    vim.log.levels.WARN
+    { level = vim.log.levels.WARN }
   )
   return false
 end

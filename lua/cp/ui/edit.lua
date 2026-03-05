@@ -90,7 +90,7 @@ local function delete_current_test()
     return
   end
   if #edit_state.test_buffers == 1 then
-    logger.log('Problems must have at least one test case.', vim.log.levels.ERROR)
+    logger.log('Problems must have at least one test case.', { level = vim.log.levels.ERROR })
     return
   end
 
@@ -311,7 +311,10 @@ setup_keybindings = function(buf)
         end
 
         if is_tracked then
-          logger.log('Test buffer closed unexpectedly. Exiting editor.', vim.log.levels.WARN)
+          logger.log(
+            'Test buffer closed unexpectedly. Exiting editor.',
+            { level = vim.log.levels.WARN }
+          )
           M.toggle_edit()
         end
       end)
@@ -368,7 +371,10 @@ function M.toggle_edit(test_index)
     state.get_platform(), state.get_contest_id(), state.get_problem_id()
 
   if not platform or not contest_id or not problem_id then
-    logger.log('No problem context. Run :CP <platform> <contest> first.', vim.log.levels.ERROR)
+    logger.log(
+      'No problem context. Run :CP <platform> <contest> first.',
+      { level = vim.log.levels.ERROR }
+    )
     return
   end
 
@@ -376,7 +382,7 @@ function M.toggle_edit(test_index)
   local test_cases = cache.get_test_cases(platform, contest_id, problem_id)
 
   if not test_cases or #test_cases == 0 then
-    logger.log('No test cases available for editing.', vim.log.levels.ERROR)
+    logger.log('No test cases available for editing.', { level = vim.log.levels.ERROR })
     return
   end
 
@@ -389,7 +395,7 @@ function M.toggle_edit(test_index)
   if target_index < 1 or target_index > #test_cases then
     logger.log(
       ('Test %d does not exist (only %d tests available)'):format(target_index, #test_cases),
-      vim.log.levels.ERROR
+      { level = vim.log.levels.ERROR }
     )
     return
   end

@@ -16,7 +16,7 @@ local function syshandle(result)
   end
 
   local msg = 'Failed to parse scraper output: ' .. tostring(data)
-  logger.log(msg, vim.log.levels.ERROR)
+  logger.log(msg, { level = vim.log.levels.ERROR })
   return { success = false, error = msg }
 end
 
@@ -37,7 +37,7 @@ end
 local function run_scraper(platform, subcommand, args, opts)
   if not utils.setup_python_env() then
     local msg = 'no Python environment available (install uv or nix)'
-    logger.log(msg, vim.log.levels.ERROR)
+    logger.log(msg, { level = vim.log.levels.ERROR })
     if opts and opts.on_exit then
       opts.on_exit({ success = false, error = msg })
     end
@@ -125,7 +125,7 @@ local function run_scraper(platform, subcommand, args, opts)
       if stdin_pipe and not stdin_pipe:is_closing() then
         stdin_pipe:close()
       end
-      logger.log('Failed to start scraper process', vim.log.levels.ERROR)
+      logger.log('Failed to start scraper process', { level = vim.log.levels.ERROR })
       return { success = false, error = 'spawn failed' }
     end
 
@@ -221,7 +221,7 @@ function M.scrape_contest_metadata(platform, contest_id, callback)
             constants.PLATFORM_DISPLAY_NAMES[platform],
             contest_id
           ),
-          vim.log.levels.ERROR
+          { level = vim.log.levels.ERROR }
         )
         return
       end
@@ -232,7 +232,7 @@ function M.scrape_contest_metadata(platform, contest_id, callback)
             constants.PLATFORM_DISPLAY_NAMES[platform],
             contest_id
           ),
-          vim.log.levels.ERROR
+          { level = vim.log.levels.ERROR }
         )
         return
       end
@@ -251,7 +251,7 @@ function M.scrape_contest_list(platform)
         platform,
         (result and result.error) or 'unknown'
       ),
-      vim.log.levels.ERROR
+      { level = vim.log.levels.ERROR }
     )
     return {}
   end
@@ -261,9 +261,15 @@ end
 ---@param platform string
 ---@param contest_id string
 ---@param callback fun(data: table)|nil
-function M.scrape_all_tests(platform, contest_id, callback)
+---@param on_done fun()|nil
+function M.scrape_all_tests(platform, contest_id, callback, on_done)
   run_scraper(platform, 'tests', { contest_id }, {
     ndjson = true,
+    on_exit = function()
+      if type(on_done) == 'function' then
+        vim.schedule(on_done)
+      end
+    end,
     on_event = function(ev)
       if ev.done then
         return
@@ -275,7 +281,7 @@ function M.scrape_all_tests(platform, contest_id, callback)
             contest_id,
             ev.error
           ),
-          vim.log.levels.WARN
+          { level = vim.log.levels.WARN }
         )
         return
       end
@@ -316,15 +322,14 @@ function M.submit(
   contest_id,
   problem_id,
   language,
-  source_code,
+  source_file,
   credentials,
   on_status,
   callback
 )
   local done = false
-  run_scraper(platform, 'submit', { contest_id, problem_id, language }, {
+  run_scraper(platform, 'submit', { contest_id, problem_id, language, source_file }, {
     ndjson = true,
-    stdin = source_code,
     env_extra = { CP_CREDENTIALS = vim.json.encode(credentials) },
     on_event = function(ev)
       if ev.credentials ~= nil then

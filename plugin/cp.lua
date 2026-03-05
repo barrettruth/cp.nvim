@@ -43,7 +43,6 @@ end, {
       vim.list_extend(candidates, platforms)
       table.insert(candidates, 'cache')
       table.insert(candidates, 'pick')
-
       if platform and contest_id then
         vim.list_extend(candidates, actions)
         local cache = require('cp.cache')
@@ -60,10 +59,11 @@ end, {
       return filter_candidates(candidates)
     elseif num_args == 3 then
       if vim.tbl_contains(platforms, args[2]) then
+        local candidates = { 'login', 'logout' }
         local cache = require('cp.cache')
         cache.load()
-        local contests = cache.get_cached_contest_ids(args[2])
-        return filter_candidates(contests)
+        vim.list_extend(candidates, cache.get_cached_contest_ids(args[2]))
+        return filter_candidates(candidates)
       elseif args[2] == 'cache' then
         return filter_candidates({ 'clear', 'read' })
       elseif args[2] == 'stress' or args[2] == 'interact' then
@@ -103,8 +103,6 @@ end, {
           end
         end
         return filter_candidates(candidates)
-      elseif args[2] == 'login' or args[2] == 'logout' then
-        return filter_candidates(platforms)
       elseif args[2] == 'race' then
         local candidates = { 'stop' }
         vim.list_extend(candidates, platforms)

@@ -21,6 +21,7 @@ from .models import (
 from .timeouts import (
     BROWSER_NAV_TIMEOUT,
     BROWSER_SESSION_TIMEOUT,
+    BROWSER_SUBMIT_NAV_TIMEOUT,
     HTTP_TIMEOUT,
 )
 
@@ -289,7 +290,7 @@ class CodeforcesScraper(BaseScraper):
         self,
         contest_id: str,
         problem_id: str,
-        source_code: str,
+        file_path: str,
         language_id: str,
         credentials: dict[str, str],
     ) -> SubmitResult:
@@ -297,7 +298,7 @@ class CodeforcesScraper(BaseScraper):
             _submit_headless,
             contest_id,
             problem_id,
-            source_code,
+            file_path,
             language_id,
             credentials,
         )
@@ -306,12 +307,14 @@ class CodeforcesScraper(BaseScraper):
 def _submit_headless(
     contest_id: str,
     problem_id: str,
-    source_code: str,
+    file_path: str,
     language_id: str,
     credentials: dict[str, str],
     _retried: bool = False,
 ) -> SubmitResult:
     from pathlib import Path
+
+    source_code = Path(file_path).read_text()
 
     try:
         from scrapling.fetchers import StealthySession  # type: ignore[import-untyped,unresolved-import]
@@ -379,12 +382,22 @@ def _submit_headless(
                 problem_id.upper(),
             )
             page.select_option('select[name="programTypeId"]', language_id)
-            page.fill('textarea[name="source"]', source_code)
+            page.evaluate(
+                """(code) => {
+                    const cm = document.querySelector('.CodeMirror');
+                    if (cm && cm.CodeMirror) {
+                        cm.CodeMirror.setValue(code);
+                    }
+                    const ta = document.querySelector('textarea[name="source"]');
+                    if (ta) ta.value = code;
+                }""",
+                source_code,
+            )
             page.locator("form.submit-form input.submit").click(no_wait_after=True)
             try:
                 page.wait_for_url(
                     lambda url: "/my" in url or "/status" in url,
-                    timeout=BROWSER_NAV_TIMEOUT * 2,
+                    timeout=BROWSER_SUBMIT_NAV_TIMEOUT["codeforces"],
                 )
             except Exception:
                 err_el = page.query_selector("span.error")
@@ -441,7 +454,7 @@ def _submit_headless(
             return _submit_headless(
                 contest_id,
                 problem_id,
-                source_code,
+                file_path,
                 language_id,
                 credentials,
                 _retried=True,
