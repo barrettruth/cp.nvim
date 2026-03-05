@@ -11,6 +11,7 @@ local actions = constants.ACTIONS
 ---@field type string
 ---@field error string?
 ---@field action? string
+---@field requires_context? boolean
 ---@field message? string
 ---@field contest? string
 ---@field platform? string
@@ -71,7 +72,7 @@ local function parse_command(args)
       end
     elseif first == 'race' then
       if args[2] == 'stop' then
-        return { type = 'action', action = 'race_stop' }
+        return { type = 'action', action = 'race_stop', requires_context = false }
       end
       if not args[2] or not args[3] then
         return {
@@ -86,6 +87,7 @@ local function parse_command(args)
       return {
         type = 'action',
         action = 'race',
+        requires_context = false,
         platform = args[2],
         contest = args[3],
         language = language,
@@ -93,14 +95,15 @@ local function parse_command(args)
     elseif first == 'interact' then
       local inter = args[2]
       if inter and inter ~= '' then
-        return { type = 'action', action = 'interact', interactor_cmd = inter }
+        return { type = 'action', action = 'interact', requires_context = true, interactor_cmd = inter }
       else
-        return { type = 'action', action = 'interact' }
+        return { type = 'action', action = 'interact', requires_context = true }
       end
     elseif first == 'stress' then
       return {
         type = 'action',
         action = 'stress',
+        requires_context = true,
         generator_cmd = args[2],
         brute_cmd = args[3],
       }
@@ -119,7 +122,7 @@ local function parse_command(args)
         end
         test_index = idx
       end
-      return { type = 'action', action = 'edit', test_index = test_index }
+      return { type = 'action', action = 'edit', requires_context = true, test_index = test_index }
     elseif first == 'run' or first == 'panel' then
       local debug = false
       local test_indices = nil
@@ -232,10 +235,22 @@ local function parse_command(args)
       return {
         type = 'action',
         action = first,
+        requires_context = true,
         test_indices = test_indices,
         debug = debug,
         mode = mode,
       }
+    elseif first == 'pick' then
+      local language = nil
+      if #args >= 3 and args[2] == '--lang' then
+        language = args[3]
+      elseif #args >= 2 and args[2] ~= nil and args[2]:sub(1, 2) ~= '--' then
+        return {
+          type = 'error',
+          message = ("Unknown argument '%s' for action '%s'"):format(args[2], first),
+        }
+      end
+      return { type = 'action', action = 'pick', requires_context = false, language = language }
     else
       local language = nil
       if #args >= 3 and args[2] == '--lang' then
@@ -246,7 +261,7 @@ local function parse_command(args)
           message = ("Unknown argument '%s' for action '%s'"):format(args[2], first),
         }
       end
-      return { type = 'action', action = first, language = language }
+      return { type = 'action', action = first, requires_context = true, language = language }
     end
   end
 
@@ -258,7 +273,7 @@ local function parse_command(args)
       }
     elseif #args == 2 then
       if args[2] == 'login' or args[2] == 'logout' then
-        return { type = 'action', action = args[2], platform = first }
+        return { type = 'action', action = args[2], requires_context = false, platform = first }
       end
       local contest = args[2]
       if first == 'codeforces' then
@@ -318,9 +333,7 @@ function M.handle_command(opts)
     local restore = require('cp.restore')
     restore.restore_from_current_file()
   elseif cmd.type == 'action' then
-    local CONTEST_ACTIONS =
-      { 'run', 'panel', 'edit', 'interact', 'stress', 'submit', 'next', 'prev', 'pick' }
-    if vim.tbl_contains(CONTEST_ACTIONS, cmd.action) and not state.get_platform() then
+    if cmd.requires_context and not state.get_platform() then
       local restore = require('cp.restore')
       if not restore.restore_from_current_file() then
         return
