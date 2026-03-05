@@ -64,6 +64,12 @@ class TestsResult(ScrapingResult):
     model_config = ConfigDict(extra="forbid")
 
 
+class LoginResult(ScrapingResult):
+    credentials: dict[str, str] = Field(default_factory=dict)
+
+    model_config = ConfigDict(extra="forbid")
+
+
 class SubmitResult(ScrapingResult):
     submission_id: str = ""
     verdict: str = ""
