@@ -550,7 +550,7 @@ def _submit_headless(
 
             try:
                 browser_cookies = session.context.cookies()
-                if any(c["name"] == "JSESSIONID" for c in browser_cookies):
+                if browser_cookies:
                     cookie_cache.write_text(json.dumps(browser_cookies))
             except Exception:
                 pass
