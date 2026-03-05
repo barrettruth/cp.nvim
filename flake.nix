@@ -26,6 +26,20 @@
           ps.requests
         ]);
 
+      mkDevPythonEnv =
+        pkgs:
+        pkgs.python312.withPackages (ps: [
+          ps.backoff
+          ps.beautifulsoup4
+          ps.curl-cffi
+          ps.httpx
+          ps.ndjson
+          ps.pydantic
+          ps.requests
+          ps.pytest
+          ps.pytest-mock
+        ]);
+
       mkSubmitEnv =
         pkgs:
         pkgs.buildFHSEnv {
@@ -44,19 +58,24 @@
               glib
               gtk3
               libdrm
-              libGL
               libxkbcommon
               mesa
+              libGL
               nspr
               nss
               pango
-              xorg.libX11
-              xorg.libXcomposite
-              xorg.libXdamage
-              xorg.libXext
-              xorg.libXfixes
-              xorg.libXrandr
-              xorg.libxcb
+              libx11
+              libxcomposite
+              libxdamage
+              libxext
+              libxfixes
+              libxrandr
+              libxcb
+              at-spi2-core
+              expat
+              libgbm
+              systemdLibs
+              zlib
             ];
           runScript = "${pkgs.uv}/bin/uv";
         };
@@ -100,15 +119,19 @@
         submitEnv = mkSubmitEnv (pkgsFor system);
       });
 
+      formatter = eachSystem (system: (pkgsFor system).nixfmt-tree);
+
       devShells = eachSystem (system: {
         default = (pkgsFor system).mkShell {
           packages = with (pkgsFor system); [
             uv
-            python312
+            (mkDevPythonEnv (pkgsFor system))
             prettier
+            ruff
             stylua
             selene
             lua-language-server
+            ty
           ];
         };
       });

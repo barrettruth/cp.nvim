@@ -7,7 +7,7 @@ requires-python = ">=3.11"
 dependencies = [
     "backoff>=2.2.1",
     "beautifulsoup4>=4.13.5",
-    "camoufox[geoip]",
+    "scrapling[fetchers]>=0.4",
     "curl-cffi>=0.13.0",
     "httpx>=0.28.1",
     "ndjson>=0.3.1",

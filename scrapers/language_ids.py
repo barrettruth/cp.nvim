@@ -1,7 +1,7 @@
 LANGUAGE_IDS = {
     "atcoder": {
-        "cpp": "5028",
-        "python": "5078",
+        "cpp": "6017",
+        "python": "6082",
     },
     "codeforces": {
         "cpp": "89",

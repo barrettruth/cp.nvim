@@ -235,7 +235,7 @@ def _extract_samples(html: str) -> list[TestCase]:
     return cases
 
 
-_TURNSTILE_JS = '() => { const el = document.querySelector(\'[name="cf-turnstile-response"]\'); return el && el.value.length > 0; }'
+_TURNSTILE_JS = "() => { const el = document.querySelector('[name=\"cf-turnstile-response\"]'); return el && el.value.length > 0; }"
 
 
 def _solve_turnstile(page) -> None:
@@ -358,9 +358,7 @@ def _submit_headless(
             finally:
                 os.unlink(tmp_path)
             page.locator('button[type="submit"]').click()
-            page.wait_for_url(
-                lambda url: "/submissions/me" in url, timeout=60000
-            )
+            page.wait_for_url(lambda url: "/submissions/me" in url, timeout=60000)
         except Exception as e:
             submit_error = str(e)
 
@@ -561,7 +559,12 @@ class AtcoderScraper(BaseScraper):
         credentials: dict[str, str],
     ) -> SubmitResult:
         return await asyncio.to_thread(
-            _submit_headless, contest_id, problem_id, source_code, language_id, credentials
+            _submit_headless,
+            contest_id,
+            problem_id,
+            source_code,
+            language_id,
+            credentials,
         )
 
 

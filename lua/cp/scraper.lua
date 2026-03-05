@@ -278,7 +278,16 @@ function M.scrape_all_tests(platform, contest_id, callback)
   })
 end
 
-function M.submit(platform, contest_id, problem_id, language, source_code, credentials, on_status, callback)
+function M.submit(
+  platform,
+  contest_id,
+  problem_id,
+  language,
+  source_code,
+  credentials,
+  on_status,
+  callback
+)
   local done = false
   run_scraper(platform, 'submit', { contest_id, problem_id, language }, {
     ndjson = true,
@@ -286,15 +295,22 @@ function M.submit(platform, contest_id, problem_id, language, source_code, crede
     env_extra = { CP_CREDENTIALS = vim.json.encode(credentials) },
     on_event = function(ev)
       if ev.status ~= nil then
-        if type(on_status) == 'function' then on_status(ev.status) end
+        if type(on_status) == 'function' then
+          on_status(ev.status)
+        end
       elseif ev.success ~= nil then
         done = true
-        if type(callback) == 'function' then callback(ev) end
+        if type(callback) == 'function' then
+          callback(ev)
+        end
       end
     end,
     on_exit = function(proc)
       if not done and type(callback) == 'function' then
-        callback({ success = false, error = 'submit process exited (code=' .. tostring(proc.code) .. ')' })
+        callback({
+          success = false,
+          error = 'submit process exited (code=' .. tostring(proc.code) .. ')',
+        })
       end
     end,
   })
