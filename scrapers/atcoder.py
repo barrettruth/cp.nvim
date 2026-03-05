@@ -264,7 +264,7 @@ def _solve_turnstile(page) -> None:
 
 def _ensure_browser() -> None:
     try:
-        from patchright._impl._driver import compute_driver_executable
+        from patchright._impl._driver import compute_driver_executable  # type: ignore[import-untyped,unresolved-import]
 
         node, cli = compute_driver_executable()
         browser_info = subprocess.run(
@@ -296,7 +296,7 @@ def _submit_headless(
     from pathlib import Path
 
     try:
-        from scrapling.fetchers import StealthySession
+        from scrapling.fetchers import StealthySession  # type: ignore[import-untyped,unresolved-import]
     except ImportError:
         return SubmitResult(
             success=False,
