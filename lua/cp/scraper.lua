@@ -316,15 +316,14 @@ function M.submit(
   contest_id,
   problem_id,
   language,
-  source_code,
+  source_file,
   credentials,
   on_status,
   callback
 )
   local done = false
-  run_scraper(platform, 'submit', { contest_id, problem_id, language }, {
+  run_scraper(platform, 'submit', { contest_id, problem_id, language, source_file }, {
     ndjson = true,
-    stdin = source_code,
     env_extra = { CP_CREDENTIALS = vim.json.encode(credentials) },
     on_event = function(ev)
       if ev.credentials ~= nil then

@@ -289,7 +289,7 @@ class CodeforcesScraper(BaseScraper):
         self,
         contest_id: str,
         problem_id: str,
-        source_code: str,
+        file_path: str,
         language_id: str,
         credentials: dict[str, str],
     ) -> SubmitResult:
@@ -297,7 +297,7 @@ class CodeforcesScraper(BaseScraper):
             _submit_headless,
             contest_id,
             problem_id,
-            source_code,
+            file_path,
             language_id,
             credentials,
         )
@@ -306,12 +306,14 @@ class CodeforcesScraper(BaseScraper):
 def _submit_headless(
     contest_id: str,
     problem_id: str,
-    source_code: str,
+    file_path: str,
     language_id: str,
     credentials: dict[str, str],
     _retried: bool = False,
 ) -> SubmitResult:
     from pathlib import Path
+
+    source_code = Path(file_path).read_text()
 
     try:
         from scrapling.fetchers import StealthySession  # type: ignore[import-untyped,unresolved-import]
@@ -451,7 +453,7 @@ def _submit_headless(
             return _submit_headless(
                 contest_id,
                 problem_id,
-                source_code,
+                file_path,
                 language_id,
                 credentials,
                 _retried=True,

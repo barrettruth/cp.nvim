@@ -37,11 +37,6 @@ from .timeouts import (
     HTTP_TIMEOUT,
 )
 
-_LANGUAGE_ID_EXTENSION = {
-    "6017": "cc",
-    "6082": "py",
-}
-
 MIB_TO_MB = 1.048576
 BASE_URL = "https://atcoder.jp"
 ARCHIVE_URL = f"{BASE_URL}/contests/archive"
@@ -297,7 +292,7 @@ def _ensure_browser() -> None:
 def _submit_headless(
     contest_id: str,
     problem_id: str,
-    source_code: str,
+    file_path: str,
     language_id: str,
     credentials: dict[str, str],
     _retried: bool = False,
@@ -362,15 +357,7 @@ def _submit_headless(
                 f'select[name="data.LanguageId"] option[value="{language_id}"]'
             ).wait_for(state="attached", timeout=BROWSER_ELEMENT_WAIT)
             page.select_option('select[name="data.LanguageId"]', language_id)
-            ext = _LANGUAGE_ID_EXTENSION.get(language_id, "txt")
-            page.set_input_files(
-                "#input-open-file",
-                {
-                    "name": f"solution.{ext}",
-                    "mimeType": "text/plain",
-                    "buffer": source_code.encode(),
-                },
-            )
+            page.set_input_files("#input-open-file", file_path)
             page.wait_for_timeout(BROWSER_SETTLE_DELAY)
             page.locator('button[type="submit"]').click()
             page.wait_for_url(
@@ -423,7 +410,7 @@ def _submit_headless(
             return _submit_headless(
                 contest_id,
                 problem_id,
-                source_code,
+                file_path,
                 language_id,
                 credentials,
                 _retried=True,
@@ -581,7 +568,7 @@ class AtcoderScraper(BaseScraper):
         self,
         contest_id: str,
         problem_id: str,
-        source_code: str,
+        file_path: str,
         language_id: str,
         credentials: dict[str, str],
     ) -> SubmitResult:
@@ -589,7 +576,7 @@ class AtcoderScraper(BaseScraper):
             _submit_headless,
             contest_id,
             problem_id,
-            source_code,
+            file_path,
             language_id,
             credentials,
         )
@@ -651,15 +638,14 @@ async def main_async() -> int:
         return 0 if contest_result.success else 1
 
     if mode == "submit":
-        if len(sys.argv) != 5:
+        if len(sys.argv) != 6:
             print(
                 SubmitResult(
                     success=False,
-                    error="Usage: atcoder.py submit <contest_id> <problem_id> <language>",
+                    error="Usage: atcoder.py submit <contest_id> <problem_id> <language> <file_path>",
                 ).model_dump_json()
             )
             return 1
-        source_code = sys.stdin.read()
         creds_raw = os.environ.get("CP_CREDENTIALS", "{}")
         try:
             credentials = json.loads(creds_raw)
@@ -667,7 +653,7 @@ async def main_async() -> int:
             credentials = {}
         language_id = get_language_id("atcoder", sys.argv[4]) or sys.argv[4]
         submit_result = await scraper.submit(
-            sys.argv[2], sys.argv[3], source_code, language_id, credentials
+            sys.argv[2], sys.argv[3], sys.argv[5], language_id, credentials
         )
         print(submit_result.model_dump_json())
         return 0 if submit_result.success else 1

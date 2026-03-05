@@ -53,9 +53,7 @@ function M.submit(opts)
   end
 
   prompt_credentials(platform, function(creds)
-    local source_lines = vim.fn.readfile(source_file)
-    local source_code = table.concat(source_lines, '\n')
-
+    vim.cmd.update()
     vim.notify('[cp.nvim] Submitting...', vim.log.levels.INFO)
 
     require('cp.scraper').submit(
@@ -63,7 +61,7 @@ function M.submit(opts)
       contest_id,
       problem_id,
       language,
-      source_code,
+      source_file,
       creds,
       function(ev)
         vim.schedule(function()
