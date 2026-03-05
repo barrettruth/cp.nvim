@@ -21,6 +21,7 @@ from .models import (
 from .timeouts import (
     BROWSER_NAV_TIMEOUT,
     BROWSER_SESSION_TIMEOUT,
+    BROWSER_SUBMIT_NAV_TIMEOUT,
     HTTP_TIMEOUT,
 )
 
@@ -396,7 +397,7 @@ def _submit_headless(
             try:
                 page.wait_for_url(
                     lambda url: "/my" in url or "/status" in url,
-                    timeout=BROWSER_NAV_TIMEOUT * 2,
+                    timeout=BROWSER_SUBMIT_NAV_TIMEOUT,
                 )
             except Exception:
                 err_el = page.query_selector("span.error")
