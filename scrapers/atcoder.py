@@ -7,6 +7,7 @@ import re
 import subprocess
 import sys
 import time
+from pathlib import Path
 from typing import Any
 
 import backoff
@@ -22,6 +23,7 @@ from .models import (
     CombinedTest,
     ContestListResult,
     ContestSummary,
+    LoginResult,
     MetadataResult,
     ProblemSummary,
     SubmitResult,
@@ -295,6 +297,93 @@ def _ensure_browser() -> None:
             break
 
 
+def _login_headless(credentials: dict[str, str]) -> LoginResult:
+    try:
+        from scrapling.fetchers import StealthySession  # type: ignore[import-untyped,unresolved-import]
+    except ImportError:
+        return LoginResult(
+            success=False,
+            error="scrapling is required for AtCoder login. Install it: uv add 'scrapling[fetchers]>=0.4'",
+        )
+
+    _ensure_browser()
+
+    cookie_cache = Path.home() / ".cache" / "cp-nvim" / "atcoder-cookies.json"
+    cookie_cache.parent.mkdir(parents=True, exist_ok=True)
+    saved_cookies: list[dict[str, Any]] = []
+    if cookie_cache.exists():
+        try:
+            saved_cookies = json.loads(cookie_cache.read_text())
+        except Exception:
+            pass
+
+    logged_in = False
+    login_error: str | None = None
+
+    def check_login(page):
+        nonlocal logged_in
+        logged_in = page.evaluate(
+            "() => Array.from(document.querySelectorAll('a')).some(a => a.textContent.trim() === 'Sign Out')"
+        )
+
+    def login_action(page):
+        nonlocal login_error
+        try:
+            _solve_turnstile(page)
+            page.fill('input[name="username"]', credentials.get("username", ""))
+            page.fill('input[name="password"]', credentials.get("password", ""))
+            page.click("#submit")
+            page.wait_for_url(
+                lambda url: "/login" not in url, timeout=BROWSER_NAV_TIMEOUT
+            )
+        except Exception as e:
+            login_error = str(e)
+
+    try:
+        with StealthySession(
+            headless=True,
+            timeout=BROWSER_SESSION_TIMEOUT,
+            google_search=False,
+            cookies=saved_cookies if saved_cookies else [],
+        ) as session:
+            if saved_cookies:
+                print(json.dumps({"status": "checking_login"}), flush=True)
+                session.fetch(
+                    f"{BASE_URL}/home", page_action=check_login, network_idle=True
+                )
+
+            if not logged_in:
+                print(json.dumps({"status": "logging_in"}), flush=True)
+                session.fetch(
+                    f"{BASE_URL}/login",
+                    page_action=login_action,
+                    solve_cloudflare=True,
+                )
+                if login_error:
+                    return LoginResult(
+                        success=False, error=f"Login failed: {login_error}"
+                    )
+
+                session.fetch(
+                    f"{BASE_URL}/home", page_action=check_login, network_idle=True
+                )
+                if not logged_in:
+                    return LoginResult(
+                        success=False, error="Login failed (bad credentials?)"
+                    )
+
+            try:
+                browser_cookies = session.context.cookies()
+                if any(c["name"] == "REVEL_SESSION" for c in browser_cookies):
+                    cookie_cache.write_text(json.dumps(browser_cookies))
+            except Exception:
+                pass
+
+        return LoginResult(success=True, error="")
+    except Exception as e:
+        return LoginResult(success=False, error=str(e))
+
+
 def _submit_headless(
     contest_id: str,
     problem_id: str,
@@ -303,8 +392,6 @@ def _submit_headless(
     credentials: dict[str, str],
     _retried: bool = False,
 ) -> "SubmitResult":
-    from pathlib import Path
-
     try:
         from scrapling.fetchers import StealthySession  # type: ignore[import-untyped,unresolved-import]
     except ImportError:
@@ -587,6 +674,11 @@ class AtcoderScraper(BaseScraper):
             language_id,
             credentials,
         )
+
+    async def login(self, credentials: dict[str, str]) -> LoginResult:
+        if not credentials.get("username") or not credentials.get("password"):
+            return self._login_error("Missing username or password")
+        return await asyncio.to_thread(_login_headless, credentials)
 
 
 async def main_async() -> int:
