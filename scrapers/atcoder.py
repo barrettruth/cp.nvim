@@ -246,14 +246,14 @@ _TURNSTILE_JS = "() => { const el = document.querySelector('[name=\"cf-turnstile
 
 
 def _solve_turnstile(page) -> None:
+    if page.evaluate(_TURNSTILE_JS):
+        return
+    iframe_loc = page.locator('iframe[src*="challenges.cloudflare.com"]')
+    if not iframe_loc.count():
+        return
     for _ in range(6):
-        has_token = page.evaluate(_TURNSTILE_JS)
-        if has_token:
-            return
         try:
-            box = page.locator(
-                'iframe[src*="challenges.cloudflare.com"]'
-            ).first.bounding_box()
+            box = iframe_loc.first.bounding_box()
             if box:
                 page.mouse.click(
                     box["x"] + box["width"] * 0.15,
