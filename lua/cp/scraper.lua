@@ -92,6 +92,10 @@ local function run_scraper(platform, subcommand, args, opts)
       env = spawn_env_list(env),
       cwd = plugin_path,
     }, function(code, signal)
+      if timer and not timer:is_closing() then
+        timer:stop()
+        timer:close()
+      end
       if buf ~= '' and opts.on_event then
         local ok_tail, ev_tail = pcall(vim.json.decode, buf)
         if ok_tail then
@@ -122,6 +126,31 @@ local function run_scraper(platform, subcommand, args, opts)
       end
       logger.log('Failed to start scraper process', vim.log.levels.ERROR)
       return { success = false, error = 'spawn failed' }
+    end
+
+    local timer = nil
+    if subcommand == 'submit' then
+      timer = uv.new_timer()
+      timer:start(120000, 0, function()
+        timer:stop()
+        timer:close()
+        if stdin_pipe and not stdin_pipe:is_closing() then
+          stdin_pipe:close()
+        end
+        if not stdout:is_closing() then
+          stdout:close()
+        end
+        if not stderr:is_closing() then
+          stderr:close()
+        end
+        if handle and not handle:is_closing() then
+          handle:kill(15)
+          handle:close()
+        end
+        if opts.on_exit then
+          opts.on_exit({ success = false, error = 'submit timed out' })
+        end
+      end)
     end
 
     if stdin_pipe then
