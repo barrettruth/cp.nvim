@@ -16,7 +16,10 @@ local function apply_template(bufnr, lang_id, platform)
   end
   local path = vim.fn.expand(eff.template)
   if vim.fn.filereadable(path) ~= 1 then
-    logger.log(('[cp.nvim] template not readable: %s'):format(path), { level = vim.log.levels.WARN })
+    logger.log(
+      ('[cp.nvim] template not readable: %s'):format(path),
+      { level = vim.log.levels.WARN }
+    )
     return
   end
   local lines = vim.fn.readfile(path)
@@ -117,7 +120,10 @@ local function start_tests(platform, contest_id, problems)
     scraper.scrape_all_tests(platform, contest_id, function(ev)
       local cached_tests = {}
       if not ev.interactive and vim.tbl_isempty(ev.tests) then
-        logger.log(("No tests found for problem '%s'."):format(ev.problem_id), { level = vim.log.levels.WARN })
+        logger.log(
+          ("No tests found for problem '%s'."):format(ev.problem_id),
+          { level = vim.log.levels.WARN }
+        )
       end
       for i, t in ipairs(ev.tests) do
         cached_tests[i] = { index = i, input = t.input, expected = t.expected }
@@ -144,7 +150,10 @@ local function start_tests(platform, contest_id, problems)
         end
       end
     end, function()
-      logger.log(('Loaded %d test%s.'):format(to_fetch, to_fetch == 1 and '' or 's'), { level = vim.log.levels.INFO, override = true })
+      logger.log(
+        ('Loaded %d test%s.'):format(to_fetch, to_fetch == 1 and '' or 's'),
+        { level = vim.log.levels.INFO, override = true }
+      )
     end)
   end
 end
@@ -280,10 +289,20 @@ function M.setup_problem(problem_id, language)
 
   if vim.fn.filereadable(source_file) == 1 then
     local existing = cache.get_file_state(vim.fn.fnamemodify(source_file, ':p'))
-    if existing and (existing.platform ~= platform or existing.contest_id ~= (state.get_contest_id() or '') or existing.problem_id ~= problem_id) then
+    if
+      existing
+      and (
+        existing.platform ~= platform
+        or existing.contest_id ~= (state.get_contest_id() or '')
+        or existing.problem_id ~= problem_id
+      )
+    then
       logger.log(
         ('File %q already exists for %s/%s %s.'):format(
-          source_file, existing.platform, existing.contest_id, existing.problem_id
+          source_file,
+          existing.platform,
+          existing.contest_id,
+          existing.problem_id
         ),
         { level = vim.log.levels.ERROR }
       )

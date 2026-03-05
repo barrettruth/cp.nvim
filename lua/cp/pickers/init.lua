@@ -43,13 +43,19 @@ function M.get_platform_contests(platform, refresh)
 
   if refresh or vim.tbl_isempty(picker_contests) then
     local display_name = constants.PLATFORM_DISPLAY_NAMES[platform]
-    logger.log(('Fetching %s contests...'):format(display_name), { level = vim.log.levels.INFO, override = true, sync = true })
+    logger.log(
+      ('Fetching %s contests...'):format(display_name),
+      { level = vim.log.levels.INFO, override = true, sync = true }
+    )
 
     local contests = scraper.scrape_contest_list(platform)
     cache.set_contest_summaries(platform, contests)
     picker_contests = cache.get_contest_summaries(platform)
 
-    logger.log(('Fetched %d %s contests.'):format(#picker_contests, display_name), { level = vim.log.levels.INFO, override = true })
+    logger.log(
+      ('Fetched %d %s contests.'):format(#picker_contests, display_name),
+      { level = vim.log.levels.INFO, override = true }
+    )
   end
 
   return picker_contests

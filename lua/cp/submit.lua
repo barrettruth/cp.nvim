@@ -42,7 +42,10 @@ function M.submit(opts)
   local problem_id = state.get_problem_id()
   local language = (opts and opts.language) or state.get_language()
   if not platform or not contest_id or not problem_id or not language then
-    logger.log('No active problem. Use :CP <platform> <contest> first.', { level = vim.log.levels.ERROR })
+    logger.log(
+      'No active problem. Use :CP <platform> <contest> first.',
+      { level = vim.log.levels.ERROR }
+    )
     return
   end
 

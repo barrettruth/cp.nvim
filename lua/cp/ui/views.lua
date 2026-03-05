@@ -74,7 +74,10 @@ function M.toggle_interactive(interactor_cmd)
     and contest_data.index_map
     and not contest_data.problems[contest_data.index_map[problem_id]].interactive
   then
-    logger.log('This problem is not interactive. Use :CP {run,panel}.', { level = vim.log.levels.ERROR })
+    logger.log(
+      'This problem is not interactive. Use :CP {run,panel}.',
+      { level = vim.log.levels.ERROR }
+    )
     return
   end
 
@@ -383,7 +386,10 @@ function M.ensure_io_view()
     and contest_data.index_map
     and contest_data.problems[contest_data.index_map[problem_id]].interactive
   then
-    logger.log('This problem is not interactive. Use :CP {run,panel}.', { level = vim.log.levels.ERROR })
+    logger.log(
+      'This problem is not interactive. Use :CP {run,panel}.',
+      { level = vim.log.levels.ERROR }
+    )
     return
   end
 
@@ -599,7 +605,10 @@ function M.run_io_view(test_indices_arg, debug, mode)
   end
   io_view_running = true
 
-  logger.log(('%s tests...'):format(debug and 'Debugging' or 'Running'), { level = vim.log.levels.INFO, override = true })
+  logger.log(
+    ('%s tests...'):format(debug and 'Debugging' or 'Running'),
+    { level = vim.log.levels.INFO, override = true }
+  )
 
   mode = mode or 'combined'
 
@@ -792,7 +801,10 @@ function M.toggle_panel(panel_opts)
     and contest_data.index_map
     and contest_data.problems[contest_data.index_map[state.get_problem_id()]].interactive
   then
-    logger.log('This is an interactive problem. Use :CP interact instead.', { level = vim.log.levels.WARN })
+    logger.log(
+      'This is an interactive problem. Use :CP interact instead.',
+      { level = vim.log.levels.WARN }
+    )
     return
   end
 

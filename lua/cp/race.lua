@@ -59,7 +59,10 @@ function M.start(platform, contest_id, language)
 
   local remaining = start_time - os.time()
   if remaining <= 0 then
-    logger.log('Contest has already started, setting up...', { level = vim.log.levels.INFO, override = true })
+    logger.log(
+      'Contest has already started, setting up...',
+      { level = vim.log.levels.INFO, override = true }
+    )
     require('cp.setup').setup_contest(platform, contest_id, nil, language)
     return
   end

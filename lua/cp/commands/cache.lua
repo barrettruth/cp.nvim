@@ -50,7 +50,10 @@ function M.handle_cache_command(cmd)
           { level = vim.log.levels.INFO, override = true }
         )
       else
-        logger.log(("Unknown platform '%s'."):format(cmd.platform), { level = vim.log.levels.ERROR })
+        logger.log(
+          ("Unknown platform '%s'."):format(cmd.platform),
+          { level = vim.log.levels.ERROR }
+        )
       end
     elseif cmd.platform then
       if vim.tbl_contains(platforms, cmd.platform) then
@@ -60,7 +63,10 @@ function M.handle_cache_command(cmd)
           { level = vim.log.levels.INFO, override = true }
         )
       else
-        logger.log(("Unknown platform '%s'."):format(cmd.platform), { level = vim.log.levels.ERROR })
+        logger.log(
+          ("Unknown platform '%s'."):format(cmd.platform),
+          { level = vim.log.levels.ERROR }
+        )
       end
     else
       cache.clear_all()

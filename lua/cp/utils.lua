@@ -152,7 +152,10 @@ local function discover_nix_submit_cmd()
     :wait()
 
   if result.code ~= 0 then
-    logger.log('nix build #submitEnv failed: ' .. (result.stderr or ''), { level = vim.log.levels.WARN })
+    logger.log(
+      'nix build #submitEnv failed: ' .. (result.stderr or ''),
+      { level = vim.log.levels.WARN }
+    )
     return false
   end
 
@@ -216,7 +219,10 @@ local function discover_nix_python()
     :wait()
 
   if result.code ~= 0 then
-    logger.log('nix build #pythonEnv failed: ' .. (result.stderr or ''), { level = vim.log.levels.WARN })
+    logger.log(
+      'nix build #pythonEnv failed: ' .. (result.stderr or ''),
+      { level = vim.log.levels.WARN }
+    )
     return false
   end
 

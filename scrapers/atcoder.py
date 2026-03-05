@@ -367,7 +367,8 @@ def _submit_headless(
             page.wait_for_timeout(BROWSER_SETTLE_DELAY)
             page.locator('button[type="submit"]').click()
             page.wait_for_url(
-                lambda url: "/submissions/me" in url, timeout=BROWSER_SUBMIT_NAV_TIMEOUT["atcoder"]
+                lambda url: "/submissions/me" in url,
+                timeout=BROWSER_SUBMIT_NAV_TIMEOUT["atcoder"],
             )
         except Exception as e:
             submit_error = str(e)

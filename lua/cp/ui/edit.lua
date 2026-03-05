@@ -311,7 +311,10 @@ setup_keybindings = function(buf)
         end
 
         if is_tracked then
-          logger.log('Test buffer closed unexpectedly. Exiting editor.', { level = vim.log.levels.WARN })
+          logger.log(
+            'Test buffer closed unexpectedly. Exiting editor.',
+            { level = vim.log.levels.WARN }
+          )
           M.toggle_edit()
         end
       end)
@@ -368,7 +371,10 @@ function M.toggle_edit(test_index)
     state.get_platform(), state.get_contest_id(), state.get_problem_id()
 
   if not platform or not contest_id or not problem_id then
-    logger.log('No problem context. Run :CP <platform> <contest> first.', { level = vim.log.levels.ERROR })
+    logger.log(
+      'No problem context. Run :CP <platform> <contest> first.',
+      { level = vim.log.levels.ERROR }
+    )
     return
   end
 
