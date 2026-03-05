@@ -44,7 +44,9 @@ end, {
       table.insert(candidates, 'cache')
       table.insert(candidates, 'pick')
       if platform and contest_id then
-        vim.list_extend(candidates, actions)
+        vim.list_extend(candidates, vim.tbl_filter(function(a)
+          return a ~= 'pick' and a ~= 'cache'
+        end, actions))
         local cache = require('cp.cache')
         cache.load()
         local contest_data = cache.get_contest_data(platform, contest_id)
