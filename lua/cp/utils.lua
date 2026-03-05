@@ -3,6 +3,7 @@ local M = {}
 local logger = require('cp.log')
 
 local _nix_python = nil
+local _nix_submit_cmd = nil
 local _nix_discovered = false
 
 local uname = vim.uv.os_uname()
@@ -111,7 +112,83 @@ function M.get_python_cmd(module, plugin_path)
   return { 'uv', 'run', '--directory', plugin_path, '-m', 'scrapers.' .. module }
 end
 
+---@param module string
+---@param plugin_path string
+---@return string[]
+function M.get_python_submit_cmd(module, plugin_path)
+  if _nix_submit_cmd then
+    return { _nix_submit_cmd, 'run', '--directory', plugin_path, '-m', 'scrapers.' .. module }
+  end
+  return { 'uv', 'run', '--directory', plugin_path, '-m', 'scrapers.' .. module }
+end
+
 local python_env_setup = false
+local _nix_submit_attempted = false
+
+---@return boolean
+local function discover_nix_submit_cmd()
+  local cache_dir = vim.fn.stdpath('cache') .. '/cp-nvim'
+  local cache_file = cache_dir .. '/nix-submit'
+
+  local f = io.open(cache_file, 'r')
+  if f then
+    local cached = f:read('*l')
+    f:close()
+    if cached and vim.fn.executable(cached) == 1 then
+      _nix_submit_cmd = cached
+      return true
+    end
+  end
+
+  local plugin_path = M.get_plugin_path()
+  vim.cmd.redraw()
+  vim.notify('Building submit environment...', vim.log.levels.INFO)
+  vim.cmd.redraw()
+  local result = vim
+    .system(
+      { 'nix', 'build', plugin_path .. '#submitEnv', '--no-link', '--print-out-paths' },
+      { text = true }
+    )
+    :wait()
+
+  if result.code ~= 0 then
+    logger.log('nix build #submitEnv failed: ' .. (result.stderr or ''), vim.log.levels.WARN)
+    return false
+  end
+
+  local store_path = result.stdout:gsub('%s+$', '')
+  local submit_cmd = store_path .. '/bin/cp-nvim-submit'
+
+  if vim.fn.executable(submit_cmd) ~= 1 then
+    logger.log('nix submit cmd not executable at ' .. submit_cmd, vim.log.levels.WARN)
+    return false
+  end
+
+  vim.fn.mkdir(cache_dir, 'p')
+  f = io.open(cache_file, 'w')
+  if f then
+    f:write(submit_cmd)
+    f:close()
+  end
+
+  _nix_submit_cmd = submit_cmd
+  return true
+end
+
+---@return boolean
+function M.setup_nix_submit_env()
+  if _nix_submit_cmd then
+    return true
+  end
+  if _nix_submit_attempted then
+    return false
+  end
+  _nix_submit_attempted = true
+  if vim.fn.executable('nix') == 1 then
+    return discover_nix_submit_cmd()
+  end
+  return false
+end
 
 ---@return boolean
 local function discover_nix_python()

@@ -7,8 +7,13 @@
     "globals": ["vim"]
   },
   "workspace": {
-    "library": ["$VIMRUNTIME/lua", "${3rd}/luv/library", "${3rd}/busted/library"],
-    "checkThirdParty": false
+    "library": [
+      "$VIMRUNTIME/lua",
+      "${3rd}/luv/library",
+      "${3rd}/busted/library"
+    ],
+    "checkThirdParty": false,
+    "ignoreDir": [".direnv"]
   },
   "completion": {
     "callSnippet": "Replace"

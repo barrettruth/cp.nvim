@@ -44,8 +44,17 @@ local function run_scraper(platform, subcommand, args, opts)
     return { success = false, error = msg }
   end
 
+  if subcommand == 'submit' then
+    utils.setup_nix_submit_env()
+  end
+
   local plugin_path = utils.get_plugin_path()
-  local cmd = utils.get_python_cmd(platform, plugin_path)
+  local cmd
+  if subcommand == 'submit' then
+    cmd = utils.get_python_submit_cmd(platform, plugin_path)
+  else
+    cmd = utils.get_python_cmd(platform, plugin_path)
+  end
   vim.list_extend(cmd, { subcommand })
   vim.list_extend(cmd, args)
 
@@ -62,8 +71,16 @@ local function run_scraper(platform, subcommand, args, opts)
     end
   end
 
+  if subcommand == 'submit' and utils.is_nix_build() then
+    env.UV_PROJECT_ENVIRONMENT = vim.fn.stdpath('cache') .. '/cp-nvim/submit-env'
+  end
+
   if opts and opts.ndjson then
     local uv = vim.uv
+    local stdin_pipe = nil
+    if opts.stdin then
+      stdin_pipe = uv.new_pipe(false)
+    end
     local stdout = uv.new_pipe(false)
     local stderr = uv.new_pipe(false)
     local buf = ''
@@ -71,7 +88,7 @@ local function run_scraper(platform, subcommand, args, opts)
     local handle
     handle = uv.spawn(cmd[1], {
       args = vim.list_slice(cmd, 2),
-      stdio = { nil, stdout, stderr },
+      stdio = { stdin_pipe, stdout, stderr },
       env = spawn_env_list(env),
       cwd = plugin_path,
     }, function(code, signal)
@@ -85,6 +102,9 @@ local function run_scraper(platform, subcommand, args, opts)
       if opts.on_exit then
         opts.on_exit({ success = (code == 0), code = code, signal = signal })
       end
+      if stdin_pipe and not stdin_pipe:is_closing() then
+        stdin_pipe:close()
+      end
       if not stdout:is_closing() then
         stdout:close()
       end
@@ -97,8 +117,19 @@ local function run_scraper(platform, subcommand, args, opts)
     end)
 
     if not handle then
+      if stdin_pipe and not stdin_pipe:is_closing() then
+        stdin_pipe:close()
+      end
       logger.log('Failed to start scraper process', vim.log.levels.ERROR)
       return { success = false, error = 'spawn failed' }
+    end
+
+    if stdin_pipe then
+      uv.write(stdin_pipe, opts.stdin, function()
+        uv.shutdown(stdin_pipe, function()
+          stdin_pipe:close()
+        end)
+      end)
     end
 
     uv.read_start(stdout, function(_, data)
@@ -131,7 +162,12 @@ local function run_scraper(platform, subcommand, args, opts)
     return
   end
 
-  local sysopts = { text = true, timeout = 30000, env = env, cwd = plugin_path }
+  local sysopts = {
+    text = true,
+    timeout = (subcommand == 'submit') and 120000 or 30000,
+    env = env,
+    cwd = plugin_path,
+  }
   if opts and opts.stdin then
     sysopts.stdin = opts.stdin
   end
@@ -246,18 +282,39 @@ function M.scrape_all_tests(platform, contest_id, callback)
   })
 end
 
-function M.submit(platform, contest_id, problem_id, language, source_code, credentials, callback)
-  local creds_json = vim.json.encode(credentials)
+function M.submit(
+  platform,
+  contest_id,
+  problem_id,
+  language,
+  source_code,
+  credentials,
+  on_status,
+  callback
+)
+  local done = false
   run_scraper(platform, 'submit', { contest_id, problem_id, language }, {
+    ndjson = true,
     stdin = source_code,
-    env_extra = { CP_CREDENTIALS = creds_json },
-    on_exit = function(result)
-      if type(callback) == 'function' then
-        if result and result.success then
-          callback(result.data or { success = true })
-        else
-          callback({ success = false, error = result and result.error or 'unknown' })
+    env_extra = { CP_CREDENTIALS = vim.json.encode(credentials) },
+    on_event = function(ev)
+      if ev.status ~= nil then
+        if type(on_status) == 'function' then
+          on_status(ev.status)
         end
+      elseif ev.success ~= nil then
+        done = true
+        if type(callback) == 'function' then
+          callback(ev)
+        end
+      end
+    end,
+    on_exit = function(proc)
+      if not done and type(callback) == 'function' then
+        callback({
+          success = false,
+          error = 'submit process exited (code=' .. tostring(proc.code) .. ')',
+        })
       end
     end,
   })
