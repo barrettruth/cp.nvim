@@ -182,6 +182,12 @@ function M.setup_contest(platform, contest_id, problem_id, language)
   cache.load()
 
   local function proceed(contest_data)
+    if is_new_contest then
+      local io_state = state.get_io_view_state()
+      if io_state and io_state.output_buf and vim.api.nvim_buf_is_valid(io_state.output_buf) then
+        require('cp.utils').update_buffer_content(io_state.output_buf, {}, nil, nil)
+      end
+    end
     local problems = contest_data.problems
     local pid = problem_id and problem_id or problems[1].id
     M.setup_problem(pid, language)
