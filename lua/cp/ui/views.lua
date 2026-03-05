@@ -14,7 +14,7 @@ local utils = require('cp.utils')
 
 local current_diff_layout = nil
 local current_mode = nil
-local io_view_running = false
+local _run_gen = 0
 
 function M.disable()
   local active_panel = state.get_active_panel()
@@ -599,11 +599,8 @@ local function render_io_view_results(io_state, test_indices, mode, combined_res
 end
 
 function M.run_io_view(test_indices_arg, debug, mode)
-  if io_view_running then
-    logger.log('Tests already running', { level = vim.log.levels.WARN })
-    return
-  end
-  io_view_running = true
+  _run_gen = _run_gen + 1
+  local gen = _run_gen
 
   logger.log(
     ('%s tests...'):format(debug and 'Debugging' or 'Running'),
@@ -619,7 +616,6 @@ function M.run_io_view(test_indices_arg, debug, mode)
       'No platform/contest/problem configured. Use :CP <platform> <contest> [...] first.',
       { level = vim.log.levels.ERROR }
     )
-    io_view_running = false
     return
   end
 
@@ -627,7 +623,6 @@ function M.run_io_view(test_indices_arg, debug, mode)
   local contest_data = cache.get_contest_data(platform, contest_id)
   if not contest_data or not contest_data.index_map then
     logger.log('No test cases available.', { level = vim.log.levels.ERROR })
-    io_view_running = false
     return
   end
 
@@ -644,13 +639,11 @@ function M.run_io_view(test_indices_arg, debug, mode)
     local combined = cache.get_combined_test(platform, contest_id, problem_id)
     if not combined then
       logger.log('No combined test available', { level = vim.log.levels.ERROR })
-      io_view_running = false
       return
     end
   else
     if not run.load_test_cases() then
       logger.log('No test cases available', { level = vim.log.levels.ERROR })
-      io_view_running = false
       return
     end
   end
@@ -671,7 +664,6 @@ function M.run_io_view(test_indices_arg, debug, mode)
             ),
             { level = vim.log.levels.WARN }
           )
-          io_view_running = false
           return
         end
       end
@@ -689,7 +681,6 @@ function M.run_io_view(test_indices_arg, debug, mode)
 
   local io_state = state.get_io_view_state()
   if not io_state then
-    io_view_running = false
     return
   end
 
@@ -702,8 +693,10 @@ function M.run_io_view(test_indices_arg, debug, mode)
   local execute = require('cp.runner.execute')
 
   execute.compile_problem(debug, function(compile_result)
+    if gen ~= _run_gen then
+      return
+    end
     if not vim.api.nvim_buf_is_valid(io_state.output_buf) then
-      io_view_running = false
       return
     end
 
@@ -723,7 +716,6 @@ function M.run_io_view(test_indices_arg, debug, mode)
 
       local ns = vim.api.nvim_create_namespace('cp_io_view_compile_error')
       utils.update_buffer_content(io_state.output_buf, lines, highlights, ns)
-      io_view_running = false
       return
     end
 
@@ -731,33 +723,53 @@ function M.run_io_view(test_indices_arg, debug, mode)
       local combined = cache.get_combined_test(platform, contest_id, problem_id)
       if not combined then
         logger.log('No combined test found', { level = vim.log.levels.ERROR })
-        io_view_running = false
         return
       end
 
       run.load_test_cases()
 
       run.run_combined_test(debug, function(result)
+        if gen ~= _run_gen then
+          return
+        end
         if not result then
           logger.log('Failed to run combined test', { level = vim.log.levels.ERROR })
-          io_view_running = false
           return
         end
 
         if vim.api.nvim_buf_is_valid(io_state.output_buf) then
           render_io_view_results(io_state, test_indices, mode, result, combined.input)
         end
-        io_view_running = false
       end)
     else
       run.run_all_test_cases(test_indices, debug, nil, function()
+        if gen ~= _run_gen then
+          return
+        end
         if vim.api.nvim_buf_is_valid(io_state.output_buf) then
           render_io_view_results(io_state, test_indices, mode, nil, nil)
         end
-        io_view_running = false
       end)
     end
   end)
+end
+
+function M.cancel_io_view()
+  _run_gen = _run_gen + 1
+end
+
+function M.cancel_interactive()
+  if state.interactive_buf and vim.api.nvim_buf_is_valid(state.interactive_buf) then
+    local job = vim.b[state.interactive_buf].terminal_job_id
+    if job then
+      vim.fn.jobstop(job)
+    end
+  end
+  if state.saved_interactive_session then
+    vim.fn.delete(state.saved_interactive_session)
+    state.saved_interactive_session = nil
+  end
+  state.set_active_panel(nil)
 end
 
 ---@param panel_opts? PanelOpts

@@ -179,6 +179,19 @@ function M.setup_contest(platform, contest_id, problem_id, language)
 
   local is_new_contest = old_platform ~= platform or old_contest_id ~= contest_id
 
+  if is_new_contest then
+    local views = require('cp.ui.views')
+    views.cancel_io_view()
+    local active = state.get_active_panel()
+    if active == 'interactive' then
+      views.cancel_interactive()
+    elseif active == 'stress' then
+      require('cp.stress').cancel()
+    elseif active == 'run' then
+      views.disable()
+    end
+  end
+
   cache.load()
 
   local function proceed(contest_data)
