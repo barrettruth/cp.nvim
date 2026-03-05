@@ -439,7 +439,12 @@ def _submit_headless(
         if needs_relogin and not _retried:
             cookie_cache.unlink(missing_ok=True)
             return _submit_headless(
-                contest_id, problem_id, source_code, language_id, credentials, _retried=True
+                contest_id,
+                problem_id,
+                source_code,
+                language_id,
+                credentials,
+                _retried=True,
             )
 
         if submit_error:

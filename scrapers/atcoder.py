@@ -365,7 +365,11 @@ def _submit_headless(
             ext = _LANGUAGE_ID_EXTENSION.get(language_id, "txt")
             page.set_input_files(
                 "#input-open-file",
-                {"name": f"solution.{ext}", "mimeType": "text/plain", "buffer": source_code.encode()},
+                {
+                    "name": f"solution.{ext}",
+                    "mimeType": "text/plain",
+                    "buffer": source_code.encode(),
+                },
             )
             page.wait_for_timeout(BROWSER_SETTLE_DELAY)
             page.locator('button[type="submit"]').click()
@@ -384,7 +388,9 @@ def _submit_headless(
         ) as session:
             if not (cookie_cache.exists() and not _retried):
                 print(json.dumps({"status": "checking_login"}), flush=True)
-                session.fetch(f"{BASE_URL}/home", page_action=check_login, network_idle=True)
+                session.fetch(
+                    f"{BASE_URL}/home", page_action=check_login, network_idle=True
+                )
 
             if not logged_in:
                 print(json.dumps({"status": "logging_in"}), flush=True)
@@ -394,7 +400,9 @@ def _submit_headless(
                     solve_cloudflare=True,
                 )
                 if login_error:
-                    return SubmitResult(success=False, error=f"Login failed: {login_error}")
+                    return SubmitResult(
+                        success=False, error=f"Login failed: {login_error}"
+                    )
 
             print(json.dumps({"status": "submitting"}), flush=True)
             session.fetch(
@@ -413,13 +421,20 @@ def _submit_headless(
         if needs_relogin and not _retried:
             cookie_cache.unlink(missing_ok=True)
             return _submit_headless(
-                contest_id, problem_id, source_code, language_id, credentials, _retried=True
+                contest_id,
+                problem_id,
+                source_code,
+                language_id,
+                credentials,
+                _retried=True,
             )
 
         if submit_error:
             return SubmitResult(success=False, error=submit_error)
 
-        return SubmitResult(success=True, error="", submission_id="", verdict="submitted")
+        return SubmitResult(
+            success=True, error="", submission_id="", verdict="submitted"
+        )
     except Exception as e:
         return SubmitResult(success=False, error=str(e))
 
