@@ -1,18 +1,27 @@
 local M = {}
 
 local cache = require('cp.cache')
+local constants = require('cp.constants')
 local logger = require('cp.log')
 local state = require('cp.state')
+
+local STATUS_MESSAGES = {
+  checking_login = 'Checking existing session...',
+  logging_in = 'Logging in...',
+  installing_browser = 'Installing browser...',
+}
 
 function M.login(platform)
   platform = platform or state.get_platform()
   if not platform then
     logger.log(
-      'No platform specified. Usage: :CP login <platform>',
+      'No platform specified. Usage: :CP <platform> login',
       { level = vim.log.levels.ERROR }
     )
     return
   end
+
+  local display = constants.PLATFORM_DISPLAY_NAMES[platform] or platform
 
   vim.ui.input({ prompt = platform .. ' username: ' }, function(username)
     if not username or username == '' then
@@ -26,9 +35,36 @@ function M.login(platform)
       logger.log('Cancelled', { level = vim.log.levels.WARN })
       return
     end
+
     cache.load()
-    cache.set_credentials(platform, { username = username, password = password })
-    logger.log(platform .. ' credentials saved', { level = vim.log.levels.INFO, override = true })
+    local existing = cache.get_credentials(platform) or {}
+    local credentials = {
+      username = username,
+      password = password,
+    }
+    if existing.token then
+      credentials.token = existing.token
+    end
+
+    local scraper = require('cp.scraper')
+    scraper.login(platform, credentials, function(ev)
+      vim.schedule(function()
+        local msg = STATUS_MESSAGES[ev.status] or ev.status
+        logger.log(display .. ': ' .. msg, { level = vim.log.levels.INFO, override = true })
+      end)
+    end, function(result)
+      vim.schedule(function()
+        if result.success then
+          logger.log(
+            display .. ' login successful',
+            { level = vim.log.levels.INFO, override = true }
+          )
+        else
+          local err = result.error or 'unknown error'
+          logger.log(display .. ' login failed: ' .. err, { level = vim.log.levels.ERROR })
+        end
+      end)
+    end)
   end)
 end
 
@@ -36,7 +72,7 @@ function M.logout(platform)
   platform = platform or state.get_platform()
   if not platform then
     logger.log(
-      'No platform specified. Usage: :CP logout <platform>',
+      'No platform specified. Usage: :CP <platform> logout',
       { level = vim.log.levels.ERROR }
     )
     return

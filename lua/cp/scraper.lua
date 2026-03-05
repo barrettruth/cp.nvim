@@ -44,13 +44,15 @@ local function run_scraper(platform, subcommand, args, opts)
     return { success = false, error = msg }
   end
 
-  if subcommand == 'submit' then
+  local needs_browser = subcommand == 'submit' or subcommand == 'login'
+
+  if needs_browser then
     utils.setup_nix_submit_env()
   end
 
   local plugin_path = utils.get_plugin_path()
   local cmd
-  if subcommand == 'submit' then
+  if needs_browser then
     cmd = utils.get_python_submit_cmd(platform, plugin_path)
   else
     cmd = utils.get_python_cmd(platform, plugin_path)
@@ -71,7 +73,7 @@ local function run_scraper(platform, subcommand, args, opts)
     end
   end
 
-  if subcommand == 'submit' and utils.is_nix_build() then
+  if needs_browser and utils.is_nix_build() then
     env.UV_PROJECT_ENVIRONMENT = vim.fn.stdpath('cache') .. '/cp-nvim/submit-env'
   end
 
@@ -129,7 +131,7 @@ local function run_scraper(platform, subcommand, args, opts)
       return { success = false, error = 'spawn failed' }
     end
 
-    if subcommand == 'submit' then
+    if needs_browser then
       timer = uv.new_timer()
       timer:start(120000, 0, function()
         timer:stop()
@@ -193,7 +195,7 @@ local function run_scraper(platform, subcommand, args, opts)
 
   local sysopts = {
     text = true,
-    timeout = (subcommand == 'submit') and 120000 or 30000,
+    timeout = needs_browser and 120000 or 30000,
     env = env,
     cwd = plugin_path,
   }
@@ -313,6 +315,37 @@ function M.scrape_all_tests(platform, contest_id, callback, on_done)
           })
         end
       end)
+    end,
+  })
+end
+
+function M.login(platform, credentials, on_status, callback)
+  local done = false
+  run_scraper(platform, 'login', {}, {
+    ndjson = true,
+    env_extra = { CP_CREDENTIALS = vim.json.encode(credentials) },
+    on_event = function(ev)
+      if ev.credentials ~= nil and next(ev.credentials) ~= nil then
+        require('cp.cache').set_credentials(platform, ev.credentials)
+      end
+      if ev.status ~= nil then
+        if type(on_status) == 'function' then
+          on_status(ev)
+        end
+      elseif ev.success ~= nil then
+        done = true
+        if type(callback) == 'function' then
+          callback(ev)
+        end
+      end
+    end,
+    on_exit = function(proc)
+      if not done and type(callback) == 'function' then
+        callback({
+          success = false,
+          error = 'login process exited (code=' .. tostring(proc.code) .. ')',
+        })
+      end
     end,
   })
 end
