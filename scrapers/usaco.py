@@ -12,6 +12,7 @@ from .timeouts import HTTP_TIMEOUT
 from .models import (
     ContestListResult,
     ContestSummary,
+    LoginResult,
     MetadataResult,
     ProblemSummary,
     SubmitResult,
@@ -298,6 +299,9 @@ class USACOScraper(BaseScraper):
             submission_id="",
             verdict="",
         )
+
+    async def login(self, credentials: dict[str, str]) -> LoginResult:
+        return self._login_error("USACO login not yet implemented")
 
 
 if __name__ == "__main__":
