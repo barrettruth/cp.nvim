@@ -232,4 +232,18 @@ function M.toggle(generator_cmd, brute_cmd)
   end)
 end
 
+function M.cancel()
+  if state.stress_buf and vim.api.nvim_buf_is_valid(state.stress_buf) then
+    local job = vim.b[state.stress_buf].terminal_job_id
+    if job then
+      vim.fn.jobstop(job)
+    end
+  end
+  if state.saved_stress_session then
+    vim.fn.delete(state.saved_stress_session)
+    state.saved_stress_session = nil
+  end
+  state.set_active_panel(nil)
+end
+
 return M
