@@ -23,13 +23,13 @@ function M.login(platform)
 
   local display = constants.PLATFORM_DISPLAY_NAMES[platform] or platform
 
-  vim.ui.input({ prompt = platform .. ' username: ' }, function(username)
+  vim.ui.input({ prompt = display .. ' username: ' }, function(username)
     if not username or username == '' then
       logger.log('Cancelled', { level = vim.log.levels.WARN })
       return
     end
     vim.fn.inputsave()
-    local password = vim.fn.inputsecret(platform .. ' password: ')
+    local password = vim.fn.inputsecret(display .. ' password: ')
     vim.fn.inputrestore()
     if not password or password == '' then
       logger.log('Cancelled', { level = vim.log.levels.WARN })
@@ -77,9 +77,10 @@ function M.logout(platform)
     )
     return
   end
+  local display = constants.PLATFORM_DISPLAY_NAMES[platform] or platform
   cache.load()
   cache.clear_credentials(platform)
-  logger.log(platform .. ' credentials cleared', { level = vim.log.levels.INFO, override = true })
+  logger.log(display .. ' credentials cleared', { level = vim.log.levels.INFO, override = true })
 end
 
 return M
