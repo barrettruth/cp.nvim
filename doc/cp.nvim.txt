@@ -4,6 +4,37 @@ Author:  Barrett Ruth <br.barrettruth@gmail.com>
 License: Same terms as Vim itself (see |license|)
 
 ==============================================================================
+CONTENTS                                                        *cp-contents*
+
+  1. Introduction .................................................. |cp.nvim|
+  2. Requirements ........................................ |cp-requirements|
+  3. Setup ........................................................ |cp-setup|
+  4. Configuration ................................................ |cp-config|
+  5. Commands .................................................. |cp-commands|
+  6. Mappings .................................................. |cp-mappings|
+  7. Language Selection .................................. |cp-lang-selection|
+  8. Workflow .................................................. |cp-workflow|
+  9. Workflow Example ............................................ |cp-example|
+ 10. Verdict Formatting ................................. |cp-verdict-format|
+ 11. Picker Integration .......................................... |cp-picker|
+ 12. Picker Keymaps ........................................ |cp-picker-keys|
+ 13. Panel ........................................................ |cp-panel|
+ 14. Interactive Mode .......................................... |cp-interact|
+ 15. Stress Testing .............................................. |cp-stress|
+ 16. Race .......................................................... |cp-race|
+ 17. Credentials ............................................ |cp-credentials|
+ 18. Submit ...................................................... |cp-submit|
+ 19. ANSI Colors ................................................... |cp-ansi|
+ 20. Highlight Groups ........................................ |cp-highlights|
+ 21. Terminal Colors .................................... |cp-terminal-colors|
+ 22. Highlight Customization .......................... |cp-highlight-custom|
+ 23. Helpers .................................................... |cp-helpers|
+ 24. Statusline Integration .................................. |cp-statusline|
+ 25. Panel Keymaps .......................................... |cp-panel-keys|
+ 26. File Structure ................................................ |cp-files|
+ 27. Health Check ................................................ |cp-health|
+
+==============================================================================
 INTRODUCTION                                                         *cp.nvim*
 
 cp.nvim is a competitive programming plugin that automates problem setup,
