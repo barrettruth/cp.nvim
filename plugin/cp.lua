@@ -64,7 +64,7 @@ end, {
       return filter_candidates(candidates)
     elseif num_args == 3 then
       if vim.tbl_contains(platforms, args[2]) then
-        local candidates = { 'login', 'logout' }
+        local candidates = { 'login', 'logout', 'signup' }
         local cache = require('cp.cache')
         cache.load()
         vim.list_extend(candidates, cache.get_cached_contest_ids(args[2]))
