@@ -380,9 +380,14 @@ class KattisScraper(BaseScraper):
 
             sid_m = re.search(r"Submission ID:\s*(\d+)", r.text, re.IGNORECASE)
             if not sid_m:
-                return self._submit_error(r.text.strip() or "Submit failed (no submission ID)")
+                return self._submit_error(
+                    r.text.strip() or "Submit failed (no submission ID)"
+                )
             return SubmitResult(
-                success=True, error="", submission_id=sid_m.group(1), verdict="submitted"
+                success=True,
+                error="",
+                submission_id=sid_m.group(1),
+                verdict="submitted",
             )
 
     async def login(self, credentials: dict[str, str]) -> LoginResult:
