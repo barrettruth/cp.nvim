@@ -6,6 +6,7 @@ import json
 import re
 import zipfile
 from datetime import datetime
+from pathlib import Path
 
 import httpx
 
@@ -26,6 +27,8 @@ HEADERS = {
     "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 }
 CONNECTIONS = 8
+
+_COOKIE_PATH = Path.home() / ".cache" / "cp-nvim" / "kattis-cookies.json"
 
 TIME_RE = re.compile(
     r"CPU Time limit</span>\s*<span[^>]*>\s*(\d+)\s*seconds?\s*</span>",
@@ -201,6 +204,44 @@ async def _stream_single_problem(client: httpx.AsyncClient, slug: str) -> None:
     )
 
 
+async def _load_kattis_cookies(client: httpx.AsyncClient) -> None:
+    if not _COOKIE_PATH.exists():
+        return
+    try:
+        for k, v in json.loads(_COOKIE_PATH.read_text()).items():
+            client.cookies.set(k, v)
+    except Exception:
+        pass
+
+
+async def _save_kattis_cookies(client: httpx.AsyncClient) -> None:
+    cookies = {k: v for k, v in client.cookies.items()}
+    if cookies:
+        _COOKIE_PATH.parent.mkdir(parents=True, exist_ok=True)
+        _COOKIE_PATH.write_text(json.dumps(cookies))
+
+
+async def _check_kattis_login(client: httpx.AsyncClient) -> bool:
+    try:
+        r = await client.get(BASE_URL + "/", headers=HEADERS, timeout=HTTP_TIMEOUT)
+        text = r.text.lower()
+        return "sign out" in text or "logout" in text or "my profile" in text
+    except Exception:
+        return False
+
+
+async def _do_kattis_login(
+    client: httpx.AsyncClient, username: str, password: str
+) -> bool:
+    r = await client.post(
+        f"{BASE_URL}/login/email",
+        data={"user": username, "password": password, "script": "true"},
+        headers=HEADERS,
+        timeout=HTTP_TIMEOUT,
+    )
+    return r.status_code == 200 and "login failed" not in r.text.lower()
+
+
 class KattisScraper(BaseScraper):
     @property
     def platform_name(self) -> str:
@@ -245,7 +286,10 @@ class KattisScraper(BaseScraper):
     async def scrape_contest_list(self) -> ContestListResult:
         try:
             async with httpx.AsyncClient() as client:
-                html = await _fetch_text(client, f"{BASE_URL}/contests")
+                html = await _fetch_text(
+                    client,
+                    f"{BASE_URL}/contests?kattis_original=on&kattis_recycled=off&user_created=off",
+                )
             contests = _parse_contests_page(html)
             if not contests:
                 return self._contests_error("No contests found")
@@ -278,15 +322,81 @@ class KattisScraper(BaseScraper):
         language_id: str,
         credentials: dict[str, str],
     ) -> SubmitResult:
-        return SubmitResult(
-            success=False,
-            error="Kattis submit not yet implemented",
-            submission_id="",
-            verdict="",
-        )
+        source = Path(file_path).read_bytes()
+        username = credentials.get("username", "")
+        password = credentials.get("password", "")
+        if not username or not password:
+            return self._submit_error("Missing credentials. Use :CP kattis login")
+
+        async with httpx.AsyncClient(follow_redirects=True) as client:
+            await _load_kattis_cookies(client)
+            print(json.dumps({"status": "checking_login"}), flush=True)
+            logged_in = bool(client.cookies) and await _check_kattis_login(client)
+            if not logged_in:
+                print(json.dumps({"status": "logging_in"}), flush=True)
+                ok = await _do_kattis_login(client, username, password)
+                if not ok:
+                    return self._submit_error("Login failed (bad credentials?)")
+                await _save_kattis_cookies(client)
+
+            print(json.dumps({"status": "submitting"}), flush=True)
+            ext = "py" if "python" in language_id.lower() else "cpp"
+            data: dict[str, str] = {
+                "submit": "true",
+                "script": "true",
+                "language": language_id,
+                "problem": problem_id,
+                "mainclass": "",
+                "submit_ctr": "2",
+            }
+            if contest_id != problem_id:
+                data["contest"] = contest_id
+            try:
+                r = await client.post(
+                    f"{BASE_URL}/submit",
+                    data=data,
+                    files={"sub_file[]": (f"solution.{ext}", source, "text/plain")},
+                    headers=HEADERS,
+                    timeout=HTTP_TIMEOUT,
+                )
+                r.raise_for_status()
+            except Exception as e:
+                return self._submit_error(f"Submit request failed: {e}")
+
+            sid_m = re.search(r"Submission ID:\s*(\d+)", r.text, re.IGNORECASE)
+            sid = sid_m.group(1) if sid_m else ""
+            return SubmitResult(
+                success=True, error="", submission_id=sid, verdict="submitted"
+            )
 
     async def login(self, credentials: dict[str, str]) -> LoginResult:
-        return self._login_error("Kattis login not yet implemented")
+        username = credentials.get("username", "")
+        password = credentials.get("password", "")
+        if not username or not password:
+            return self._login_error("Missing username or password")
+
+        async with httpx.AsyncClient(follow_redirects=True) as client:
+            await _load_kattis_cookies(client)
+            if client.cookies:
+                print(json.dumps({"status": "checking_login"}), flush=True)
+                if await _check_kattis_login(client):
+                    return LoginResult(
+                        success=True,
+                        error="",
+                        credentials={"username": username, "password": password},
+                    )
+
+            print(json.dumps({"status": "logging_in"}), flush=True)
+            ok = await _do_kattis_login(client, username, password)
+            if not ok:
+                return self._login_error("Login failed (bad credentials?)")
+
+            await _save_kattis_cookies(client)
+        return LoginResult(
+            success=True,
+            error="",
+            credentials={"username": username, "password": password},
+        )
 
 
 if __name__ == "__main__":
