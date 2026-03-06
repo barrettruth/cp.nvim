@@ -126,7 +126,7 @@ function M.start(platform, contest_id, language)
         require('cp.setup').setup_contest(p, c, nil, l)
       else
         vim.notify(
-          ('[cp.nvim] %s starts in %s'):format(race_state.contest_name, format_countdown(r)),
+          ('[cp.nvim]: %s starts in %s'):format(race_state.contest_name, format_countdown(r)),
           vim.log.levels.INFO
         )
       end
@@ -137,8 +137,11 @@ end
 function M.stop()
   local timer = race_state.timer
   if not timer then
+    logger.log('No active race', { level = vim.log.levels.WARN })
     return
   end
+  local display = constants.PLATFORM_DISPLAY_NAMES[race_state.platform] or race_state.platform
+  local name = race_state.contest_name or race_state.contest_id
   timer:stop()
   timer:close()
   race_state.timer = nil
@@ -147,6 +150,7 @@ function M.stop()
   race_state.contest_name = nil
   race_state.language = nil
   race_state.start_time = nil
+  logger.log(('Cancelled %s race "%s"'):format(display, name), { level = vim.log.levels.INFO, override = true })
 end
 
 function M.status()
