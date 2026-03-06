@@ -8,7 +8,7 @@ from typing import Any, cast
 
 import httpx
 
-from .base import BaseScraper
+from .base import BaseScraper, extract_precision
 from .timeouts import HTTP_TIMEOUT
 from .models import (
     ContestListResult,
@@ -130,12 +130,14 @@ def _parse_problem_page(html: str) -> dict[str, Any]:
     memory_mb = int(mm.group(1)) if mm else 256
 
     interactive = "interactive problem" in html.lower()
+    precision = extract_precision(html)
 
     return {
         "tests": tests,
         "timeout_ms": timeout_ms,
         "memory_mb": memory_mb,
         "interactive": interactive,
+        "precision": precision,
     }
 
 
@@ -375,6 +377,7 @@ class USACOScraper(BaseScraper):
                             "timeout_ms": 4000,
                             "memory_mb": 256,
                             "interactive": False,
+                            "precision": None,
                         }
 
                     tests = cast(list[TestCase], info["tests"])
@@ -396,6 +399,7 @@ class USACOScraper(BaseScraper):
                         "memory_mb": info["memory_mb"],
                         "interactive": info["interactive"],
                         "multi_test": False,
+                        "precision": info["precision"],
                     }
 
             tasks = [run_one(cpid) for cpid, _ in problems_raw]
