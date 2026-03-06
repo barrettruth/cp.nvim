@@ -283,7 +283,7 @@ local function parse_command(args)
         message = 'Too few arguments - specify a contest.',
       }
     elseif #args == 2 then
-      if args[2] == 'login' or args[2] == 'logout' then
+      if args[2] == 'login' or args[2] == 'logout' or args[2] == 'signup' then
         return { type = 'action', action = args[2], requires_context = false, platform = first }
       end
       local contest = args[2]
@@ -328,6 +328,22 @@ local function parse_command(args)
   end
 
   return { type = 'error', message = 'Unknown command or no contest context.' }
+end
+
+---@param platform string
+---@return boolean
+local function check_platform_enabled(platform)
+  local cfg = require('cp.config').get_config()
+  if not cfg.platforms[platform] then
+    logger.log(
+      ("Platform '%s' is not enabled. Add it to vim.g.cp.platforms to enable it."):format(
+        constants.PLATFORM_DISPLAY_NAMES[platform] or platform
+      ),
+      { level = vim.log.levels.ERROR }
+    )
+    return false
+  end
+  return true
 end
 
 --- Core logic for handling `:CP ...` commands
@@ -378,6 +394,9 @@ function M.handle_command(opts)
     elseif cmd.action == 'submit' then
       require('cp.submit').submit({ language = cmd.language })
     elseif cmd.action == 'race' then
+      if not check_platform_enabled(cmd.platform) then
+        return
+      end
       require('cp.race').start(cmd.platform, cmd.contest, cmd.language)
     elseif cmd.action == 'race_stop' then
       require('cp.race').stop()
@@ -396,9 +415,25 @@ function M.handle_command(opts)
       end
       vim.ui.open(url)
     elseif cmd.action == 'login' then
+      if not check_platform_enabled(cmd.platform) then
+        return
+      end
       require('cp.credentials').login(cmd.platform)
     elseif cmd.action == 'logout' then
+      if not check_platform_enabled(cmd.platform) then
+        return
+      end
       require('cp.credentials').logout(cmd.platform)
+    elseif cmd.action == 'signup' then
+      local url = constants.SIGNUP_URLS[cmd.platform]
+      if not url then
+        logger.log(
+          ("No signup URL available for '%s'"):format(cmd.platform),
+          { level = vim.log.levels.WARN }
+        )
+        return
+      end
+      vim.ui.open(url)
     end
   elseif cmd.type == 'problem_jump' then
     local platform = state.get_platform()
@@ -432,6 +467,9 @@ function M.handle_command(opts)
     local cache_commands = require('cp.commands.cache')
     cache_commands.handle_cache_command(cmd)
   elseif cmd.type == 'contest_setup' then
+    if not check_platform_enabled(cmd.platform) then
+      return
+    end
     local setup = require('cp.setup')
     setup.setup_contest(cmd.platform, cmd.contest, nil, cmd.language)
     return
