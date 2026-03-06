@@ -433,6 +433,16 @@ function M.get_contest_start_time(platform, contest_id)
 end
 
 ---@param platform string
+---@param contest_id string
+---@return string?
+function M.get_contest_display_name(platform, contest_id)
+  if not cache_data[platform] or not cache_data[platform][contest_id] then
+    return nil
+  end
+  return cache_data[platform][contest_id].display_name
+end
+
+---@param platform string
 ---@return table?
 function M.get_credentials(platform)
   if not cache_data[platform] then

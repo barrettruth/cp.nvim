@@ -9,15 +9,24 @@ local race_state = {
   timer = nil,
   platform = nil,
   contest_id = nil,
+  contest_name = nil,
   language = nil,
   start_time = nil,
 }
 
 local function format_countdown(seconds)
-  local h = math.floor(seconds / 3600)
+  local d = math.floor(seconds / 86400)
+  local h = math.floor((seconds % 86400) / 3600)
   local m = math.floor((seconds % 3600) / 60)
   local s = seconds % 60
-  return string.format('%02d:%02d:%02d', h, m, s)
+  if d > 0 then
+    return string.format('%dd %dh %dm %ds', d, h, m, s)
+  elseif h > 0 then
+    return string.format('%dh %dm %ds', h, m, s)
+  elseif m > 0 then
+    return string.format('%dm %ds', m, s)
+  end
+  return string.format('%ds', s)
 end
 
 function M.start(platform, contest_id, language)
@@ -85,17 +94,9 @@ function M.start(platform, contest_id, language)
 
   race_state.platform = platform
   race_state.contest_id = contest_id
+  race_state.contest_name = cache.get_contest_display_name(platform, contest_id) or contest_id
   race_state.language = language
   race_state.start_time = start_time
-
-  logger.log(
-    ('Race started for %s %s — %s remaining'):format(
-      constants.PLATFORM_DISPLAY_NAMES[platform] or platform,
-      contest_id,
-      format_countdown(remaining)
-    ),
-    { level = vim.log.levels.INFO, override = true }
-  )
 
   local timer = vim.uv.new_timer()
   race_state.timer = timer
@@ -113,15 +114,15 @@ function M.start(platform, contest_id, language)
         local l = race_state.language
         race_state.platform = nil
         race_state.contest_id = nil
+        race_state.contest_name = nil
         race_state.language = nil
         race_state.start_time = nil
         logger.log('Contest started!', { level = vim.log.levels.INFO, override = true })
         require('cp.setup').setup_contest(p, c, nil, l)
       else
         vim.notify(
-          ('[cp.nvim] %s %s — %s'):format(
-            constants.PLATFORM_DISPLAY_NAMES[race_state.platform] or race_state.platform,
-            race_state.contest_id,
+          ('[cp.nvim] %s starts in %s'):format(
+            race_state.contest_name,
             format_countdown(r)
           ),
           vim.log.levels.INFO
@@ -142,6 +143,7 @@ function M.stop()
   race_state.timer = nil
   race_state.platform = nil
   race_state.contest_id = nil
+  race_state.contest_name = nil
   race_state.language = nil
   race_state.start_time = nil
   logger.log('Race cancelled', { level = vim.log.levels.INFO, override = true })
