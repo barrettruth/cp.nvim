@@ -11,6 +11,18 @@ LANGUAGE_IDS = {
         "cpp": "C++17",
         "python": "Python3",
     },
+    "usaco": {
+        "cpp": "cpp",
+        "python": "python",
+    },
+    "kattis": {
+        "cpp": "C++17",
+        "python": "Python 3",
+    },
+    "codechef": {
+        "cpp": "C++ 17",
+        "python": "Python 3",
+    },
 }
 
 
