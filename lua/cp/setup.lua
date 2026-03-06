@@ -164,7 +164,6 @@ end
 ---@param language? string
 function M.setup_contest(platform, contest_id, problem_id, language)
   local old_platform, old_contest_id = state.get_platform(), state.get_contest_id()
-  local old_problem_id = state.get_problem_id()
 
   state.set_platform(platform)
   state.set_contest_id(contest_id)
@@ -205,13 +204,6 @@ function M.setup_contest(platform, contest_id, problem_id, language)
     local pid = problem_id and problem_id or problems[1].id
     M.setup_problem(pid, language)
     start_tests(platform, contest_id, problems)
-
-    local is_new_problem = old_problem_id ~= pid
-    local should_open_url = config_module.get_config().open_url
-      and (is_new_contest or is_new_problem)
-    if should_open_url and contest_data.url then
-      vim.ui.open(contest_data.url:format(pid))
-    end
   end
 
   local contest_data = cache.get_contest_data(platform, contest_id)

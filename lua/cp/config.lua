@@ -101,7 +101,6 @@
 ---@field templates? CpTemplatesConfig
 ---@field hooks Hooks
 ---@field debug boolean
----@field open_url boolean
 ---@field scrapers string[]
 ---@field filename? fun(contest: string, contest_id: string, problem_id?: string, config: cp.Config, language?: string): string
 ---@field ui CpUI
@@ -118,7 +117,6 @@ local utils = require('cp.utils')
 -- defaults per the new single schema
 ---@type cp.Config
 M.defaults = {
-  open_url = false,
   languages = {
     cpp = {
       extension = 'cc',
@@ -362,7 +360,6 @@ function M.setup(user_config)
     hooks = { cfg.hooks, { 'table' } },
     ui = { cfg.ui, { 'table' } },
     debug = { cfg.debug, { 'boolean', 'nil' }, true },
-    open_url = { cfg.open_url, { 'boolean', 'nil' }, true },
     filename = { cfg.filename, { 'function', 'nil' }, true },
     scrapers = {
       cfg.scrapers,
