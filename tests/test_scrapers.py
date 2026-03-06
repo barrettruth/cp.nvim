@@ -27,6 +27,16 @@ MATRIX = {
         "tests": ("START209D",),
         "contests": tuple(),
     },
+    "kattis": {
+        "metadata": ("hello",),
+        "tests": ("hello",),
+        "contests": tuple(),
+    },
+    "usaco": {
+        "metadata": ("dec24_gold",),
+        "tests": ("dec24_gold",),
+        "contests": tuple(),
+    },
 }
 
 
@@ -85,5 +95,36 @@ def test_scraper_offline_fixture_matrix(run_scraper_offline, scraper, mode):
                 )
                 assert "multi_test" in obj, "Missing multi_test field in raw JSON"
                 assert isinstance(obj["multi_test"], bool), "multi_test not boolean"
+                assert "precision" in obj, "Missing precision field in raw JSON"
+                assert obj["precision"] is None or isinstance(
+                    obj["precision"], float
+                ), "precision must be None or float"
                 validated_any = True
         assert validated_any, "No valid tests payloads validated"
+
+
+def test_kattis_contest_metadata(run_scraper_offline):
+    rc, objs = run_scraper_offline("kattis", "metadata", "open2024")
+    assert rc == 0
+    assert objs
+    model = MetadataResult.model_validate(objs[-1])
+    assert model.success is True
+    assert len(model.problems) == 2
+    assert model.contest_url != ""
+    assert model.standings_url != ""
+
+
+@pytest.mark.parametrize(
+    "scraper,contest_id",
+    [
+        ("cses", "nonexistent_category_xyz"),
+        ("usaco", "badformat"),
+        ("kattis", "nonexistent_problem_xyz"),
+    ],
+)
+def test_scraper_metadata_error(run_scraper_offline, scraper, contest_id):
+    rc, objs = run_scraper_offline(scraper, "metadata", contest_id)
+    assert rc == 1
+    assert objs
+    assert objs[-1].get("success") is False
+    assert objs[-1].get("error")
