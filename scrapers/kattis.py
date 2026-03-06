@@ -123,7 +123,7 @@ def _parse_contests_page(html: str) -> list[ContestSummary]:
                     start_time = int(dt.timestamp())
                 except Exception:
                     pass
-        results.append(ContestSummary(id=cid, name=name, start_time=start_time))
+        results.append(ContestSummary(id=cid, name=name, display_name=name, start_time=start_time))
     return results
 
 
