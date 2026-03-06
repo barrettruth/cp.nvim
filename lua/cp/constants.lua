@@ -25,6 +25,15 @@ M.PLATFORM_DISPLAY_NAMES = {
   usaco = 'USACO',
 }
 
+M.SIGNUP_URLS = {
+  atcoder = 'https://atcoder.jp/register',
+  codechef = 'https://www.codechef.com/register',
+  codeforces = 'https://codeforces.com/register',
+  cses = 'https://cses.fi/register',
+  kattis = 'https://open.kattis.com/register',
+  usaco = 'https://usaco.org/index.php?page=createaccount',
+}
+
 M.CPP = 'cpp'
 M.PYTHON = 'python'
 
