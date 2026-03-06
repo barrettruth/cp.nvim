@@ -10,7 +10,7 @@ from pathlib import Path
 
 import httpx
 
-from .base import BaseScraper
+from .base import BaseScraper, extract_precision
 from .timeouts import HTTP_TIMEOUT
 from .models import (
     ContestListResult,
@@ -173,6 +173,7 @@ async def _stream_single_problem(client: httpx.AsyncClient, slug: str) -> None:
 
     timeout_ms, memory_mb = _parse_limits(html)
     interactive = _is_interactive(html)
+    precision = extract_precision(html)
 
     tests: list[TestCase] = []
     try:
@@ -200,6 +201,7 @@ async def _stream_single_problem(client: httpx.AsyncClient, slug: str) -> None:
                 "memory_mb": memory_mb,
                 "interactive": interactive,
                 "multi_test": False,
+                "precision": precision,
             }
         ),
         flush=True,
@@ -254,6 +256,8 @@ class KattisScraper(BaseScraper):
                             ProblemSummary(id=slug, name=name) for slug, name in slugs
                         ],
                         url=f"{BASE_URL}/problems/%s",
+                        contest_url=f"{BASE_URL}/contests/{contest_id}",
+                        standings_url=f"{BASE_URL}/contests/{contest_id}/standings",
                     )
                 try:
                     html = await _fetch_text(
@@ -273,6 +277,8 @@ class KattisScraper(BaseScraper):
                     contest_id=contest_id,
                     problems=[ProblemSummary(id=contest_id, name=name)],
                     url=f"{BASE_URL}/problems/%s",
+                    contest_url=f"{BASE_URL}/problems/{contest_id}",
+                    standings_url="",
                 )
         except Exception as e:
             return self._metadata_error(str(e))
@@ -373,9 +379,15 @@ class KattisScraper(BaseScraper):
                     return self._submit_error(f"Submit request failed: {e}")
 
             sid_m = re.search(r"Submission ID:\s*(\d+)", r.text, re.IGNORECASE)
-            sid = sid_m.group(1) if sid_m else ""
+            if not sid_m:
+                return self._submit_error(
+                    r.text.strip() or "Submit failed (no submission ID)"
+                )
             return SubmitResult(
-                success=True, error="", submission_id=sid, verdict="submitted"
+                success=True,
+                error="",
+                submission_id=sid_m.group(1),
+                verdict="submitted",
             )
 
     async def login(self, credentials: dict[str, str]) -> LoginResult:
