@@ -29,7 +29,7 @@ CONNECTIONS = 4
 
 _COOKIE_PATH = Path.home() / ".cache" / "cp-nvim" / "usaco-cookies.json"
 _LOGIN_PATH = "/current/tpcm/login-session.php"
-_SUBMIT_PATH = "/current/tpcm/submitproblem.php"
+_SUBMIT_PATH = "/current/tpcm/submit-solution.php"
 
 _LANG_KEYWORDS: dict[str, list[str]] = {
     "cpp": ["c++17", "c++ 17", "g++17", "c++", "cpp"],
@@ -141,13 +141,16 @@ def _parse_problem_page(html: str) -> dict[str, Any]:
 
 def _pick_lang_option(select_body: str, language_id: str) -> str | None:
     keywords = _LANG_KEYWORDS.get(language_id.lower(), [language_id.lower()])
-    for m in re.finditer(
-        r'<option\b[^>]*\bvalue=["\']([^"\']*)["\'][^>]*>([^<]+)',
-        select_body,
-        re.IGNORECASE,
-    ):
-        val, text = m.group(1), m.group(2).strip().lower()
-        for kw in keywords:
+    options = [
+        (m.group(1), m.group(2).strip().lower())
+        for m in re.finditer(
+            r'<option\b[^>]*\bvalue=["\']([^"\']*)["\'][^>]*>([^<]+)',
+            select_body,
+            re.IGNORECASE,
+        )
+    ]
+    for kw in keywords:
+        for val, text in options:
             if kw in text:
                 return val
     return None
@@ -165,7 +168,7 @@ def _parse_submit_form(
         re.DOTALL | re.IGNORECASE,
     ):
         action, body = form_m.group(1), form_m.group(2)
-        if "sub_file" not in body.lower():
+        if "sourcefile" not in body.lower():
             continue
         if action.startswith("http"):
             form_action = action
@@ -182,7 +185,7 @@ def _parse_submit_form(
             name_m = re.search(r'\bname=["\']([^"\']+)["\']', tag, re.IGNORECASE)
             val_m = re.search(r'\bvalue=["\']([^"\']*)["\']', tag, re.IGNORECASE)
             if name_m and val_m:
-                hidden[name_m.group(1)] = val_m.group(2)
+                hidden[name_m.group(1)] = val_m.group(1)
         for sel_m in re.finditer(
             r'<select\b[^>]*\bname=["\']([^"\']+)["\'][^>]*>(.*?)</select>',
             body,
@@ -231,16 +234,15 @@ async def _do_usaco_login(
 ) -> bool:
     r = await client.post(
         f"{_AUTH_BASE}{_LOGIN_PATH}",
-        data={"user": username, "password": password},
+        data={"uname": username, "password": password},
         headers=HEADERS,
         timeout=HTTP_TIMEOUT,
     )
     r.raise_for_status()
     try:
-        data = r.json()
-        return bool(data.get("success") or data.get("status") == "success")
+        return r.json().get("code") == 1
     except Exception:
-        return r.status_code == 200 and "error" not in r.text.lower()
+        return False
 
 
 class USACOScraper(BaseScraper):
@@ -453,7 +455,7 @@ class USACOScraper(BaseScraper):
                 r = await client.post(
                     form_url,
                     data=data,
-                    files={"sub_file[]": (f"solution.{ext}", source, "text/plain")},
+                    files={"sourcefile": (f"solution.{ext}", source, "text/plain")},
                     headers=HEADERS,
                     timeout=HTTP_TIMEOUT,
                 )
@@ -477,16 +479,6 @@ class USACOScraper(BaseScraper):
             return self._login_error("Missing username or password")
 
         async with httpx.AsyncClient(follow_redirects=True) as client:
-            await _load_usaco_cookies(client)
-            if client.cookies:
-                print(json.dumps({"status": "checking_login"}), flush=True)
-                if await _check_usaco_login(client, username):
-                    return LoginResult(
-                        success=True,
-                        error="",
-                        credentials={"username": username, "password": password},
-                    )
-
             print(json.dumps({"status": "logging_in"}), flush=True)
             try:
                 ok = await _do_usaco_login(client, username, password)

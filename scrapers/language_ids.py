@@ -16,7 +16,7 @@ LANGUAGE_IDS = {
         "python": "python",
     },
     "kattis": {
-        "cpp": "C++17",
+        "cpp": "C++",
         "python": "Python 3",
     },
     "codechef": {

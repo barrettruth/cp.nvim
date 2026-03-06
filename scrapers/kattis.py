@@ -223,25 +223,17 @@ async def _save_kattis_cookies(client: httpx.AsyncClient) -> None:
         _COOKIE_PATH.write_text(json.dumps(cookies))
 
 
-async def _check_kattis_login(client: httpx.AsyncClient) -> bool:
-    try:
-        r = await client.get(BASE_URL + "/", headers=HEADERS, timeout=HTTP_TIMEOUT)
-        text = r.text.lower()
-        return "sign out" in text or "logout" in text or "my profile" in text
-    except Exception:
-        return False
-
-
 async def _do_kattis_login(
     client: httpx.AsyncClient, username: str, password: str
 ) -> bool:
+    client.cookies.clear()
     r = await client.post(
-        f"{BASE_URL}/login/email",
+        f"{BASE_URL}/login",
         data={"user": username, "password": password, "script": "true"},
         headers=HEADERS,
         timeout=HTTP_TIMEOUT,
     )
-    return r.status_code == 200 and "login failed" not in r.text.lower()
+    return r.status_code == 200
 
 
 class KattisScraper(BaseScraper):
@@ -332,9 +324,7 @@ class KattisScraper(BaseScraper):
 
         async with httpx.AsyncClient(follow_redirects=True) as client:
             await _load_kattis_cookies(client)
-            print(json.dumps({"status": "checking_login"}), flush=True)
-            logged_in = bool(client.cookies) and await _check_kattis_login(client)
-            if not logged_in:
+            if not client.cookies:
                 print(json.dumps({"status": "logging_in"}), flush=True)
                 ok = await _do_kattis_login(client, username, password)
                 if not ok:
@@ -353,17 +343,34 @@ class KattisScraper(BaseScraper):
             }
             if contest_id != problem_id:
                 data["contest"] = contest_id
-            try:
-                r = await client.post(
+
+            async def _do_submit() -> httpx.Response:
+                return await client.post(
                     f"{BASE_URL}/submit",
                     data=data,
                     files={"sub_file[]": (f"solution.{ext}", source, "text/plain")},
                     headers=HEADERS,
                     timeout=HTTP_TIMEOUT,
                 )
+
+            try:
+                r = await _do_submit()
                 r.raise_for_status()
             except Exception as e:
                 return self._submit_error(f"Submit request failed: {e}")
+
+            if r.text == "Request validation failed":
+                _COOKIE_PATH.unlink(missing_ok=True)
+                print(json.dumps({"status": "logging_in"}), flush=True)
+                ok = await _do_kattis_login(client, username, password)
+                if not ok:
+                    return self._submit_error("Login failed (bad credentials?)")
+                await _save_kattis_cookies(client)
+                try:
+                    r = await _do_submit()
+                    r.raise_for_status()
+                except Exception as e:
+                    return self._submit_error(f"Submit request failed: {e}")
 
             sid_m = re.search(r"Submission ID:\s*(\d+)", r.text, re.IGNORECASE)
             sid = sid_m.group(1) if sid_m else ""
@@ -378,21 +385,10 @@ class KattisScraper(BaseScraper):
             return self._login_error("Missing username or password")
 
         async with httpx.AsyncClient(follow_redirects=True) as client:
-            await _load_kattis_cookies(client)
-            if client.cookies:
-                print(json.dumps({"status": "checking_login"}), flush=True)
-                if await _check_kattis_login(client):
-                    return LoginResult(
-                        success=True,
-                        error="",
-                        credentials={"username": username, "password": password},
-                    )
-
             print(json.dumps({"status": "logging_in"}), flush=True)
             ok = await _do_kattis_login(client, username, password)
             if not ok:
                 return self._login_error("Login failed (bad credentials?)")
-
             await _save_kattis_cookies(client)
         return LoginResult(
             success=True,
