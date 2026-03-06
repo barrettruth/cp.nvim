@@ -118,7 +118,9 @@ def test_usaco_precision_extracted(run_scraper_offline):
     rc, objs = run_scraper_offline("usaco", "tests", "dec24_gold")
     assert rc == 0
     precisions = [obj["precision"] for obj in objs if "problem_id" in obj]
-    assert any(p is not None for p in precisions), "Expected at least one problem with precision"
+    assert any(p is not None for p in precisions), (
+        "Expected at least one problem with precision"
+    )
 
 
 @pytest.mark.parametrize(
