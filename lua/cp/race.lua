@@ -20,11 +20,11 @@ local function format_countdown(seconds)
   local m = math.floor((seconds % 3600) / 60)
   local s = seconds % 60
   if d > 0 then
-    return string.format('%dd %dh %dm %ds', d, h, m, s)
+    return string.format('%dd%dh%dm%ds', d, h, m, s)
   elseif h > 0 then
-    return string.format('%dh %dm %ds', h, m, s)
+    return string.format('%dh%dm%ds', h, m, s)
   elseif m > 0 then
-    return string.format('%dm %ds', m, s)
+    return string.format('%dm%ds', m, s)
   end
   return string.format('%ds', s)
 end
@@ -126,7 +126,11 @@ function M.start(platform, contest_id, language)
         require('cp.setup').setup_contest(p, c, nil, l)
       else
         vim.notify(
-          ('[cp.nvim]: %s starts in %s'):format(race_state.contest_name, format_countdown(r)),
+          ('[cp.nvim]: %s race "%s" starts in %s'):format(
+            constants.PLATFORM_DISPLAY_NAMES[race_state.platform] or race_state.platform,
+            race_state.contest_name,
+            format_countdown(r)
+          ),
           vim.log.levels.INFO
         )
       end
