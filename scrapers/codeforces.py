@@ -223,6 +223,8 @@ class CodeforcesScraper(BaseScraper):
                 contest_id=contest_id,
                 problems=problems,
                 url=f"https://codeforces.com/contest/{contest_id}/problem/%s",
+                contest_url=f"https://codeforces.com/contest/{contest_id}",
+                standings_url=f"https://codeforces.com/contest/{contest_id}/standings",
             )
         except Exception as e:
             return self._metadata_error(str(e))

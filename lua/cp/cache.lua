@@ -10,6 +10,8 @@
 ---@field name string
 ---@field display_name string
 ---@field url string
+---@field contest_url string
+---@field standings_url string
 
 ---@class ContestSummary
 ---@field display_name string
@@ -148,12 +150,16 @@ end
 ---@param contest_id string
 ---@param problems Problem[]
 ---@param url string
-function M.set_contest_data(platform, contest_id, problems, url)
+---@param contest_url string
+---@param standings_url string
+function M.set_contest_data(platform, contest_id, problems, url, contest_url, standings_url)
   vim.validate({
     platform = { platform, 'string' },
     contest_id = { contest_id, 'string' },
     problems = { problems, 'table' },
     url = { url, 'string' },
+    contest_url = { contest_url, 'string' },
+    standings_url = { standings_url, 'string' },
   })
 
   cache_data[platform] = cache_data[platform] or {}
@@ -165,6 +171,8 @@ function M.set_contest_data(platform, contest_id, problems, url)
     problems = problems,
     index_map = {},
     url = url,
+    contest_url = contest_url,
+    standings_url = standings_url,
   }
   for i, p in ipairs(out.problems) do
     out.index_map[p.id] = i
@@ -172,6 +180,25 @@ function M.set_contest_data(platform, contest_id, problems, url)
 
   cache_data[platform][contest_id] = out
   M.save()
+end
+
+---@param platform string?
+---@param contest_id string?
+---@param problem_id string?
+---@return { problem: string|nil, contest: string|nil, standings: string|nil }|nil
+function M.get_open_urls(platform, contest_id, problem_id)
+  if not platform or not contest_id then
+    return nil
+  end
+  if not cache_data[platform] or not cache_data[platform][contest_id] then
+    return nil
+  end
+  local cd = cache_data[platform][contest_id]
+  return {
+    problem = cd.url ~= '' and problem_id and string.format(cd.url, problem_id) or nil,
+    contest = cd.contest_url ~= '' and cd.contest_url or nil,
+    standings = cd.standings_url ~= '' and cd.standings_url or nil,
+  }
 end
 
 ---@param platform string

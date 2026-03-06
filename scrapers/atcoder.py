@@ -606,6 +606,8 @@ class AtcoderScraper(BaseScraper):
                 contest_id=contest_id,
                 problems=problems,
                 url=f"https://atcoder.jp/contests/{contest_id}/tasks/{contest_id}_%s",
+                contest_url=f"https://atcoder.jp/contests/{contest_id}",
+                standings_url=f"https://atcoder.jp/contests/{contest_id}/standings",
             )
         except Exception as e:
             return self._metadata_error(str(e))
