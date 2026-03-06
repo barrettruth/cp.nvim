@@ -24,15 +24,16 @@ CONTENTS                                                        *cp-contents*
  16. Race .......................................................... |cp-race|
  17. Credentials ............................................ |cp-credentials|
  18. Submit ...................................................... |cp-submit|
- 19. ANSI Colors ................................................... |cp-ansi|
- 20. Highlight Groups ........................................ |cp-highlights|
- 21. Terminal Colors .................................... |cp-terminal-colors|
- 22. Highlight Customization .......................... |cp-highlight-custom|
- 23. Helpers .................................................... |cp-helpers|
- 24. Statusline Integration .................................. |cp-statusline|
- 25. Panel Keymaps .......................................... |cp-panel-keys|
- 26. File Structure ................................................ |cp-files|
- 27. Health Check ................................................ |cp-health|
+ 19. Open ......................................................... |cp-open|
+ 20. ANSI Colors ................................................... |cp-ansi|
+ 21. Highlight Groups ........................................ |cp-highlights|
+ 22. Terminal Colors .................................... |cp-terminal-colors|
+ 23. Highlight Customization .......................... |cp-highlight-custom|
+ 24. Helpers .................................................... |cp-helpers|
+ 25. Statusline Integration .................................. |cp-statusline|
+ 26. Panel Keymaps .......................................... |cp-panel-keys|
+ 27. File Structure ................................................ |cp-files|
+ 28. Health Check ................................................ |cp-health|
 
 ==============================================================================
 INTRODUCTION                                                         *cp.nvim*
@@ -487,6 +488,17 @@ COMMANDS                                                         *cp-commands*
                                 credentials are saved.
                                 --lang: Submit solution for a specific language.
 
+            :CP open [problem|contest|standings]
+                                Open the URL for the current problem, contest,
+                                or standings page in the browser via
+                                |vim.ui.open|. Defaults to "problem" if no
+                                argument is given. Warns if the URL is not
+                                available (e.g. CSES has no standings).
+                                Examples: >
+                                    :CP open
+                                    :CP open contest
+                                    :CP open standings
+<
         State Restoration ~
             :CP                 Restore state from current file.
                                 Automatically detects platform, contest, problem,
@@ -579,6 +591,9 @@ through the same code path as |:CP|.
 
                                                            *<Plug>(cp-submit)*
 <Plug>(cp-submit)       Submit current solution. Equivalent to :CP submit.
+
+                                                             *<Plug>(cp-open)*
+<Plug>(cp-open)         Open current problem URL in browser. Equivalent to :CP open.
 
                                                         *<Plug>(cp-race-stop)*
 <Plug>(cp-race-stop)    Cancel active race countdown. Equivalent to :CP race stop.
@@ -1019,6 +1034,22 @@ Submit the current solution to the online judge.
 
         Platform support:
             AtCoder     Fully implemented.
+            Others      Not yet implemented.
+
+==============================================================================
+OPEN                                                                 *cp-open*
+
+Open a platform URL for the current contest in the browser.
+
+:CP open [problem|contest|standings]
+        Open the URL for the active problem, contest page, or standings.
+        Defaults to "problem" if no argument is given. Uses |vim.ui.open|.
+        Warns if the URL is unavailable (e.g. CSES has no standings page).
+
+        Platform support:
+            AtCoder     problem, contest, standings
+            Codeforces  problem, contest, standings
+            CSES        problem, contest (no standings)
             Others      Not yet implemented.
 
 ==============================================================================
