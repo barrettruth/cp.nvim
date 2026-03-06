@@ -107,6 +107,7 @@
 ---@field runtime { effective: table<string, table<string, CpLanguage>> }  -- computed
 
 ---@class cp.PartialConfig: cp.Config
+---@field platforms? table<string, CpPlatform|false>
 
 local M = {}
 
@@ -333,13 +334,18 @@ function M.setup(user_config)
   vim.validate({ user_config = { user_config, { 'table', 'nil' }, true } })
   local defaults = vim.deepcopy(M.defaults)
   if user_config and user_config.platforms then
-    for plat in pairs(defaults.platforms) do
-      if not user_config.platforms[plat] then
+    for plat, v in pairs(user_config.platforms) do
+      if v == false then
         defaults.platforms[plat] = nil
       end
     end
   end
   local cfg = vim.tbl_deep_extend('force', defaults, user_config or {})
+  for plat, v in pairs(cfg.platforms) do
+    if v == false then
+      cfg.platforms[plat] = nil
+    end
+  end
 
   if not next(cfg.languages) then
     error('[cp.nvim] At least one language must be configured')

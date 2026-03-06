@@ -92,26 +92,6 @@ Configuration is done via `vim.g.cp`. Set this before using the plugin:
             cpp = { extension = 'cpp', commands = { build = { ... } } }
           },
         },
-        atcoder = {
-          enabled_languages = { 'cpp', 'python' },
-          default_language  = 'cpp',
-        },
-        codeforces = {
-          enabled_languages = { 'cpp', 'python' },
-          default_language  = 'cpp',
-        },
-        codechef = {
-          enabled_languages = { 'cpp', 'python' },
-          default_language  = 'cpp',
-        },
-        usaco = {
-          enabled_languages = { 'cpp', 'python' },
-          default_language  = 'cpp',
-        },
-        kattis = {
-          enabled_languages = { 'cpp', 'python' },
-          default_language  = 'cpp',
-        },
       },
       debug = false,
       ui = {
@@ -137,21 +117,25 @@ Configuration is done via `vim.g.cp`. Set this before using the plugin:
 <
 
 By default, C++ (g++ with ISO C++17) and Python are preconfigured under
-'languages'. Platforms select which languages are enabled and which one is
-the default; per-platform overrides can tweak 'extension' or 'commands'.
+'languages'. All six platforms are enabled by default. User-supplied
+platform entries are merged on top of the defaults — you only need to
+specify what you want to change. To disable a platform entirely, set it
+to `false`.
 
-For example, to run CodeForces contests with Python by default:
+For example, to run Codeforces contests with Python by default and
+disable CodeChef:
 >lua
     vim.g.cp = {
       platforms = {
         codeforces = {
           default_language  = 'python',
         },
+        codechef = false,
       },
     }
 <
 Any language is supported provided the proper configuration. For example, to
-run CSES problems with Rust using the single schema:
+add Rust and use it by default on CSES:
 >lua
     vim.g.cp = {
       languages = {
@@ -175,8 +159,11 @@ run CSES problems with Rust using the single schema:
     Fields: ~
         {languages}     (table<string,|CpLanguage|>) Global language registry.
                         Each language provides an {extension} and {commands}.
-        {platforms}     (table<string,|CpPlatform|>) Per-platform enablement,
-                        default language, and optional overrides.
+        {platforms}     (table<string,|CpPlatform||false>) All six platforms
+                        are enabled by default. Each entry is merged on top
+                        of the platform defaults — omitted fields keep their
+                        defaults and unmentioned platforms stay enabled. Set
+                        a platform key to `false` to disable it entirely.
         {hooks}         (|cp.Hooks|) Hook functions called at various stages.
         {debug}         (boolean, default: false) Show info messages.
         {scrapers}      (string[]) Supported platform ids.
@@ -476,6 +463,14 @@ COMMANDS                                                         *cp-commands*
                                 If [platform] is omitted, uses the active platform.
                                 Examples: >
                                     :CP logout atcoder
+<
+            :CP {platform} signup
+                                Open the platform's registration page in the
+                                browser via |vim.ui.open|. Works even if
+                                {platform} is not enabled in your config.
+                                Examples: >
+                                    :CP atcoder signup
+                                    :CP codeforces signup
 <
         Submit Commands ~
             :CP submit [--lang {language}]
@@ -1018,6 +1013,12 @@ Credentials are stored under _credentials in the main cache file
 :CP logout [platform]
         Remove stored credentials for a platform.
         Omit [platform] to use the currently active platform.
+
+:CP {platform} signup
+        Open the platform's account registration page in the browser via
+        |vim.ui.open|. Works even if {platform} is not enabled in your
+        config. {platform} is one of: atcoder, codechef, codeforces, cses,
+        kattis, usaco.
 
 ==============================================================================
 SUBMIT                                                            *cp-submit*
