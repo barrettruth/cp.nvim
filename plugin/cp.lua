@@ -108,13 +108,6 @@ end, {
           end
         end
         return filter_candidates(candidates)
-      elseif args[2] == 'race' then
-        if require('cp.race').status().active then
-          return filter_candidates({ 'stop' })
-        end
-        local candidates = { 'stop' }
-        vim.list_extend(candidates, platforms)
-        return filter_candidates(candidates)
       elseif args[2] == 'open' then
         return filter_candidates({ 'problem', 'contest', 'standings' })
       elseif args[2] == 'next' or args[2] == 'prev' or args[2] == 'pick' then
@@ -129,15 +122,6 @@ end, {
       if args[2] == 'stress' then
         local utils = require('cp.utils')
         return filter_candidates(utils.cwd_executables())
-      elseif
-        args[2] == 'race'
-        and not require('cp.race').status().active
-        and vim.tbl_contains(platforms, args[3])
-      then
-        local cache = require('cp.cache')
-        cache.load()
-        local contests = cache.get_cached_contest_ids(args[3])
-        return filter_candidates(contests)
       elseif args[2] == 'cache' and args[3] == 'clear' then
         local candidates = vim.list_extend({}, platforms)
         table.insert(candidates, '')
@@ -152,6 +136,9 @@ end, {
         cache.load()
         local contest_data = cache.get_contest_data(args[2], args[3])
         local candidates = { '--lang' }
+        if not require('cp.race').status().active then
+          table.insert(candidates, '--race')
+        end
         if contest_data and contest_data.problems then
           for _, problem in ipairs(contest_data.problems) do
             table.insert(candidates, problem.id)
@@ -160,34 +147,35 @@ end, {
         return filter_candidates(candidates)
       end
     elseif num_args == 5 then
-      if
-        args[2] == 'race'
-        and not require('cp.race').status().active
-        and vim.tbl_contains(platforms, args[3])
-      then
-        return filter_candidates({ '--lang' })
-      elseif args[2] == 'cache' and args[3] == 'clear' and vim.tbl_contains(platforms, args[4]) then
+      if args[2] == 'cache' and args[3] == 'clear' and vim.tbl_contains(platforms, args[4]) then
         local cache = require('cp.cache')
         cache.load()
         local contests = cache.get_cached_contest_ids(args[4])
         return filter_candidates(contests)
       elseif vim.tbl_contains(platforms, args[2]) then
-        if args[4] == '--lang' then
+        if args[3] == '--race' then
+          return filter_candidates({ '--lang' })
+        elseif args[4] == '--lang' then
           return filter_candidates(get_enabled_languages(args[2]))
+        elseif args[3] == '--lang' then
+          local candidates = {}
+          if not require('cp.race').status().active then
+            table.insert(candidates, '--race')
+          end
+          return filter_candidates(candidates)
         else
           return filter_candidates({ '--lang' })
         end
       end
     elseif num_args == 6 then
-      if
-        args[2] == 'race'
-        and not require('cp.race').status().active
-        and vim.tbl_contains(platforms, args[3])
-        and args[5] == '--lang'
-      then
-        return filter_candidates(get_enabled_languages(args[3]))
-      elseif vim.tbl_contains(platforms, args[2]) and args[5] == '--lang' then
-        return filter_candidates(get_enabled_languages(args[2]))
+      if vim.tbl_contains(platforms, args[2]) then
+        if args[3] == '--race' and args[4] == '--lang' then
+          return filter_candidates(get_enabled_languages(args[2]))
+        elseif args[3] == '--lang' and args[5] == '--race' then
+          return {}
+        elseif args[5] == '--lang' then
+          return filter_candidates(get_enabled_languages(args[2]))
+        end
       end
     end
     return {}
@@ -209,6 +197,3 @@ vim.keymap.set('n', '<Plug>(cp-pick)', cp_action('pick'), { desc = 'CP pick cont
 vim.keymap.set('n', '<Plug>(cp-interact)', cp_action('interact'), { desc = 'CP interactive mode' })
 vim.keymap.set('n', '<Plug>(cp-stress)', cp_action('stress'), { desc = 'CP stress test' })
 vim.keymap.set('n', '<Plug>(cp-submit)', cp_action('submit'), { desc = 'CP submit solution' })
-vim.keymap.set('n', '<Plug>(cp-race-stop)', function()
-  require('cp.race').stop()
-end, { desc = 'CP stop race countdown' })
