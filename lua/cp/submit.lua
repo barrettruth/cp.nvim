@@ -54,6 +54,7 @@ function M.submit(opts)
     logger.log('Source file not found', { level = vim.log.levels.ERROR })
     return
   end
+  source_file = vim.fn.fnamemodify(source_file, ':p')
 
   prompt_credentials(platform, function(creds)
     vim.cmd.update()
