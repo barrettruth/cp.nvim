@@ -114,6 +114,13 @@ def test_kattis_contest_metadata(run_scraper_offline):
     assert model.standings_url != ""
 
 
+def test_usaco_precision_extracted(run_scraper_offline):
+    rc, objs = run_scraper_offline("usaco", "tests", "dec24_gold")
+    assert rc == 0
+    precisions = [obj["precision"] for obj in objs if "problem_id" in obj]
+    assert any(p is not None for p in precisions), "Expected at least one problem with precision"
+
+
 @pytest.mark.parametrize(
     "scraper,contest_id",
     [
