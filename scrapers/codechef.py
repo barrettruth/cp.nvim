@@ -362,7 +362,9 @@ class CodeChefScraper(BaseScraper):
                 except Exception:
                     pass
             contests.append(
-                ContestSummary(id=code, name=name, display_name=name, start_time=start_time)
+                ContestSummary(
+                    id=code, name=name, display_name=name, start_time=start_time
+                )
             )
         if not contests:
             return self._contests_error("No Starters contests found")
