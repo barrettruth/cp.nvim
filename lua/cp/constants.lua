@@ -10,7 +10,6 @@ M.ACTIONS = {
   'cache',
   'interact',
   'edit',
-  'race',
   'stress',
   'submit',
   'open',

@@ -39,8 +39,7 @@ function M.start(platform, contest_id, language)
     return
   end
   if race_state.timer then
-    logger.log('Race already active. Use :CP race stop first.', { level = vim.log.levels.WARN })
-    return
+    M.stop()
   end
 
   cache.load()
@@ -48,7 +47,7 @@ function M.start(platform, contest_id, language)
   local display = constants.PLATFORM_DISPLAY_NAMES[platform] or platform
   local cached_countdown = cache.get_supports_countdown(platform)
   if cached_countdown == false then
-    logger.log(('%s does not support :CP race'):format(display), { level = vim.log.levels.ERROR })
+    logger.log(('%s does not support --race'):format(display), { level = vim.log.levels.ERROR })
     return
   end
 
@@ -65,7 +64,7 @@ function M.start(platform, contest_id, language)
       if sc == false then
         cache.set_contest_summaries(platform, result.contests or {}, { supports_countdown = false })
         logger.log(
-          ('%s does not support :CP race'):format(display),
+          ('%s does not support --race'):format(display),
           { level = vim.log.levels.ERROR }
         )
         return
@@ -138,7 +137,6 @@ end
 function M.stop()
   local timer = race_state.timer
   if not timer then
-    logger.log('No active race', { level = vim.log.levels.WARN })
     return
   end
   timer:stop()
@@ -149,7 +147,6 @@ function M.stop()
   race_state.contest_name = nil
   race_state.language = nil
   race_state.start_time = nil
-  logger.log('Race cancelled', { level = vim.log.levels.INFO, override = true })
 end
 
 function M.status()

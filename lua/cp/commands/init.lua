@@ -24,6 +24,7 @@ local actions = constants.ACTIONS
 ---@field mode? string
 ---@field debug? boolean
 ---@field language? string
+---@field race? boolean
 ---@field subcommand? string
 
 ---@param str string
@@ -70,28 +71,6 @@ local function parse_command(args)
       else
         return { type = 'error', message = 'unknown cache subcommand: ' .. subcommand }
       end
-    elseif first == 'race' then
-      if args[2] == 'stop' then
-        return { type = 'action', action = 'race_stop', requires_context = false }
-      end
-      if not args[2] or not args[3] then
-        return {
-          type = 'error',
-          message = 'Usage: :CP race <platform> <contest_id> [--lang <lang>]',
-        }
-      end
-      local language = nil
-      if args[4] == '--lang' and args[5] then
-        language = args[5]
-      end
-      return {
-        type = 'action',
-        action = 'race',
-        requires_context = false,
-        platform = args[2],
-        contest = args[3],
-        language = language,
-      }
     elseif first == 'interact' then
       local inter = args[2]
       if inter and inter ~= '' then
@@ -295,6 +274,17 @@ local function parse_command(args)
         platform = first,
         contest = contest,
       }
+    elseif #args == 3 and args[3] == '--race' then
+      local contest = args[2]
+      if first == 'codeforces' then
+        contest = canonicalize_cf_contest(contest)
+      end
+      return {
+        type = 'contest_setup',
+        platform = first,
+        contest = contest,
+        race = true,
+      }
     elseif #args == 4 and args[3] == '--lang' then
       local contest = args[2]
       if first == 'codeforces' then
@@ -306,10 +296,35 @@ local function parse_command(args)
         contest = contest,
         language = args[4],
       }
+    elseif #args == 5 then
+      local contest = args[2]
+      if first == 'codeforces' then
+        contest = canonicalize_cf_contest(contest)
+      end
+      local language, race = nil, false
+      if args[3] == '--race' and args[4] == '--lang' then
+        language = args[5]
+        race = true
+      elseif args[3] == '--lang' and args[5] == '--race' then
+        language = args[4]
+        race = true
+      else
+        return {
+          type = 'error',
+          message = 'Invalid arguments. Usage: :CP <platform> <contest> [--race] [--lang <language>]',
+        }
+      end
+      return {
+        type = 'contest_setup',
+        platform = first,
+        contest = contest,
+        language = language,
+        race = race,
+      }
     else
       return {
         type = 'error',
-        message = 'Invalid arguments. Usage: :CP <platform> <contest> [--lang <language>]',
+        message = 'Invalid arguments. Usage: :CP <platform> <contest> [--race] [--lang <language>]',
       }
     end
   end
@@ -393,13 +408,6 @@ function M.handle_command(opts)
       require('cp.stress').toggle(cmd.generator_cmd, cmd.brute_cmd)
     elseif cmd.action == 'submit' then
       require('cp.submit').submit({ language = cmd.language })
-    elseif cmd.action == 'race' then
-      if not check_platform_enabled(cmd.platform) then
-        return
-      end
-      require('cp.race').start(cmd.platform, cmd.contest, cmd.language)
-    elseif cmd.action == 'race_stop' then
-      require('cp.race').stop()
     elseif cmd.action == 'open' then
       local cache = require('cp.cache')
       cache.load()
@@ -470,8 +478,12 @@ function M.handle_command(opts)
     if not check_platform_enabled(cmd.platform) then
       return
     end
-    local setup = require('cp.setup')
-    setup.setup_contest(cmd.platform, cmd.contest, nil, cmd.language)
+    if cmd.race then
+      require('cp.race').start(cmd.platform, cmd.contest, cmd.language)
+    else
+      local setup = require('cp.setup')
+      setup.setup_contest(cmd.platform, cmd.contest, nil, cmd.language)
+    end
     return
   end
 end
