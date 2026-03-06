@@ -239,21 +239,6 @@ class CSESScraper(BaseScraper):
             return self._login_error("Missing username or password")
 
         async with httpx.AsyncClient(follow_redirects=True) as client:
-            token = credentials.get("token")
-
-            if token:
-                print(json.dumps({"status": "checking_login"}), flush=True)
-                if await self._check_token(client, token):
-                    return LoginResult(
-                        success=True,
-                        error="",
-                        credentials={
-                            "username": username,
-                            "password": password,
-                            "token": token,
-                        },
-                    )
-
             print(json.dumps({"status": "logging_in"}), flush=True)
             token = await self._web_login(client, username, password)
             if not token:

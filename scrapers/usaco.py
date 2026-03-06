@@ -423,11 +423,7 @@ class USACOScraper(BaseScraper):
 
         async with httpx.AsyncClient(follow_redirects=True) as client:
             await _load_usaco_cookies(client)
-            print(json.dumps({"status": "checking_login"}), flush=True)
-            logged_in = bool(client.cookies) and await _check_usaco_login(
-                client, username
-            )
-            if not logged_in:
+            if not client.cookies:
                 print(json.dumps({"status": "logging_in"}), flush=True)
                 try:
                     ok = await _do_usaco_login(client, username, password)
@@ -437,44 +433,76 @@ class USACOScraper(BaseScraper):
                     return self._submit_error("Login failed (bad credentials?)")
                 await _save_usaco_cookies(client)
 
-            print(json.dumps({"status": "submitting"}), flush=True)
-            try:
-                page_r = await client.get(
-                    f"{_AUTH_BASE}/index.php?page=viewproblem2&cpid={problem_id}",
-                    headers=HEADERS,
-                    timeout=HTTP_TIMEOUT,
-                )
-                form_url, hidden_fields, lang_val = _parse_submit_form(
-                    page_r.text, language_id
-                )
-            except Exception:
-                form_url = _AUTH_BASE + _SUBMIT_PATH
-                hidden_fields = {}
-                lang_val = None
-
-            data: dict[str, str] = {"cpid": problem_id, **hidden_fields}
-            data["language"] = lang_val if lang_val is not None else language_id
-            ext = "py" if "python" in language_id.lower() else "cpp"
-            try:
-                r = await client.post(
-                    form_url,
-                    data=data,
-                    files={"sourcefile": (f"solution.{ext}", source, "text/plain")},
-                    headers=HEADERS,
-                    timeout=HTTP_TIMEOUT,
-                )
-                r.raise_for_status()
-            except Exception as e:
-                return self._submit_error(f"Submit request failed: {e}")
-
-            try:
-                resp = r.json()
-                sid = str(resp.get("submission_id", resp.get("id", "")))
-            except Exception:
-                sid = ""
-            return SubmitResult(
-                success=True, error="", submission_id=sid, verdict="submitted"
+            result = await self._do_submit(
+                client, problem_id, language_id, source
             )
+
+            if result.success or result.error != "auth_failure":
+                return result
+
+            client.cookies.clear()
+            print(json.dumps({"status": "logging_in"}), flush=True)
+            try:
+                ok = await _do_usaco_login(client, username, password)
+            except Exception as e:
+                return self._submit_error(f"Login failed: {e}")
+            if not ok:
+                return self._submit_error("Login failed (bad credentials?)")
+            await _save_usaco_cookies(client)
+
+            return await self._do_submit(
+                client, problem_id, language_id, source
+            )
+
+    async def _do_submit(
+        self,
+        client: httpx.AsyncClient,
+        problem_id: str,
+        language_id: str,
+        source: bytes,
+    ) -> SubmitResult:
+        print(json.dumps({"status": "submitting"}), flush=True)
+        try:
+            page_r = await client.get(
+                f"{_AUTH_BASE}/index.php?page=viewproblem2&cpid={problem_id}",
+                headers=HEADERS,
+                timeout=HTTP_TIMEOUT,
+            )
+            if "login" in page_r.url.path.lower() or "Login" in page_r.text[:2000]:
+                return self._submit_error("auth_failure")
+            form_url, hidden_fields, lang_val = _parse_submit_form(
+                page_r.text, language_id
+            )
+        except Exception:
+            form_url = _AUTH_BASE + _SUBMIT_PATH
+            hidden_fields = {}
+            lang_val = None
+
+        data: dict[str, str] = {"cpid": problem_id, **hidden_fields}
+        data["language"] = lang_val if lang_val is not None else language_id
+        ext = "py" if "python" in language_id.lower() else "cpp"
+        try:
+            r = await client.post(
+                form_url,
+                data=data,
+                files={"sourcefile": (f"solution.{ext}", source, "text/plain")},
+                headers=HEADERS,
+                timeout=HTTP_TIMEOUT,
+            )
+            r.raise_for_status()
+        except Exception as e:
+            return self._submit_error(f"Submit request failed: {e}")
+
+        try:
+            resp = r.json()
+            if resp.get("code") == 0 and "login" in resp.get("message", "").lower():
+                return self._submit_error("auth_failure")
+            sid = str(resp.get("submission_id", resp.get("id", "")))
+        except Exception:
+            sid = ""
+        return SubmitResult(
+            success=True, error="", submission_id=sid, verdict="submitted"
+        )
 
     async def login(self, credentials: dict[str, str]) -> LoginResult:
         username = credentials.get("username", "")
