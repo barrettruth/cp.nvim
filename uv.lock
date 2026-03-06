@@ -1034,7 +1034,6 @@ source = { virtual = "." }
 dependencies = [
     { name = "backoff" },
     { name = "beautifulsoup4" },
-    { name = "curl-cffi" },
     { name = "httpx" },
     { name = "ndjson" },
     { name = "pydantic" },
@@ -1058,7 +1057,6 @@ dev = [
 requires-dist = [
     { name = "backoff", specifier = ">=2.2.1" },
     { name = "beautifulsoup4", specifier = ">=4.13.5" },
-    { name = "curl-cffi", specifier = ">=0.13.0" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "ndjson", specifier = ">=0.3.1" },
     { name = "pydantic", specifier = ">=2.11.10" },
