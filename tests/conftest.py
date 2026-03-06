@@ -7,6 +7,8 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
 
+import re
+
 import httpx
 import pytest
 import requests
@@ -102,6 +104,35 @@ def run_scraper_offline(fixture_text):
             return fixture_text(f"codeforces/{contest_id}_{index}.html")
 
         raise AssertionError(f"No fixture for Codeforces url={url!r}")
+
+    def _router_kattis(*, url: str) -> str:
+        url = url.removeprefix("https://open.kattis.com")
+        if "/contests?" in url:
+            return fixture_text("kattis/contests.html")
+        m = re.search(r"/contests/([^/]+)/problems", url)
+        if m:
+            try:
+                return fixture_text(f"kattis/contest_{m.group(1)}_problems.html")
+            except FileNotFoundError:
+                return "<html></html>"
+        if "/problems/" in url and "/file/statement" not in url:
+            slug = url.rstrip("/").split("/")[-1]
+            return fixture_text(f"kattis/problem_{slug}.html")
+        raise AssertionError(f"No fixture for Kattis url={url!r}")
+
+    def _router_usaco(*, url: str) -> str:
+        if "page=contests" in url and "results" not in url:
+            return fixture_text("usaco/contests.html")
+        m = re.search(r"page=([a-z]+\d{2,4}results)", url)
+        if m:
+            try:
+                return fixture_text(f"usaco/{m.group(1)}.html")
+            except FileNotFoundError:
+                return "<html></html>"
+        m = re.search(r"page=viewproblem2&cpid=(\d+)", url)
+        if m:
+            return fixture_text(f"usaco/problem_{m.group(1)}.html")
+        raise AssertionError(f"No fixture for USACO url={url!r}")
 
     def _make_offline_fetches(scraper_name: str):
         match scraper_name:
@@ -213,6 +244,37 @@ def run_scraper_offline(fixture_text):
                     "__offline_get_async": __offline_get_async,
                 }
 
+            case "kattis":
+
+                async def __offline_get_kattis(client, url: str, **kwargs):
+                    if "/file/statement/samples.zip" in url:
+                        raise httpx.HTTPError("not found")
+                    html = _router_kattis(url=url)
+                    return SimpleNamespace(
+                        text=html,
+                        content=html.encode(),
+                        status_code=200,
+                        raise_for_status=lambda: None,
+                    )
+
+                return {
+                    "__offline_get_async": __offline_get_kattis,
+                }
+
+            case "usaco":
+
+                async def __offline_get_usaco(client, url: str, **kwargs):
+                    html = _router_usaco(url=url)
+                    return SimpleNamespace(
+                        text=html,
+                        status_code=200,
+                        raise_for_status=lambda: None,
+                    )
+
+                return {
+                    "__offline_get_async": __offline_get_usaco,
+                }
+
             case _:
                 raise AssertionError(f"Unknown scraper: {scraper_name}")
 
@@ -221,6 +283,8 @@ def run_scraper_offline(fixture_text):
         "atcoder": "AtcoderScraper",
         "codeforces": "CodeforcesScraper",
         "codechef": "CodeChefScraper",
+        "kattis": "KattisScraper",
+        "usaco": "USACOScraper",
     }
 
     def _run(scraper_name: str, mode: str, *args: str):
@@ -236,7 +300,7 @@ def run_scraper_offline(fixture_text):
             ns._get_async = offline_fetches["_get_async"]
         elif scraper_name == "cses":
             httpx.AsyncClient.get = offline_fetches["__offline_fetch_text"]
-        elif scraper_name == "codechef":
+        elif scraper_name in ("codechef", "kattis", "usaco"):
             httpx.AsyncClient.get = offline_fetches["__offline_get_async"]
 
         scraper_class = getattr(ns, scraper_classes[scraper_name])
