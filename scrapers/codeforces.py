@@ -7,7 +7,6 @@ from typing import Any
 
 import requests
 from bs4 import BeautifulSoup, Tag
-from curl_cffi import requests as curl_requests
 
 from .base import BaseScraper, extract_precision
 from .models import (
@@ -141,10 +140,30 @@ def _is_interactive(block: Tag) -> bool:
 
 
 def _fetch_problems_html(contest_id: str) -> str:
+    try:
+        from scrapling.fetchers import StealthySession  # type: ignore[import-untyped,unresolved-import]
+    except ImportError:
+        raise RuntimeError("scrapling is required for Codeforces metadata")
+
+    from .atcoder import _ensure_browser
+
+    _ensure_browser()
+
     url = f"{BASE_URL}/contest/{contest_id}/problems"
-    response = curl_requests.get(url, impersonate="chrome", timeout=HTTP_TIMEOUT)
-    response.raise_for_status()
-    return response.text
+    html = ""
+
+    def page_action(page):
+        nonlocal html
+        html = page.content()
+
+    with StealthySession(
+        headless=True,
+        timeout=BROWSER_SESSION_TIMEOUT,
+        google_search=False,
+    ) as session:
+        session.fetch(url, page_action=page_action, solve_cloudflare=True)
+
+    return html
 
 
 def _parse_all_blocks(html: str) -> list[dict[str, Any]]:

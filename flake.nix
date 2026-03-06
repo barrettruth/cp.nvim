@@ -19,7 +19,6 @@
         pkgs.python312.withPackages (ps: [
           ps.backoff
           ps.beautifulsoup4
-          ps.curl-cffi
           ps.httpx
           ps.ndjson
           ps.pydantic
@@ -31,7 +30,6 @@
         pkgs.python312.withPackages (ps: [
           ps.backoff
           ps.beautifulsoup4
-          ps.curl-cffi
           ps.httpx
           ps.ndjson
           ps.pydantic

@@ -45,6 +45,7 @@ local function run_scraper(platform, subcommand, args, opts)
   end
 
   local needs_browser = subcommand == 'submit' or subcommand == 'login'
+    or (platform == 'codeforces' and (subcommand == 'metadata' or subcommand == 'tests'))
 
   if needs_browser then
     utils.setup_nix_submit_env()
