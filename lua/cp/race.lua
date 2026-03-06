@@ -55,13 +55,19 @@ function M.start(platform, contest_id, language)
   local start_time = cache.get_contest_start_time(platform, contest_id)
 
   if not start_time then
-    logger.log('Fetching contest list...', { level = vim.log.levels.INFO, override = true, sync = true })
+    logger.log(
+      'Fetching contest list...',
+      { level = vim.log.levels.INFO, override = true, sync = true }
+    )
     local result = scraper.scrape_contest_list(platform)
     if result then
       local sc = result.supports_countdown
       if sc == false then
         cache.set_contest_summaries(platform, result.contests or {}, { supports_countdown = false })
-        logger.log(('%s does not support :CP race'):format(display), { level = vim.log.levels.ERROR })
+        logger.log(
+          ('%s does not support :CP race'):format(display),
+          { level = vim.log.levels.ERROR }
+        )
         return
       end
       if result.contests and #result.contests > 0 then
@@ -121,10 +127,7 @@ function M.start(platform, contest_id, language)
         require('cp.setup').setup_contest(p, c, nil, l)
       else
         vim.notify(
-          ('[cp.nvim] %s starts in %s'):format(
-            race_state.contest_name,
-            format_countdown(r)
-          ),
+          ('[cp.nvim] %s starts in %s'):format(race_state.contest_name, format_countdown(r)),
           vim.log.levels.INFO
         )
       end
