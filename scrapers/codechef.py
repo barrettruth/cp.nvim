@@ -125,7 +125,9 @@ def _login_headless_codechef(credentials: dict[str, str]) -> LoginResult:
         ) as session:
             if saved_cookies:
                 print(json.dumps({"status": "checking_login"}), flush=True)
-                session.fetch(f"{BASE_URL}/", page_action=check_login, network_idle=True)
+                session.fetch(
+                    f"{BASE_URL}/", page_action=check_login, network_idle=True
+                )
 
             if not logged_in:
                 print(json.dumps({"status": "logging_in"}), flush=True)
@@ -135,7 +137,9 @@ def _login_headless_codechef(credentials: dict[str, str]) -> LoginResult:
                         success=False, error=f"Login failed: {login_error}"
                     )
 
-                session.fetch(f"{BASE_URL}/", page_action=check_login, network_idle=True)
+                session.fetch(
+                    f"{BASE_URL}/", page_action=check_login, network_idle=True
+                )
                 if not logged_in:
                     return LoginResult(
                         success=False, error="Login failed (bad credentials?)"
@@ -274,7 +278,9 @@ def _submit_headless_codechef(
         ) as session:
             if not logged_in:
                 print(json.dumps({"status": "checking_login"}), flush=True)
-                session.fetch(f"{BASE_URL}/", page_action=check_login, network_idle=True)
+                session.fetch(
+                    f"{BASE_URL}/", page_action=check_login, network_idle=True
+                )
 
             if not logged_in:
                 print(json.dumps({"status": "logging_in"}), flush=True)
