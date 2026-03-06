@@ -3,13 +3,13 @@
 import asyncio
 import json
 import re
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
 import httpx
-from curl_cffi import requests as curl_requests
 
-from .base import BaseScraper, extract_precision
+from .base import BaseScraper
 from .timeouts import BROWSER_NAV_TIMEOUT, BROWSER_SESSION_TIMEOUT, HTTP_TIMEOUT
 from .models import (
     ContestListResult,
@@ -25,7 +25,6 @@ BASE_URL = "https://www.codechef.com"
 API_CONTESTS_ALL = "/api/list/contests/all"
 API_CONTEST = "/api/contests/{contest_id}"
 API_PROBLEM = "/api/contests/{contest_id}/problems/{problem_id}"
-PROBLEM_URL = "https://www.codechef.com/problems/{problem_id}"
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 }
@@ -44,32 +43,12 @@ _CC_CHECK_LOGIN_JS = """() => {
     return !!document.querySelector('a[href="/logout"]') ||
            !!document.querySelector('[class*="user-name"]');
 }"""
-MEMORY_LIMIT_RE = re.compile(
-    r"Memory\s+[Ll]imit.*?([0-9.]+)\s*(MB|GB)", re.IGNORECASE | re.DOTALL
-)
 
 
 async def fetch_json(client: httpx.AsyncClient, path: str) -> dict[str, Any]:
     r = await client.get(BASE_URL + path, headers=HEADERS, timeout=HTTP_TIMEOUT)
     r.raise_for_status()
     return r.json()
-
-
-def _extract_memory_limit(html: str) -> float:
-    m = MEMORY_LIMIT_RE.search(html)
-    if not m:
-        return 256.0
-    value = float(m.group(1))
-    unit = m.group(2).upper()
-    if unit == "GB":
-        return value * 1024.0
-    return value
-
-
-def _fetch_html_sync(url: str) -> str:
-    response = curl_requests.get(url, impersonate="chrome", timeout=HTTP_TIMEOUT)
-    response.raise_for_status()
-    return response.text
 
 
 def _login_headless_codechef(credentials: dict[str, str]) -> LoginResult:
@@ -364,56 +343,29 @@ class CodeChefScraper(BaseScraper):
                 data = await fetch_json(client, API_CONTESTS_ALL)
             except httpx.HTTPStatusError as e:
                 return self._contests_error(f"Failed to fetch contests: {e}")
-            all_contests = data.get("future_contests", []) + data.get(
-                "past_contests", []
+        contests: list[ContestSummary] = []
+        seen: set[str] = set()
+        for c in data.get("future_contests", []) + data.get("past_contests", []):
+            code = c.get("contest_code", "")
+            name = c.get("contest_name", code)
+            if not re.match(r"^START\d+$", code):
+                continue
+            if code in seen:
+                continue
+            seen.add(code)
+            start_time: int | None = None
+            iso = c.get("contest_start_date_iso")
+            if iso:
+                try:
+                    dt = datetime.fromisoformat(iso)
+                    start_time = int(dt.timestamp())
+                except Exception:
+                    pass
+            contests.append(
+                ContestSummary(id=code, name=name, display_name=name, start_time=start_time)
             )
-            max_num = 0
-            for contest in all_contests:
-                contest_code = contest.get("contest_code", "")
-                if contest_code.startswith("START"):
-                    match = re.match(r"START(\d+)", contest_code)
-                    if match:
-                        num = int(match.group(1))
-                        max_num = max(max_num, num)
-            if max_num == 0:
-                return self._contests_error("No Starters contests found")
-            contests = []
-            sem = asyncio.Semaphore(CONNECTIONS)
-
-            async def fetch_divisions(i: int) -> list[ContestSummary]:
-                parent_id = f"START{i}"
-                async with sem:
-                    try:
-                        parent_data = await fetch_json(
-                            client, API_CONTEST.format(contest_id=parent_id)
-                        )
-                    except Exception as e:
-                        import sys
-
-                        print(f"Error fetching {parent_id}: {e}", file=sys.stderr)
-                        return []
-                child_contests = parent_data.get("child_contests", {})
-                if not child_contests:
-                    return []
-                base_name = f"Starters {i}"
-                divisions = []
-                for div_key, div_data in child_contests.items():
-                    div_code = div_data.get("contest_code", "")
-                    div_num = div_data.get("div", {}).get("div_number", "")
-                    if div_code and div_num:
-                        divisions.append(
-                            ContestSummary(
-                                id=div_code,
-                                name=base_name,
-                                display_name=f"{base_name} (Div. {div_num})",
-                            )
-                        )
-                return divisions
-
-            tasks = [fetch_divisions(i) for i in range(1, max_num + 1)]
-            for coro in asyncio.as_completed(tasks):
-                divisions = await coro
-                contests.extend(divisions)
+        if not contests:
+            return self._contests_error("No Starters contests found")
         return ContestListResult(success=True, error="", contests=contests)
 
     async def stream_tests_for_category_async(self, category_id: str) -> None:
@@ -481,14 +433,9 @@ class CodeChefScraper(BaseScraper):
                         ]
                         time_limit_str = problem_data.get("max_timelimit", "1")
                         timeout_ms = int(float(time_limit_str) * 1000)
-                        problem_url = PROBLEM_URL.format(problem_id=problem_code)
-                        loop = asyncio.get_event_loop()
-                        html = await loop.run_in_executor(
-                            None, _fetch_html_sync, problem_url
-                        )
-                        memory_mb = _extract_memory_limit(html)
+                        memory_mb = 256.0
                         interactive = False
-                        precision = extract_precision(html)
+                        precision = None
                     except Exception:
                         tests = []
                         timeout_ms = 1000
