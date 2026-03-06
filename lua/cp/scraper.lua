@@ -216,7 +216,7 @@ local function run_scraper(platform, subcommand, args, opts)
   end
 end
 
-function M.scrape_contest_metadata(platform, contest_id, callback)
+function M.scrape_contest_metadata(platform, contest_id, callback, on_error)
   run_scraper(platform, 'metadata', { contest_id }, {
     on_exit = function(result)
       if not result or not result.success then
@@ -227,6 +227,9 @@ function M.scrape_contest_metadata(platform, contest_id, callback)
           ),
           { level = vim.log.levels.ERROR }
         )
+        if type(on_error) == 'function' then
+          on_error()
+        end
         return
       end
       local data = result.data or {}
@@ -238,6 +241,9 @@ function M.scrape_contest_metadata(platform, contest_id, callback)
           ),
           { level = vim.log.levels.ERROR }
         )
+        if type(on_error) == 'function' then
+          on_error()
+        end
         return
       end
       if type(callback) == 'function' then
