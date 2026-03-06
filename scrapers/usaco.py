@@ -337,10 +337,16 @@ class USACOScraper(BaseScraper):
                     contests.extend(await coro)
 
             if not contests:
-                return self._contests_error("No contests found")
-            return ContestListResult(success=True, error="", contests=contests)
+                return ContestListResult(
+                    success=False, error="No contests found", supports_countdown=False
+                )
+            return ContestListResult(
+                success=True, error="", contests=contests, supports_countdown=False
+            )
         except Exception as e:
-            return self._contests_error(str(e))
+            return ContestListResult(
+                success=False, error=str(e), supports_countdown=False
+            )
 
     async def stream_tests_for_category_async(self, category_id: str) -> None:
         month_year, division = _parse_contest_id(category_id)

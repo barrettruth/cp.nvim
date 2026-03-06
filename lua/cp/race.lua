@@ -35,20 +35,36 @@ function M.start(platform, contest_id, language)
   end
 
   cache.load()
+
+  local display = constants.PLATFORM_DISPLAY_NAMES[platform] or platform
+  local cached_countdown = cache.get_supports_countdown(platform)
+  if cached_countdown == false then
+    logger.log(('%s does not support :CP race'):format(display), { level = vim.log.levels.ERROR })
+    return
+  end
+
   local start_time = cache.get_contest_start_time(platform, contest_id)
 
   if not start_time then
-    logger.log('Fetching contest list...', { level = vim.log.levels.INFO, override = true })
-    local contests = scraper.scrape_contest_list(platform)
-    if contests and #contests > 0 then
-      cache.set_contest_summaries(platform, contests)
-      start_time = cache.get_contest_start_time(platform, contest_id)
+    logger.log('Fetching contest list...', { level = vim.log.levels.INFO, override = true, sync = true })
+    local result = scraper.scrape_contest_list(platform)
+    if result then
+      local sc = result.supports_countdown
+      if sc == false then
+        cache.set_contest_summaries(platform, result.contests or {}, { supports_countdown = false })
+        logger.log(('%s does not support :CP race'):format(display), { level = vim.log.levels.ERROR })
+        return
+      end
+      if result.contests and #result.contests > 0 then
+        cache.set_contest_summaries(platform, result.contests, { supports_countdown = sc })
+        start_time = cache.get_contest_start_time(platform, contest_id)
+      end
     end
   end
 
   if not start_time then
     logger.log(
-      ('No start time found for %s contest %s'):format(
+      ('No start time found for %s contest "%s"'):format(
         constants.PLATFORM_DISPLAY_NAMES[platform] or platform,
         contest_id
       ),

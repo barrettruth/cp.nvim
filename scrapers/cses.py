@@ -228,9 +228,13 @@ class CSESScraper(BaseScraper):
         cats = parse_categories(html)
         if not cats:
             return ContestListResult(
-                success=False, error=f"{self.platform_name}: No contests found"
+                success=False,
+                error=f"{self.platform_name}: No contests found",
+                supports_countdown=False,
             )
-        return ContestListResult(success=True, error="", contests=cats)
+        return ContestListResult(
+            success=True, error="", contests=cats, supports_countdown=False
+        )
 
     async def login(self, credentials: dict[str, str]) -> LoginResult:
         username = credentials.get("username", "")

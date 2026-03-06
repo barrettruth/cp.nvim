@@ -392,7 +392,8 @@ end
 
 ---@param platform string
 ---@param contests ContestSummary[]
-function M.set_contest_summaries(platform, contests)
+---@param opts? { supports_countdown?: boolean }
+function M.set_contest_summaries(platform, contests, opts)
   cache_data[platform] = cache_data[platform] or {}
   for _, contest in ipairs(contests) do
     cache_data[platform][contest.id] = cache_data[platform][contest.id] or {}
@@ -405,7 +406,20 @@ function M.set_contest_summaries(platform, contests)
     end
   end
 
+  if opts and opts.supports_countdown ~= nil then
+    cache_data[platform].supports_countdown = opts.supports_countdown
+  end
+
   M.save()
+end
+
+---@param platform string
+---@return boolean?
+function M.get_supports_countdown(platform)
+  if not cache_data[platform] then
+    return nil
+  end
+  return cache_data[platform].supports_countdown
 end
 
 ---@param platform string

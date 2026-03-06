@@ -50,6 +50,7 @@ class MetadataResult(ScrapingResult):
 
 class ContestListResult(ScrapingResult):
     contests: list[ContestSummary] = Field(default_factory=list)
+    supports_countdown: bool = True
 
     model_config = ConfigDict(extra="forbid")
 
