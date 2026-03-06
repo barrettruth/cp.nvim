@@ -1,6 +1,7 @@
 local M = {}
 
 local cache = require('cp.cache')
+local config = require('cp.config')
 local logger = require('cp.log')
 local state = require('cp.state')
 
@@ -56,6 +57,12 @@ function M.submit(opts)
   end
   source_file = vim.fn.fnamemodify(source_file, ':p')
 
+  local lang_result = config.get_language_for_platform(platform, language)
+  local submit_language = language
+  if lang_result.valid and lang_result.effective and lang_result.effective.submit_id then
+    submit_language = lang_result.effective.submit_id
+  end
+
   prompt_credentials(platform, function(creds)
     vim.cmd.update()
     vim.notify('[cp.nvim] Submitting...', vim.log.levels.INFO)
@@ -64,7 +71,7 @@ function M.submit(opts)
       platform,
       contest_id,
       problem_id,
-      language,
+      submit_language,
       source_file,
       creds,
       function(ev)

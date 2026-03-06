@@ -8,6 +8,7 @@
 ---@field extension string
 ---@field commands CpLangCommands
 ---@field template? string
+---@field submit_id? string
 
 ---@class CpTemplatesConfig
 ---@field cursor_marker? string
@@ -16,6 +17,7 @@
 ---@field extension? string
 ---@field commands? CpLangCommands
 ---@field template? string
+---@field submit_id? string
 
 ---@class CpPlatform
 ---@field enabled_languages string[]
@@ -292,6 +294,9 @@ local function merge_lang(base, ov)
   end
   if ov.template then
     out.template = ov.template
+  end
+  if ov.submit_id then
+    out.submit_id = ov.submit_id
   end
   return out
 end
