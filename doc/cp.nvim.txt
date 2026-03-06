@@ -113,7 +113,6 @@ Configuration is done via `vim.g.cp`. Set this before using the plugin:
           default_language  = 'cpp',
         },
       },
-      open_url = true,
       debug = false,
       ui = {
         ansi = true,
@@ -186,8 +185,6 @@ run CSES problems with Rust using the single schema:
                         Should return full filename with extension.
                         (default: concatenates contest_id and problem_id, lowercased)
         {ui}            (|CpUI|) UI settings: panel, diff backend, picker.
-        {open_url}      (boolean) Open the contest & problem url in the browser
-                        when a new contest is opened or the active problem changes.
 
                                                                   *CpPlatform*
     Fields: ~
