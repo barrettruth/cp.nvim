@@ -433,9 +433,7 @@ class USACOScraper(BaseScraper):
                     return self._submit_error("Login failed (bad credentials?)")
                 await _save_usaco_cookies(client)
 
-            result = await self._do_submit(
-                client, problem_id, language_id, source
-            )
+            result = await self._do_submit(client, problem_id, language_id, source)
 
             if result.success or result.error != "auth_failure":
                 return result
@@ -450,9 +448,7 @@ class USACOScraper(BaseScraper):
                 return self._submit_error("Login failed (bad credentials?)")
             await _save_usaco_cookies(client)
 
-            return await self._do_submit(
-                client, problem_id, language_id, source
-            )
+            return await self._do_submit(client, problem_id, language_id, source)
 
     async def _do_submit(
         self,

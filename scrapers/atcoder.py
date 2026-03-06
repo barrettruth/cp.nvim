@@ -342,9 +342,7 @@ def _login_headless(credentials: dict[str, str]) -> LoginResult:
                 solve_cloudflare=True,
             )
             if login_error:
-                return LoginResult(
-                    success=False, error=f"Login failed: {login_error}"
-                )
+                return LoginResult(success=False, error=f"Login failed: {login_error}")
 
             session.fetch(
                 f"{BASE_URL}/home", page_action=check_login, network_idle=True

@@ -98,13 +98,9 @@ def _login_headless_codechef(credentials: dict[str, str]) -> LoginResult:
             print(json.dumps({"status": "logging_in"}), flush=True)
             session.fetch(f"{BASE_URL}/login", page_action=login_action)
             if login_error:
-                return LoginResult(
-                    success=False, error=f"Login failed: {login_error}"
-                )
+                return LoginResult(success=False, error=f"Login failed: {login_error}")
 
-            session.fetch(
-                f"{BASE_URL}/", page_action=check_login, network_idle=True
-            )
+            session.fetch(f"{BASE_URL}/", page_action=check_login, network_idle=True)
             if not logged_in:
                 return LoginResult(
                     success=False, error="Login failed (bad credentials?)"
