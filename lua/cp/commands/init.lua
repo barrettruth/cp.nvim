@@ -245,6 +245,12 @@ local function parse_command(args)
         debug = debug,
         mode = mode,
       }
+    elseif first == 'open' then
+      local target = args[2] or 'problem'
+      if not vim.tbl_contains({ 'problem', 'contest', 'standings' }, target) then
+        return { type = 'error', message = 'Usage: :CP open [problem|contest|standings]' }
+      end
+      return { type = 'action', action = 'open', requires_context = true, subcommand = target }
     elseif first == 'pick' then
       local language = nil
       if #args >= 3 and args[2] == '--lang' then
@@ -375,6 +381,20 @@ function M.handle_command(opts)
       require('cp.race').start(cmd.platform, cmd.contest, cmd.language)
     elseif cmd.action == 'race_stop' then
       require('cp.race').stop()
+    elseif cmd.action == 'open' then
+      local cache = require('cp.cache')
+      cache.load()
+      local urls =
+        cache.get_open_urls(state.get_platform(), state.get_contest_id(), state.get_problem_id())
+      local url = urls and urls[cmd.subcommand]
+      if not url or url == '' then
+        logger.log(
+          ("No URL available for '%s'"):format(cmd.subcommand),
+          { level = vim.log.levels.WARN }
+        )
+        return
+      end
+      vim.ui.open(url)
     elseif cmd.action == 'login' then
       require('cp.credentials').login(cmd.platform)
     elseif cmd.action == 'logout' then

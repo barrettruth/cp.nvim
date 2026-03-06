@@ -243,7 +243,14 @@ function M.setup_contest(platform, contest_id, problem_id, language)
       contest_id,
       vim.schedule_wrap(function(result)
         local problems = result.problems or {}
-        cache.set_contest_data(platform, contest_id, problems, result.url)
+        cache.set_contest_data(
+          platform,
+          contest_id,
+          problems,
+          result.url,
+          result.contest_url or '',
+          result.standings_url or ''
+        )
         local prov = state.get_provisional()
         if not prov or prov.platform ~= platform or prov.contest_id ~= contest_id then
           return

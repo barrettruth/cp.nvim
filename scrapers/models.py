@@ -42,6 +42,8 @@ class MetadataResult(ScrapingResult):
     contest_id: str = ""
     problems: list[ProblemSummary] = Field(default_factory=list)
     url: str
+    contest_url: str = ""
+    standings_url: str = ""
 
     model_config = ConfigDict(extra="forbid")
 
