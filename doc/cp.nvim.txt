@@ -438,17 +438,14 @@ COMMANDS                                                         *cp-commands*
 <
 
         Race Commands ~
-            :CP race {platform} {contest_id} [--lang {language}]
+            :CP {platform} {contest_id} --race [--lang {language}]
                                 Start a countdown to the contest's scheduled
                                 start time. At T=0, automatically runs:
                                     :CP {platform} {contest_id} [--lang ...]
                                 Examples: >
-                                    :CP race atcoder abc400
-                                    :CP race codeforces 2100 --lang python
+                                    :CP atcoder abc400 --race
+                                    :CP codeforces 2100 --race --lang python
 <
-            :CP race stop
-                                Cancel an active race countdown.
-
         Credential Commands ~
             :CP login [platform]
                                 Set or update stored credentials for a platform.
@@ -588,9 +585,6 @@ through the same code path as |:CP|.
                                                              *<Plug>(cp-open)*
 <Plug>(cp-open)         Open current problem URL in browser. Equivalent to :CP open.
 
-                                                        *<Plug>(cp-race-stop)*
-<Plug>(cp-race-stop)    Cancel active race countdown. Equivalent to :CP race stop.
-
 Example configuration: >lua
     vim.keymap.set('n', '<leader>cr', '<Plug>(cp-run)')
     vim.keymap.set('n', '<leader>cp', '<Plug>(cp-panel)')
@@ -601,7 +595,7 @@ Example configuration: >lua
     vim.keymap.set('n', '<leader>ci', '<Plug>(cp-interact)')
     vim.keymap.set('n', '<leader>cs', '<Plug>(cp-stress)')
     vim.keymap.set('n', '<leader>cu', '<Plug>(cp-submit)')
-    vim.keymap.set('n', '<leader>cR', '<Plug>(cp-race-stop)')
+
 <
 
 ==============================================================================
@@ -986,15 +980,14 @@ RACE                                                                  *cp-race*
 
 Count down to a contest's start time and automatically run setup at T=0.
 
-:CP race {platform} {contest_id} [--lang {language}]
+:CP {platform} {contest_id} --race [--lang {language}]
         Start a countdown timer. At T=0, automatically runs:
             :CP {platform} {contest_id} [--lang {language}]
         Examples: >
-            :CP race atcoder abc400
-            :CP race codeforces 2100 --lang python
+            :CP atcoder abc400 --race
+            :CP codeforces 2100 --race --lang python
 <
-:CP race stop
-        Cancel an active race countdown.
+Starting a new race while one is active automatically cancels the previous one.
 
 Statusline integration: see |cp-race-status|.
 
