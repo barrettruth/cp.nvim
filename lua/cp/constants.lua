@@ -74,4 +74,21 @@ M.signal_codes = {
   [143] = 'SIGTERM',
 }
 
+M.LANGUAGE_VERSIONS = {
+  atcoder = { cpp = { ['c++23'] = '6017' }, python = { python3 = '6082' } },
+  codeforces = { cpp = { ['c++17'] = '89' }, python = { python3 = '70' } },
+  cses = { cpp = { ['c++17'] = 'C++17' }, python = { python3 = 'Python3' } },
+  kattis = {
+    cpp = { ['c++17'] = 'C++', ['c++20'] = 'C++', ['c++23'] = 'C++' },
+    python = { python3 = 'Python 3' },
+  },
+  usaco = {
+    cpp = { ['c++17'] = 'cpp', ['c++20'] = 'cpp', ['c++23'] = 'cpp' },
+    python = { python3 = 'python' },
+  },
+  codechef = { cpp = { ['c++17'] = 'C++ 17' }, python = { python3 = 'Python 3' } },
+}
+
+M.DEFAULT_VERSIONS = { cpp = 'c++17', python = 'python3' }
+
 return M

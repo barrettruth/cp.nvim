@@ -257,9 +257,12 @@ function M.scrape_contest_list(platform)
       ),
       { level = vim.log.levels.ERROR }
     )
-    return {}
+    return nil
   end
-  return result.data.contests
+  return {
+    contests = result.data.contests,
+    supports_countdown = result.data.supports_countdown ~= false,
+  }
 end
 
 ---@param platform string

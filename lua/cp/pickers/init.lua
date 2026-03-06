@@ -48,8 +48,10 @@ function M.get_platform_contests(platform, refresh)
       { level = vim.log.levels.INFO, override = true, sync = true }
     )
 
-    local contests = scraper.scrape_contest_list(platform)
-    cache.set_contest_summaries(platform, contests)
+    local result = scraper.scrape_contest_list(platform)
+    local contests = result and result.contests or {}
+    local sc = result and result.supports_countdown
+    cache.set_contest_summaries(platform, contests, { supports_countdown = sc })
     picker_contests = cache.get_contest_summaries(platform)
 
     logger.log(

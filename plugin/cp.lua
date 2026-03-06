@@ -109,6 +109,9 @@ end, {
         end
         return filter_candidates(candidates)
       elseif args[2] == 'race' then
+        if require('cp.race').status().active then
+          return filter_candidates({ 'stop' })
+        end
         local candidates = { 'stop' }
         vim.list_extend(candidates, platforms)
         return filter_candidates(candidates)
@@ -126,7 +129,11 @@ end, {
       if args[2] == 'stress' then
         local utils = require('cp.utils')
         return filter_candidates(utils.cwd_executables())
-      elseif args[2] == 'race' and vim.tbl_contains(platforms, args[3]) then
+      elseif
+        args[2] == 'race'
+        and not require('cp.race').status().active
+        and vim.tbl_contains(platforms, args[3])
+      then
         local cache = require('cp.cache')
         cache.load()
         local contests = cache.get_cached_contest_ids(args[3])
@@ -153,7 +160,11 @@ end, {
         return filter_candidates(candidates)
       end
     elseif num_args == 5 then
-      if args[2] == 'race' and vim.tbl_contains(platforms, args[3]) then
+      if
+        args[2] == 'race'
+        and not require('cp.race').status().active
+        and vim.tbl_contains(platforms, args[3])
+      then
         return filter_candidates({ '--lang' })
       elseif args[2] == 'cache' and args[3] == 'clear' and vim.tbl_contains(platforms, args[4]) then
         local cache = require('cp.cache')
@@ -168,7 +179,12 @@ end, {
         end
       end
     elseif num_args == 6 then
-      if args[2] == 'race' and vim.tbl_contains(platforms, args[3]) and args[5] == '--lang' then
+      if
+        args[2] == 'race'
+        and not require('cp.race').status().active
+        and vim.tbl_contains(platforms, args[3])
+        and args[5] == '--lang'
+      then
         return filter_candidates(get_enabled_languages(args[3]))
       elseif vim.tbl_contains(platforms, args[2]) and args[5] == '--lang' then
         return filter_candidates(get_enabled_languages(args[2]))
