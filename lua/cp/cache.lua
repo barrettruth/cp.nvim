@@ -396,7 +396,9 @@ function M.set_contest_summaries(platform, contests)
   cache_data[platform] = cache_data[platform] or {}
   for _, contest in ipairs(contests) do
     cache_data[platform][contest.id] = cache_data[platform][contest.id] or {}
-    cache_data[platform][contest.id].display_name = (contest.display_name ~= vim.NIL and contest.display_name) or contest.name
+    cache_data[platform][contest.id].display_name = (
+      contest.display_name ~= vim.NIL and contest.display_name
+    ) or contest.name
     cache_data[platform][contest.id].name = contest.name
     if contest.start_time and contest.start_time ~= vim.NIL then
       cache_data[platform][contest.id].start_time = contest.start_time
