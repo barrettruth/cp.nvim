@@ -112,6 +112,8 @@ end, {
         local candidates = { 'stop' }
         vim.list_extend(candidates, platforms)
         return filter_candidates(candidates)
+      elseif args[2] == 'open' then
+        return filter_candidates({ 'problem', 'contest', 'standings' })
       elseif args[2] == 'next' or args[2] == 'prev' or args[2] == 'pick' then
         return filter_candidates({ '--lang' })
       else
