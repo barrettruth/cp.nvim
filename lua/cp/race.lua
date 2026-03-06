@@ -63,10 +63,7 @@ function M.start(platform, contest_id, language)
       local sc = result.supports_countdown
       if sc == false then
         cache.set_contest_summaries(platform, result.contests or {}, { supports_countdown = false })
-        logger.log(
-          ('%s does not support --race'):format(display),
-          { level = vim.log.levels.ERROR }
-        )
+        logger.log(('%s does not support --race'):format(display), { level = vim.log.levels.ERROR })
         return
       end
       if result.contests and #result.contests > 0 then
@@ -154,7 +151,10 @@ function M.stop()
   race_state.contest_name = nil
   race_state.language = nil
   race_state.start_time = nil
-  logger.log(('Cancelled %s race "%s"'):format(display, name), { level = vim.log.levels.INFO, override = true })
+  logger.log(
+    ('Cancelled %s race "%s"'):format(display, name),
+    { level = vim.log.levels.INFO, override = true }
+  )
 end
 
 function M.status()
