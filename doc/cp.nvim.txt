@@ -24,15 +24,16 @@ CONTENTS                                                        *cp-contents*
  16. Race .......................................................... |cp-race|
  17. Credentials ............................................ |cp-credentials|
  18. Submit ...................................................... |cp-submit|
- 19. Open ......................................................... |cp-open|
- 20. ANSI Colors ................................................... |cp-ansi|
- 21. Highlight Groups ........................................ |cp-highlights|
- 22. Terminal Colors .................................... |cp-terminal-colors|
- 23. Highlight Customization .......................... |cp-highlight-custom|
- 24. Helpers .................................................... |cp-helpers|
- 25. Statusline Integration .................................. |cp-statusline|
- 26. Panel Keymaps .......................................... |cp-panel-keys|
- 27. File Structure ................................................ |cp-files|
+ 19. Submit Language Versions ......................... |cp-submit-language|
+ 20. Open ......................................................... |cp-open|
+ 21. ANSI Colors ................................................... |cp-ansi|
+ 22. Highlight Groups ........................................ |cp-highlights|
+ 23. Terminal Colors .................................... |cp-terminal-colors|
+ 24. Highlight Customization .......................... |cp-highlight-custom|
+ 25. Helpers .................................................... |cp-helpers|
+ 26. Statusline Integration .................................. |cp-statusline|
+ 27. Panel Keymaps .......................................... |cp-panel-keys|
+ 28. File Structure ................................................ |cp-files|
  28. Health Check ................................................ |cp-health|
 
 ==============================================================================
@@ -1032,7 +1033,58 @@ Submit the current solution to the online judge.
 
         Platform support:
             AtCoder     Fully implemented.
-            Others      Not yet implemented.
+            Codeforces  Fully implemented.
+            CSES        Fully implemented.
+            Kattis      Fully implemented.
+            USACO       Fully implemented.
+            CodeChef    Not yet implemented.
+
+        See |cp-submit-language| for configuring the language version
+        (e.g. C++20 instead of C++17).
+
+==============================================================================
+SUBMIT LANGUAGE VERSIONS                              *cp-submit-language*
+
+When submitting, cp.nvim selects a language version for the platform.
+The default is C++17 for cpp and Python 3 for python.
+
+Configuring a version ~
+
+Set {version} globally or per-platform:
+>lua
+    languages = {
+      cpp = { version = "c++20", ... },
+    },
+    platforms = {
+      atcoder = {
+        overrides = { cpp = { version = "c++23" } },
+      },
+    },
+<
+Available versions per platform ~
+
+  Platform    cpp              python
+  AtCoder     c++23            python3
+  Codeforces  c++17            python3
+  CSES        c++17            python3
+  Kattis      c++17/20/23      python3
+  USACO       c++17/20/23      python3
+  CodeChef    c++17            python3
+
+Using a raw platform ID ~
+
+If your preferred version is not listed, you can bypass version
+lookup by setting {submit_id} to the raw platform language ID:
+>lua
+    platforms = {
+      codeforces = {
+        overrides = { cpp = { submit_id = "91" } },
+      },
+    },
+<
+To find the raw ID, open the platform's submit page in your browser,
+inspect the language dropdown, and copy the <option value="..."> for
+your desired language.
 
 ==============================================================================
 OPEN                                                                 *cp-open*

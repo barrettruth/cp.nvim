@@ -8,6 +8,8 @@
 ---@field extension string
 ---@field commands CpLangCommands
 ---@field template? string
+---@field version? string
+---@field submit_id? string
 
 ---@class CpTemplatesConfig
 ---@field cursor_marker? string
@@ -16,6 +18,8 @@
 ---@field extension? string
 ---@field commands? CpLangCommands
 ---@field template? string
+---@field version? string
+---@field submit_id? string
 
 ---@class CpPlatform
 ---@field enabled_languages string[]
@@ -293,6 +297,12 @@ local function merge_lang(base, ov)
   if ov.template then
     out.template = ov.template
   end
+  if ov.version then
+    out.version = ov.version
+  end
+  if ov.submit_id then
+    out.submit_id = ov.submit_id
+  end
   return out
 end
 
@@ -323,6 +333,23 @@ local function build_runtime(cfg)
       validate_language(lid, base)
       local eff = merge_lang(base, p.overrides and p.overrides[lid] or nil)
       validate_language(lid, eff)
+      if eff.version then
+        local normalized = eff.version:lower():gsub('%s+', '')
+        local versions = (constants.LANGUAGE_VERSIONS[plat] or {})[lid]
+        if not versions or not versions[normalized] then
+          local avail = versions and vim.tbl_keys(versions) or {}
+          table.sort(avail)
+          error(
+            ("[cp.nvim] Unknown version '%s' for %s on %s. Available: [%s]. See :help cp-submit-language"):format(
+              eff.version,
+              lid,
+              plat,
+              table.concat(avail, ', ')
+            )
+          )
+        end
+        eff.version = normalized
+      end
       cfg.runtime.effective[plat][lid] = eff
     end
   end
