@@ -348,12 +348,6 @@ def _login_headless_cf(credentials: dict[str, str]) -> LoginResult:
 
     cookie_cache = Path.home() / ".cache" / "cp-nvim" / "codeforces-cookies.json"
     cookie_cache.parent.mkdir(parents=True, exist_ok=True)
-    saved_cookies: list[dict[str, Any]] = []
-    if cookie_cache.exists():
-        try:
-            saved_cookies = json.loads(cookie_cache.read_text())
-        except Exception:
-            pass
 
     logged_in = False
     login_error: str | None = None
@@ -388,37 +382,25 @@ def _login_headless_cf(credentials: dict[str, str]) -> LoginResult:
             headless=True,
             timeout=BROWSER_SESSION_TIMEOUT,
             google_search=False,
-            cookies=saved_cookies if saved_cookies else [],
         ) as session:
-            if saved_cookies:
-                print(json.dumps({"status": "checking_login"}), flush=True)
-                session.fetch(
-                    f"{BASE_URL}/",
-                    page_action=check_login,
-                    network_idle=True,
-                )
+            print(json.dumps({"status": "logging_in"}), flush=True)
+            session.fetch(
+                f"{BASE_URL}/enter",
+                page_action=login_action,
+                solve_cloudflare=True,
+            )
+            if login_error:
+                return LoginResult(success=False, error=f"Login failed: {login_error}")
 
+            session.fetch(
+                f"{BASE_URL}/",
+                page_action=check_login,
+                network_idle=True,
+            )
             if not logged_in:
-                print(json.dumps({"status": "logging_in"}), flush=True)
-                session.fetch(
-                    f"{BASE_URL}/enter",
-                    page_action=login_action,
-                    solve_cloudflare=True,
+                return LoginResult(
+                    success=False, error="Login failed (bad credentials?)"
                 )
-                if login_error:
-                    return LoginResult(
-                        success=False, error=f"Login failed: {login_error}"
-                    )
-
-                session.fetch(
-                    f"{BASE_URL}/",
-                    page_action=check_login,
-                    network_idle=True,
-                )
-                if not logged_in:
-                    return LoginResult(
-                        success=False, error="Login failed (bad credentials?)"
-                    )
 
             try:
                 browser_cookies = session.context.cookies()
