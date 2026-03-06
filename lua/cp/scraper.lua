@@ -44,7 +44,8 @@ local function run_scraper(platform, subcommand, args, opts)
     return { success = false, error = msg }
   end
 
-  local needs_browser = subcommand == 'submit' or subcommand == 'login'
+  local needs_browser = subcommand == 'submit'
+    or subcommand == 'login'
     or (platform == 'codeforces' and (subcommand == 'metadata' or subcommand == 'tests'))
 
   if needs_browser then
