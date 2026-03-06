@@ -1,5 +1,6 @@
 import pytest
 
+from scrapers.language_ids import LANGUAGE_IDS, get_language_id
 from scrapers.models import (
     ContestListResult,
     MetadataResult,
@@ -137,3 +138,21 @@ def test_scraper_metadata_error(run_scraper_offline, scraper, contest_id):
     assert objs
     assert objs[-1].get("success") is False
     assert objs[-1].get("error")
+
+
+EXPECTED_PLATFORMS = {"atcoder", "codeforces", "cses", "usaco", "kattis", "codechef"}
+EXPECTED_LANGUAGES = {"cpp", "python"}
+
+
+def test_language_ids_coverage():
+    assert set(LANGUAGE_IDS.keys()) == EXPECTED_PLATFORMS
+    for platform in EXPECTED_PLATFORMS:
+        for lang in EXPECTED_LANGUAGES:
+            lid = get_language_id(platform, lang)
+            assert lid is not None, f"Missing language ID: {platform}/{lang}"
+            assert isinstance(lid, str) and lid, f"Empty language ID: {platform}/{lang}"
+
+
+def test_language_ids_unknown_returns_none():
+    assert get_language_id("codeforces", "rust") is None
+    assert get_language_id("nonexistent", "cpp") is None
