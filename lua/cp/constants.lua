@@ -219,4 +219,6 @@ M.LANGUAGE_VERSIONS = {
 
 M.DEFAULT_VERSIONS = { cpp = 'c++20', python = 'python3' }
 
+M.COOKIE_FILE = vim.fn.expand('~/.cache/cp-nvim/cookies.json')
+
 return M

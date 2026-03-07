@@ -9,7 +9,7 @@ from typing import Any
 
 import httpx
 
-from .base import BaseScraper
+from .base import BaseScraper, clear_platform_cookies, load_platform_cookies, save_platform_cookies
 from .timeouts import BROWSER_SESSION_TIMEOUT, HTTP_TIMEOUT
 from .models import (
     ContestListResult,
@@ -31,7 +31,6 @@ HEADERS = {
 }
 CONNECTIONS = 8
 
-_COOKIE_PATH = Path.home() / ".cache" / "cp-nvim" / "codechef-cookies.json"
 
 _CC_CHECK_LOGIN_JS = "() => !!document.querySelector('a[href*=\"/users/\"]')"
 
@@ -67,8 +66,6 @@ def _login_headless_codechef(credentials: dict[str, str]) -> LoginResult:
 
     _ensure_browser()
 
-    _COOKIE_PATH.parent.mkdir(parents=True, exist_ok=True)
-
     logged_in = False
     login_error: str | None = None
 
@@ -85,7 +82,7 @@ def _login_headless_codechef(credentials: dict[str, str]) -> LoginResult:
             try:
                 page.wait_for_url(lambda url: "/login" not in url, timeout=3000)
             except Exception:
-                login_error = "Login failed (bad credentials?)"
+                login_error = "bad credentials?"
                 return
         except Exception as e:
             login_error = str(e)
@@ -99,7 +96,7 @@ def _login_headless_codechef(credentials: dict[str, str]) -> LoginResult:
             print(json.dumps({"status": "logging_in"}), flush=True)
             session.fetch(f"{BASE_URL}/login", page_action=login_action)
             if login_error:
-                return LoginResult(success=False, error=f"Login failed: {login_error}")
+                return LoginResult(success=False, error=login_error)
 
             session.fetch(f"{BASE_URL}/", page_action=check_login, network_idle=True)
             if not logged_in:
@@ -110,7 +107,7 @@ def _login_headless_codechef(credentials: dict[str, str]) -> LoginResult:
             try:
                 browser_cookies = session.context.cookies()
                 if browser_cookies:
-                    _COOKIE_PATH.write_text(json.dumps(browser_cookies))
+                    save_platform_cookies("codechef", browser_cookies)
             except Exception:
                 pass
 
@@ -126,6 +123,7 @@ def _submit_headless_codechef(
     language_id: str,
     credentials: dict[str, str],
     _retried: bool = False,
+    _practice: bool = False,
 ) -> SubmitResult:
     source_code = Path(file_path).read_text()
 
@@ -141,15 +139,11 @@ def _submit_headless_codechef(
 
     _ensure_browser()
 
-    _COOKIE_PATH.parent.mkdir(parents=True, exist_ok=True)
     saved_cookies: list[dict[str, Any]] = []
-    if _COOKIE_PATH.exists() and not _retried:
-        try:
-            saved_cookies = json.loads(_COOKIE_PATH.read_text())
-        except Exception:
-            pass
+    if not _retried:
+        saved_cookies = load_platform_cookies("codechef") or []
 
-    logged_in = bool(saved_cookies) and not _retried
+    logged_in = bool(saved_cookies)
     login_error: str | None = None
     submit_error: str | None = None
     needs_relogin = False
@@ -167,7 +161,7 @@ def _submit_headless_codechef(
             try:
                 page.wait_for_url(lambda url: "/login" not in url, timeout=3000)
             except Exception:
-                login_error = "Login failed (bad credentials?)"
+                login_error = "bad credentials?"
                 return
         except Exception as e:
             login_error = str(e)
@@ -213,7 +207,9 @@ def _submit_headless_codechef(
                 const d = document.querySelector('[role="dialog"], .swal2-popup');
                 return d ? d.textContent.trim() : null;
             }""")
-            if dialog_text and (
+            if dialog_text and "login" in dialog_text.lower():
+                needs_relogin = True
+            elif dialog_text and (
                 "not available for accepting solutions" in dialog_text
                 or "not available for submission" in dialog_text
             ):
@@ -228,23 +224,23 @@ def _submit_headless_codechef(
             headless=True,
             timeout=BROWSER_SESSION_TIMEOUT,
             google_search=False,
-            cookies=saved_cookies if (saved_cookies and not _retried) else [],
+            cookies=saved_cookies if saved_cookies else [],
         ) as session:
-            if not logged_in:
+            if not _retried and not _practice:
                 print(json.dumps({"status": "checking_login"}), flush=True)
-                session.fetch(
-                    f"{BASE_URL}/", page_action=check_login, network_idle=True
-                )
+                session.fetch(f"{BASE_URL}/", page_action=check_login)
 
             if not logged_in:
                 print(json.dumps({"status": "logging_in"}), flush=True)
                 session.fetch(f"{BASE_URL}/login", page_action=login_action)
                 if login_error:
                     return SubmitResult(
-                        success=False, error=f"Login failed: {login_error}"
+                        success=False, error=login_error
                     )
+                logged_in = True
 
-            print(json.dumps({"status": "submitting"}), flush=True)
+            if not _practice:
+                print(json.dumps({"status": "submitting"}), flush=True)
             submit_url = (
                 f"{BASE_URL}/submit/{problem_id}"
                 if contest_id == "PRACTICE"
@@ -255,12 +251,12 @@ def _submit_headless_codechef(
             try:
                 browser_cookies = session.context.cookies()
                 if browser_cookies and logged_in:
-                    _COOKIE_PATH.write_text(json.dumps(browser_cookies))
+                    save_platform_cookies("codechef", browser_cookies)
             except Exception:
                 pass
 
         if needs_relogin and not _retried:
-            _COOKIE_PATH.unlink(missing_ok=True)
+            clear_platform_cookies("codechef")
             return _submit_headless_codechef(
                 contest_id,
                 problem_id,
@@ -270,14 +266,14 @@ def _submit_headless_codechef(
                 _retried=True,
             )
 
-        if submit_error == "PRACTICE_FALLBACK" and not _retried:
+        if submit_error == "PRACTICE_FALLBACK" and not _practice:
             return _submit_headless_codechef(
                 "PRACTICE",
                 problem_id,
                 file_path,
                 language_id,
                 credentials,
-                _retried=True,
+                _practice=True,
             )
 
         if submit_error:

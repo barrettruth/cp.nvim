@@ -38,6 +38,7 @@ local function prompt_and_login(platform, display)
     end, function(result)
       vim.schedule(function()
         if result.success then
+          cache.set_credentials(platform, credentials)
           logger.log(
             display .. ' login successful',
             { level = vim.log.levels.INFO, override = true }
@@ -105,6 +106,14 @@ function M.logout(platform)
   local display = constants.PLATFORM_DISPLAY_NAMES[platform] or platform
   cache.load()
   cache.clear_credentials(platform)
+  local cookie_file = constants.COOKIE_FILE
+  if vim.fn.filereadable(cookie_file) == 1 then
+    local ok, data = pcall(vim.fn.json_decode, vim.fn.readfile(cookie_file, 'b'))
+    if ok and type(data) == 'table' then
+      data[platform] = nil
+      vim.fn.writefile({ vim.fn.json_encode(data) }, cookie_file)
+    end
+  end
   logger.log(display .. ' credentials cleared', { level = vim.log.levels.INFO, override = true })
 end
 

@@ -4,6 +4,38 @@ import os
 import re
 import sys
 from abc import ABC, abstractmethod
+from pathlib import Path
+from typing import Any
+
+_COOKIE_FILE = Path.home() / ".cache" / "cp-nvim" / "cookies.json"
+
+
+def load_platform_cookies(platform: str) -> Any | None:
+    try:
+        data = json.loads(_COOKIE_FILE.read_text())
+        return data.get(platform)
+    except Exception:
+        return None
+
+
+def save_platform_cookies(platform: str, data: Any) -> None:
+    _COOKIE_FILE.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        existing = json.loads(_COOKIE_FILE.read_text())
+    except Exception:
+        existing = {}
+    existing[platform] = data
+    _COOKIE_FILE.write_text(json.dumps(existing))
+
+
+def clear_platform_cookies(platform: str) -> None:
+    try:
+        existing = json.loads(_COOKIE_FILE.read_text())
+        existing.pop(platform, None)
+        _COOKIE_FILE.write_text(json.dumps(existing))
+    except Exception:
+        pass
+
 
 from .language_ids import get_language_id
 from .models import (

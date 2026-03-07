@@ -16,7 +16,7 @@ from bs4 import BeautifulSoup, Tag
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-from .base import BaseScraper, extract_precision
+from .base import BaseScraper, clear_platform_cookies, extract_precision, load_platform_cookies, save_platform_cookies
 from .models import (
     ContestListResult,
     ContestSummary,
@@ -379,25 +379,14 @@ def _ensure_browser() -> None:
             break
 
 
-def _login_headless(credentials: dict[str, str]) -> LoginResult:
-    try:
-        from scrapling.fetchers import StealthySession  # type: ignore[import-untyped,unresolved-import]
-    except ImportError:
-        return LoginResult(
-            success=False,
-            error="scrapling is required for AtCoder login. Install it: uv add 'scrapling[fetchers]>=0.4'",
-        )
+def _at_check_logged_in(page) -> bool:
+    return page.evaluate(
+        "() => Array.from(document.querySelectorAll('a')).some(a => a.textContent.trim() === 'Sign Out')"
+    )
 
-    _ensure_browser()
 
-    logged_in = False
+def _at_login_action(credentials: dict[str, str]):
     login_error: str | None = None
-
-    def check_login(page):
-        nonlocal logged_in
-        logged_in = page.evaluate(
-            "() => Array.from(document.querySelectorAll('a')).some(a => a.textContent.trim() === 'Sign Out')"
-        )
 
     def login_action(page):
         nonlocal login_error
@@ -412,6 +401,45 @@ def _login_headless(credentials: dict[str, str]) -> LoginResult:
         except Exception as e:
             login_error = str(e)
 
+    return login_action, lambda: login_error
+
+
+def _login_headless(credentials: dict[str, str]) -> LoginResult:
+    try:
+        from scrapling.fetchers import StealthySession  # type: ignore[import-untyped,unresolved-import]
+    except ImportError:
+        return LoginResult(
+            success=False,
+            error="scrapling is required for AtCoder login. Install it: uv add 'scrapling[fetchers]>=0.4'",
+        )
+
+    _ensure_browser()
+
+    saved_cookies = load_platform_cookies("atcoder") or []
+
+    if saved_cookies:
+        print(json.dumps({"status": "checking_login"}), flush=True)
+        logged_in = False
+
+        def check_action(page):
+            nonlocal logged_in
+            logged_in = _at_check_logged_in(page)
+
+        try:
+            with StealthySession(
+                headless=True,
+                timeout=BROWSER_SESSION_TIMEOUT,
+                google_search=False,
+                cookies=saved_cookies,
+            ) as session:
+                session.fetch(f"{BASE_URL}/home", page_action=check_action, network_idle=True)
+            if logged_in:
+                return LoginResult(success=True, error="")
+        except Exception:
+            pass
+
+    login_action, get_error = _at_login_action(credentials)
+
     try:
         with StealthySession(
             headless=True,
@@ -424,16 +452,26 @@ def _login_headless(credentials: dict[str, str]) -> LoginResult:
                 page_action=login_action,
                 solve_cloudflare=True,
             )
+            login_error = get_error()
             if login_error:
                 return LoginResult(success=False, error=f"Login failed: {login_error}")
 
-            session.fetch(
-                f"{BASE_URL}/home", page_action=check_login, network_idle=True
-            )
+            logged_in = False
+
+            def verify_action(page):
+                nonlocal logged_in
+                logged_in = _at_check_logged_in(page)
+
+            session.fetch(f"{BASE_URL}/home", page_action=verify_action, network_idle=True)
             if not logged_in:
-                return LoginResult(
-                    success=False, error="Login failed (bad credentials?)"
-                )
+                return LoginResult(success=False, error="Login failed (bad credentials?)")
+
+            try:
+                browser_cookies = session.context.cookies()
+                if browser_cookies:
+                    save_platform_cookies("atcoder", browser_cookies)
+            except Exception:
+                pass
 
         return LoginResult(success=True, error="")
     except Exception as e:
@@ -446,6 +484,7 @@ def _submit_headless(
     file_path: str,
     language_id: str,
     credentials: dict[str, str],
+    _retried: bool = False,
 ) -> "SubmitResult":
     try:
         from scrapling.fetchers import StealthySession  # type: ignore[import-untyped,unresolved-import]
@@ -457,26 +496,24 @@ def _submit_headless(
 
     _ensure_browser()
 
-    login_error: str | None = None
-    submit_error: str | None = None
+    saved_cookies: list[dict[str, Any]] = []
+    if not _retried:
+        saved_cookies = load_platform_cookies("atcoder") or []
 
-    def login_action(page):
-        nonlocal login_error
-        try:
-            _solve_turnstile(page)
-            page.fill('input[name="username"]', credentials.get("username", ""))
-            page.fill('input[name="password"]', credentials.get("password", ""))
-            page.click("#submit")
-            page.wait_for_url(
-                lambda url: "/login" not in url, timeout=BROWSER_NAV_TIMEOUT
-            )
-        except Exception as e:
-            login_error = str(e)
+    logged_in = bool(saved_cookies)
+    submit_error: str | None = None
+    needs_relogin = False
+
+    def check_login(page):
+        nonlocal logged_in
+        logged_in = _at_check_logged_in(page)
+
+    login_action, get_login_error = _at_login_action(credentials)
 
     def submit_action(page):
-        nonlocal submit_error
+        nonlocal submit_error, needs_relogin
         if "/login" in page.url:
-            submit_error = "Not logged in after login step"
+            needs_relogin = True
             return
         try:
             _solve_turnstile(page)
@@ -488,18 +525,12 @@ def _submit_headless(
                 f'select[name="data.LanguageId"] option[value="{language_id}"]'
             ).wait_for(state="attached", timeout=BROWSER_ELEMENT_WAIT)
             page.select_option('select[name="data.LanguageId"]', language_id)
-            ext = _LANGUAGE_ID_EXTENSION.get(
-                language_id, Path(file_path).suffix.lstrip(".") or "txt"
+            page.set_input_files("#input-open-file", file_path)
+            page.wait_for_function(
+                "() => { const ta = document.getElementById('plain-textarea'); return ta && ta.value.length > 0; }",
+                timeout=BROWSER_ELEMENT_WAIT,
             )
-            page.set_input_files(
-                "#input-open-file",
-                {
-                    "name": f"solution.{ext}",
-                    "mimeType": "text/plain",
-                    "buffer": Path(file_path).read_bytes(),
-                },
-            )
-            page.locator('button[type="submit"]').click(no_wait_after=True)
+            page.evaluate("document.getElementById('submit').click()")
             page.wait_for_url(
                 lambda url: "/submissions/me" in url,
                 timeout=BROWSER_SUBMIT_NAV_TIMEOUT["atcoder"],
@@ -512,15 +543,29 @@ def _submit_headless(
             headless=True,
             timeout=BROWSER_SESSION_TIMEOUT,
             google_search=False,
+            cookies=saved_cookies if saved_cookies else [],
         ) as session:
-            print(json.dumps({"status": "logging_in"}), flush=True)
-            session.fetch(
-                f"{BASE_URL}/login",
-                page_action=login_action,
-                solve_cloudflare=True,
-            )
-            if login_error:
-                return SubmitResult(success=False, error=f"Login failed: {login_error}")
+            if not _retried and saved_cookies:
+                print(json.dumps({"status": "checking_login"}), flush=True)
+                session.fetch(f"{BASE_URL}/home", page_action=check_login, network_idle=True)
+
+            if not logged_in:
+                print(json.dumps({"status": "logging_in"}), flush=True)
+                session.fetch(
+                    f"{BASE_URL}/login",
+                    page_action=login_action,
+                    solve_cloudflare=True,
+                )
+                login_error = get_login_error()
+                if login_error:
+                    return SubmitResult(success=False, error=f"Login failed: {login_error}")
+                logged_in = True
+                try:
+                    browser_cookies = session.context.cookies()
+                    if browser_cookies:
+                        save_platform_cookies("atcoder", browser_cookies)
+                except Exception:
+                    pass
 
             print(json.dumps({"status": "submitting"}), flush=True)
             session.fetch(
@@ -529,12 +574,16 @@ def _submit_headless(
                 solve_cloudflare=True,
             )
 
+        if needs_relogin and not _retried:
+            clear_platform_cookies("atcoder")
+            return _submit_headless(
+                contest_id, problem_id, file_path, language_id, credentials, _retried=True
+            )
+
         if submit_error:
             return SubmitResult(success=False, error=submit_error)
 
-        return SubmitResult(
-            success=True, error="", submission_id="", verdict="submitted"
-        )
+        return SubmitResult(success=True, error="", submission_id="", verdict="submitted")
     except Exception as e:
         return SubmitResult(success=False, error=str(e))
 

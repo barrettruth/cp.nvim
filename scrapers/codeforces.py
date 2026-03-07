@@ -8,7 +8,7 @@ from typing import Any
 import requests
 from bs4 import BeautifulSoup, Tag
 
-from .base import BaseScraper, extract_precision
+from .base import BaseScraper, clear_platform_cookies, extract_precision, load_platform_cookies, save_platform_cookies
 from .models import (
     ContestListResult,
     ContestSummary,
@@ -331,9 +331,33 @@ class CodeforcesScraper(BaseScraper):
         return await asyncio.to_thread(_login_headless_cf, credentials)
 
 
-def _login_headless_cf(credentials: dict[str, str]) -> LoginResult:
-    from pathlib import Path
+def _cf_check_logged_in(page) -> bool:
+    return page.evaluate(
+        "() => Array.from(document.querySelectorAll('a'))"
+        ".some(a => a.textContent.includes('Logout'))"
+    )
 
+
+def _cf_login_action(credentials: dict[str, str]):
+    login_error: str | None = None
+
+    def login_action(page):
+        nonlocal login_error
+        try:
+            page.wait_for_selector('input[name="handleOrEmail"]', timeout=60000)
+            page.fill('input[name="handleOrEmail"]', credentials.get("username", ""))
+            page.fill('input[name="password"]', credentials.get("password", ""))
+            page.locator('#enterForm input[type="submit"]').click()
+            page.wait_for_url(
+                lambda url: "/enter" not in url, timeout=BROWSER_NAV_TIMEOUT
+            )
+        except Exception as e:
+            login_error = str(e)
+
+    return login_action, lambda: login_error
+
+
+def _login_headless_cf(credentials: dict[str, str]) -> LoginResult:
     try:
         from scrapling.fetchers import StealthySession  # type: ignore[import-untyped,unresolved-import]
     except ImportError:
@@ -346,36 +370,30 @@ def _login_headless_cf(credentials: dict[str, str]) -> LoginResult:
 
     _ensure_browser()
 
-    cookie_cache = Path.home() / ".cache" / "cp-nvim" / "codeforces-cookies.json"
-    cookie_cache.parent.mkdir(parents=True, exist_ok=True)
+    saved_cookies = load_platform_cookies("codeforces") or []
 
-    logged_in = False
-    login_error: str | None = None
+    if saved_cookies:
+        print(json.dumps({"status": "checking_login"}), flush=True)
+        logged_in = False
 
-    def check_login(page):
-        nonlocal logged_in
-        logged_in = page.evaluate(
-            "() => Array.from(document.querySelectorAll('a'))"
-            ".some(a => a.textContent.includes('Logout'))"
-        )
+        def check_action(page):
+            nonlocal logged_in
+            logged_in = _cf_check_logged_in(page)
 
-    def login_action(page):
-        nonlocal login_error
         try:
-            page.fill(
-                'input[name="handleOrEmail"]',
-                credentials.get("username", ""),
-            )
-            page.fill(
-                'input[name="password"]',
-                credentials.get("password", ""),
-            )
-            page.locator('#enterForm input[type="submit"]').click()
-            page.wait_for_url(
-                lambda url: "/enter" not in url, timeout=BROWSER_NAV_TIMEOUT
-            )
-        except Exception as e:
-            login_error = str(e)
+            with StealthySession(
+                headless=True,
+                timeout=BROWSER_SESSION_TIMEOUT,
+                google_search=False,
+                cookies=saved_cookies,
+            ) as session:
+                session.fetch(f"{BASE_URL}/", page_action=check_action, solve_cloudflare=True)
+            if logged_in:
+                return LoginResult(success=True, error="")
+        except Exception:
+            pass
+
+    login_action, get_error = _cf_login_action(credentials)
 
     try:
         with StealthySession(
@@ -389,23 +407,24 @@ def _login_headless_cf(credentials: dict[str, str]) -> LoginResult:
                 page_action=login_action,
                 solve_cloudflare=True,
             )
+            login_error = get_error()
             if login_error:
                 return LoginResult(success=False, error=f"Login failed: {login_error}")
 
-            session.fetch(
-                f"{BASE_URL}/",
-                page_action=check_login,
-                network_idle=True,
-            )
+            logged_in = False
+
+            def verify_action(page):
+                nonlocal logged_in
+                logged_in = _cf_check_logged_in(page)
+
+            session.fetch(f"{BASE_URL}/", page_action=verify_action, network_idle=True)
             if not logged_in:
-                return LoginResult(
-                    success=False, error="Login failed (bad credentials?)"
-                )
+                return LoginResult(success=False, error="Login failed (bad credentials?)")
 
             try:
                 browser_cookies = session.context.cookies()
-                if any(c.get("name") == "X-User-Handle" for c in browser_cookies):
-                    cookie_cache.write_text(json.dumps(browser_cookies))
+                if any(c.get("name") == "X-User-Sha1" for c in browser_cookies):
+                    save_platform_cookies("codeforces", browser_cookies)
             except Exception:
                 pass
 
@@ -426,6 +445,7 @@ def _submit_headless(
 
     source_code = Path(file_path).read_text()
 
+
     try:
         from scrapling.fetchers import StealthySession  # type: ignore[import-untyped,unresolved-import]
     except ImportError:
@@ -438,44 +458,19 @@ def _submit_headless(
 
     _ensure_browser()
 
-    cookie_cache = Path.home() / ".cache" / "cp-nvim" / "codeforces-cookies.json"
-    cookie_cache.parent.mkdir(parents=True, exist_ok=True)
     saved_cookies: list[dict[str, Any]] = []
-    if cookie_cache.exists():
-        try:
-            saved_cookies = json.loads(cookie_cache.read_text())
-        except Exception:
-            pass
+    if not _retried:
+        saved_cookies = load_platform_cookies("codeforces") or []
 
-    logged_in = cookie_cache.exists() and not _retried
-    login_error: str | None = None
+    logged_in = bool(saved_cookies)
     submit_error: str | None = None
     needs_relogin = False
 
     def check_login(page):
         nonlocal logged_in
-        logged_in = page.evaluate(
-            "() => Array.from(document.querySelectorAll('a'))"
-            ".some(a => a.textContent.includes('Logout'))"
-        )
+        logged_in = _cf_check_logged_in(page)
 
-    def login_action(page):
-        nonlocal login_error
-        try:
-            page.fill(
-                'input[name="handleOrEmail"]',
-                credentials.get("username", ""),
-            )
-            page.fill(
-                'input[name="password"]',
-                credentials.get("password", ""),
-            )
-            page.locator('#enterForm input[type="submit"]').click()
-            page.wait_for_url(
-                lambda url: "/enter" not in url, timeout=BROWSER_NAV_TIMEOUT
-            )
-        except Exception as e:
-            login_error = str(e)
+    _login_action, _get_login_error = _cf_login_action(credentials)
 
     def submit_action(page):
         nonlocal submit_error, needs_relogin
@@ -520,27 +515,25 @@ def _submit_headless(
             headless=True,
             timeout=BROWSER_SESSION_TIMEOUT,
             google_search=False,
-            cookies=saved_cookies if (cookie_cache.exists() and not _retried) else [],
+            cookies=saved_cookies if saved_cookies else [],
         ) as session:
-            if not (cookie_cache.exists() and not _retried):
+            if not _retried and saved_cookies:
                 print(json.dumps({"status": "checking_login"}), flush=True)
-                session.fetch(
-                    f"{BASE_URL}/",
-                    page_action=check_login,
-                    network_idle=True,
-                )
+                session.fetch(f"{BASE_URL}/", page_action=check_login, solve_cloudflare=True)
 
             if not logged_in:
                 print(json.dumps({"status": "logging_in"}), flush=True)
                 session.fetch(
                     f"{BASE_URL}/enter",
-                    page_action=login_action,
+                    page_action=_login_action,
                     solve_cloudflare=True,
                 )
+                login_error = _get_login_error()
                 if login_error:
                     return SubmitResult(
                         success=False, error=f"Login failed: {login_error}"
                     )
+                logged_in = True
 
             print(json.dumps({"status": "submitting"}), flush=True)
             session.fetch(
@@ -551,13 +544,13 @@ def _submit_headless(
 
             try:
                 browser_cookies = session.context.cookies()
-                if any(c.get("name") == "X-User-Handle" for c in browser_cookies):
-                    cookie_cache.write_text(json.dumps(browser_cookies))
+                if any(c.get("name") == "X-User-Sha1" for c in browser_cookies):
+                    save_platform_cookies("codeforces", browser_cookies)
             except Exception:
                 pass
 
         if needs_relogin and not _retried:
-            cookie_cache.unlink(missing_ok=True)
+            clear_platform_cookies("codeforces")
             return _submit_headless(
                 contest_id,
                 problem_id,
