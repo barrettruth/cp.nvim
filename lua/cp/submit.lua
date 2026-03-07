@@ -35,9 +35,7 @@ local function prompt_credentials(platform, callback)
         logger.log('Submit cancelled', { level = vim.log.levels.WARN })
         return
       end
-      local creds = { username = username, password = password }
-      cache.set_credentials(platform, creds)
-      callback(creds)
+      callback({ username = username, password = password })
     end
   )
 end
@@ -111,6 +109,7 @@ function M.submit(opts)
       function(result)
         vim.schedule(function()
           if result and result.success then
+            cache.set_credentials(platform, creds)
             logger.log('Submitted successfully', { level = vim.log.levels.INFO, override = true })
           else
             local err = result and result.error or 'unknown error'
