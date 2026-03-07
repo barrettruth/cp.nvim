@@ -1,0 +1,16 @@
+{
+  "status": "success",
+  "message": "past contests list",
+  "contests": [
+    {
+      "contest_code": "START209D",
+      "contest_name": "Starters 209 Div 4",
+      "contest_start_date_iso": "2025-01-01T10:30:00+05:30"
+    },
+    {
+      "contest_code": "START208",
+      "contest_name": "Starters 208",
+      "contest_start_date_iso": "2024-12-25T10:30:00+05:30"
+    }
+  ]
+}
