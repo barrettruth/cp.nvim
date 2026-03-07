@@ -434,9 +434,7 @@ def _login_headless_cf(credentials: dict[str, str]) -> LoginResult:
 
             session.fetch(f"{BASE_URL}/", page_action=verify_action, network_idle=True)
             if not logged_in:
-                return LoginResult(
-                    success=False, error="bad_credentials"
-                )
+                return LoginResult(success=False, error="bad_credentials")
 
             try:
                 browser_cookies = session.context.cookies()

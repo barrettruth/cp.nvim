@@ -107,9 +107,7 @@ def _login_headless_codechef(credentials: dict[str, str]) -> LoginResult:
 
             session.fetch(f"{BASE_URL}/", page_action=check_login, network_idle=True)
             if not logged_in:
-                return LoginResult(
-                    success=False, error="bad_credentials"
-                )
+                return LoginResult(success=False, error="bad_credentials")
 
             try:
                 browser_cookies = session.context.cookies()

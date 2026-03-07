@@ -11,7 +11,6 @@ local STATUS_MESSAGES = {
   installing_browser = 'Installing browser...',
 }
 
-
 ---@param platform string
 ---@param display string
 local function prompt_and_login(platform, display)
