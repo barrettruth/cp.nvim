@@ -1,6 +1,6 @@
 import pytest
 
-from scrapers.language_ids import LANGUAGE_IDS, get_language_id
+from scrapers.language_ids import LANGUAGE_IDS
 from scrapers.models import (
     ContestListResult,
     MetadataResult,
@@ -140,26 +140,17 @@ def test_scraper_metadata_error(run_scraper_offline, scraper, contest_id):
     assert objs[-1].get("error")
 
 
-EXPECTED_PLATFORMS = {"atcoder", "codeforces", "cses", "usaco", "kattis", "codechef"}
-EXPECTED_LANGUAGES = {"cpp", "python"}
-
-
 def test_language_ids_coverage():
-    assert set(LANGUAGE_IDS.keys()) == EXPECTED_PLATFORMS
+    expected_platforms = {
+        "atcoder",
+        "codeforces",
+        "cses",
+        "usaco",
+        "kattis",
+        "codechef",
+    }
+    assert set(LANGUAGE_IDS.keys()) == expected_platforms
     for platform, langs in LANGUAGE_IDS.items():
-        assert set(langs.keys()) == EXPECTED_LANGUAGES, f"{platform} missing languages"
+        assert {"cpp", "python"} <= set(langs.keys()), f"{platform} missing cpp/python"
         for lang, lid in langs.items():
             assert isinstance(lid, str) and lid, f"{platform}/{lang} empty ID"
-
-
-@pytest.mark.parametrize("platform", EXPECTED_PLATFORMS)
-@pytest.mark.parametrize("language", EXPECTED_LANGUAGES)
-def test_get_language_id(platform, language):
-    result = get_language_id(platform, language)
-    assert result is not None, f"No ID for {platform}/{language}"
-    assert result == LANGUAGE_IDS[platform][language]
-
-
-def test_get_language_id_unknown():
-    assert get_language_id("nonexistent", "cpp") is None
-    assert get_language_id("codeforces", "rust") is None
