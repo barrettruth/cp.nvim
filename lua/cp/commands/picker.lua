@@ -5,8 +5,9 @@ local logger = require('cp.log')
 
 --- Dispatch `:CP pick` to appropriate picker
 ---@param language? string
+---@param platform? string
 ---@return nil
-function M.handle_pick_action(language)
+function M.handle_pick_action(language, platform)
   local config = config_module.get_config()
 
   if not (config.ui and config.ui.picker) then
@@ -54,7 +55,7 @@ function M.handle_pick_action(language)
     picker = fzf_picker
   end
 
-  picker.pick(language)
+  picker.pick(language, platform)
 end
 
 return M

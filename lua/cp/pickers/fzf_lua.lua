@@ -58,11 +58,18 @@ local function contest_picker(platform, refresh, language)
   })
 end
 
-function M.pick(language)
+---@param language? string
+---@param platform? string
+function M.pick(language, platform)
+  if platform then
+    contest_picker(platform, false, language)
+    return
+  end
+
   local fzf = require('fzf-lua')
   local platforms = picker_utils.get_platforms()
-  local entries = vim.tbl_map(function(platform)
-    return platform.display_name
+  local entries = vim.tbl_map(function(p)
+    return p.display_name
   end, platforms)
 
   return fzf.fzf_exec(entries, {
@@ -74,16 +81,16 @@ function M.pick(language)
         end
 
         local selected_name = selected[1]
-        local platform = nil
+        local found = nil
         for _, p in ipairs(platforms) do
           if p.display_name == selected_name then
-            platform = p
+            found = p
             break
           end
         end
 
-        if platform then
-          contest_picker(platform.id, false, language)
+        if found then
+          contest_picker(found.id, false, language)
         end
       end,
     },
