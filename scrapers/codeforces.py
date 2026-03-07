@@ -8,7 +8,7 @@ from typing import Any
 import requests
 from bs4 import BeautifulSoup, Tag
 
-from .base import BaseScraper, extract_precision
+from .base import BaseScraper, clear_platform_cookies, extract_precision, load_platform_cookies, save_platform_cookies
 from .models import (
     ContestListResult,
     ContestSummary,
@@ -332,8 +332,6 @@ class CodeforcesScraper(BaseScraper):
 
 
 def _login_headless_cf(credentials: dict[str, str]) -> LoginResult:
-    from pathlib import Path
-
     try:
         from scrapling.fetchers import StealthySession  # type: ignore[import-untyped,unresolved-import]
     except ImportError:
@@ -345,9 +343,6 @@ def _login_headless_cf(credentials: dict[str, str]) -> LoginResult:
     from .atcoder import _ensure_browser
 
     _ensure_browser()
-
-    cookie_cache = Path.home() / ".cache" / "cp-nvim" / "codeforces-cookies.json"
-    cookie_cache.parent.mkdir(parents=True, exist_ok=True)
 
     logged_in = False
     login_error: str | None = None
@@ -405,7 +400,7 @@ def _login_headless_cf(credentials: dict[str, str]) -> LoginResult:
             try:
                 browser_cookies = session.context.cookies()
                 if any(c.get("name") == "X-User-Handle" for c in browser_cookies):
-                    cookie_cache.write_text(json.dumps(browser_cookies))
+                    save_platform_cookies("codeforces", browser_cookies)
             except Exception:
                 pass
 
@@ -426,6 +421,7 @@ def _submit_headless(
 
     source_code = Path(file_path).read_text()
 
+
     try:
         from scrapling.fetchers import StealthySession  # type: ignore[import-untyped,unresolved-import]
     except ImportError:
@@ -438,16 +434,11 @@ def _submit_headless(
 
     _ensure_browser()
 
-    cookie_cache = Path.home() / ".cache" / "cp-nvim" / "codeforces-cookies.json"
-    cookie_cache.parent.mkdir(parents=True, exist_ok=True)
     saved_cookies: list[dict[str, Any]] = []
-    if cookie_cache.exists():
-        try:
-            saved_cookies = json.loads(cookie_cache.read_text())
-        except Exception:
-            pass
+    if not _retried:
+        saved_cookies = load_platform_cookies("codeforces") or []
 
-    logged_in = cookie_cache.exists() and not _retried
+    logged_in = bool(saved_cookies) and not _retried
     login_error: str | None = None
     submit_error: str | None = None
     needs_relogin = False
@@ -520,9 +511,9 @@ def _submit_headless(
             headless=True,
             timeout=BROWSER_SESSION_TIMEOUT,
             google_search=False,
-            cookies=saved_cookies if (cookie_cache.exists() and not _retried) else [],
+            cookies=saved_cookies if (saved_cookies and not _retried) else [],
         ) as session:
-            if not (cookie_cache.exists() and not _retried):
+            if not (saved_cookies and not _retried):
                 print(json.dumps({"status": "checking_login"}), flush=True)
                 session.fetch(
                     f"{BASE_URL}/",
@@ -552,12 +543,12 @@ def _submit_headless(
             try:
                 browser_cookies = session.context.cookies()
                 if any(c.get("name") == "X-User-Handle" for c in browser_cookies):
-                    cookie_cache.write_text(json.dumps(browser_cookies))
+                    save_platform_cookies("codeforces", browser_cookies)
             except Exception:
                 pass
 
         if needs_relogin and not _retried:
-            cookie_cache.unlink(missing_ok=True)
+            clear_platform_cookies("codeforces")
             return _submit_headless(
                 contest_id,
                 problem_id,

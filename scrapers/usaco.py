@@ -8,7 +8,7 @@ from typing import Any, cast
 
 import httpx
 
-from .base import BaseScraper, extract_precision
+from .base import BaseScraper, extract_precision, load_platform_cookies, save_platform_cookies
 from .timeouts import HTTP_TIMEOUT
 from .models import (
     ContestListResult,
@@ -27,7 +27,6 @@ HEADERS = {
 }
 CONNECTIONS = 4
 
-_COOKIE_PATH = Path.home() / ".cache" / "cp-nvim" / "usaco-cookies.json"
 _LOGIN_PATH = "/current/tpcm/login-session.php"
 _SUBMIT_PATH = "/current/tpcm/submit-solution.php"
 
@@ -202,20 +201,16 @@ def _parse_submit_form(
 
 
 async def _load_usaco_cookies(client: httpx.AsyncClient) -> None:
-    if not _COOKIE_PATH.exists():
-        return
-    try:
-        for k, v in json.loads(_COOKIE_PATH.read_text()).items():
+    data = load_platform_cookies("usaco")
+    if isinstance(data, dict):
+        for k, v in data.items():
             client.cookies.set(k, v)
-    except Exception:
-        pass
 
 
 async def _save_usaco_cookies(client: httpx.AsyncClient) -> None:
-    cookies = {k: v for k, v in client.cookies.items()}
+    cookies = dict(client.cookies.items())
     if cookies:
-        _COOKIE_PATH.parent.mkdir(parents=True, exist_ok=True)
-        _COOKIE_PATH.write_text(json.dumps(cookies))
+        save_platform_cookies("usaco", cookies)
 
 
 async def _check_usaco_login(client: httpx.AsyncClient, username: str) -> bool:
