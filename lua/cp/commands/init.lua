@@ -326,6 +326,10 @@ local function parse_command(args)
     end
   end
 
+  if (first == 'login' or first == 'logout' or first == 'signup') and #args == 1 then
+    return { type = 'action', action = first, requires_context = true, platform = nil }
+  end
+
   if #args == 1 then
     return {
       type = 'problem_jump',
@@ -378,6 +382,7 @@ function M.handle_command(opts)
       if not restore.restore_from_current_file() then
         return
       end
+      vim.cmd.redraw()
     end
 
     local setup = require('cp.setup')
@@ -421,20 +426,35 @@ function M.handle_command(opts)
       end
       vim.ui.open(url)
     elseif cmd.action == 'login' then
-      if not check_platform_enabled(cmd.platform) then
+      local p = cmd.platform or state.get_platform()
+      if not p then
+        logger.log('No platform active. Usage: :CP <platform> login', { level = vim.log.levels.ERROR })
         return
       end
-      require('cp.credentials').login(cmd.platform)
+      if not check_platform_enabled(p) then
+        return
+      end
+      require('cp.credentials').login(p)
     elseif cmd.action == 'logout' then
-      if not check_platform_enabled(cmd.platform) then
+      local p = cmd.platform or state.get_platform()
+      if not p then
+        logger.log('No platform active. Usage: :CP <platform> logout', { level = vim.log.levels.ERROR })
         return
       end
-      require('cp.credentials').logout(cmd.platform)
+      if not check_platform_enabled(p) then
+        return
+      end
+      require('cp.credentials').logout(p)
     elseif cmd.action == 'signup' then
-      local url = constants.SIGNUP_URLS[cmd.platform]
+      local p = cmd.platform or state.get_platform()
+      if not p then
+        logger.log('No platform active. Usage: :CP <platform> signup', { level = vim.log.levels.ERROR })
+        return
+      end
+      local url = constants.SIGNUP_URLS[p]
       if not url then
         logger.log(
-          ("No signup URL available for '%s'"):format(cmd.platform),
+          ("No signup URL available for '%s'"):format(p),
           { level = vim.log.levels.WARN }
         )
         return

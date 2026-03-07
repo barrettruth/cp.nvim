@@ -43,6 +43,10 @@ end, {
       vim.list_extend(candidates, platforms)
       table.insert(candidates, 'cache')
       table.insert(candidates, 'pick')
+      if platform then
+        table.insert(candidates, 'login')
+        table.insert(candidates, 'logout')
+      end
       if platform and contest_id then
         vim.list_extend(
           candidates,
