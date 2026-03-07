@@ -38,7 +38,10 @@ local function prompt_and_login(platform, display)
     end, function(result)
       vim.schedule(function()
         if result.success then
-          logger.log(display .. ' login successful', { level = vim.log.levels.INFO, override = true })
+          logger.log(
+            display .. ' login successful',
+            { level = vim.log.levels.INFO, override = true }
+          )
         else
           local err = result.error or 'unknown error'
           logger.log(display .. ' login failed: ' .. err, { level = vim.log.levels.ERROR })
@@ -74,7 +77,10 @@ function M.login(platform)
     end, function(result)
       vim.schedule(function()
         if result.success then
-          logger.log(display .. ' login successful', { level = vim.log.levels.INFO, override = true })
+          logger.log(
+            display .. ' login successful',
+            { level = vim.log.levels.INFO, override = true }
+          )
         else
           prompt_and_login(platform, display)
         end
