@@ -208,6 +208,12 @@ M.LANGUAGE_VERSIONS = {
     python = { python3 = 'PYTH 3', pypy3 = 'PYPY3' },
     java = { java = 'JAVA' },
     rust = { rust = 'rust' },
+    c = { c = 'C' },
+    go = { go = 'GO' },
+    kotlin = { kotlin = 'KTLN' },
+    javascript = { nodejs = 'NODEJS' },
+    typescript = { typescript = 'TS' },
+    csharp = { csharp = 'C#' },
   },
 }
 

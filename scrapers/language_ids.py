@@ -130,6 +130,14 @@ LANGUAGE_IDS = {
         "python": "PYTH 3",
         "java": "JAVA",
         "rust": "rust",
+        "c": "C",
+        "go": "GO",
+        "kotlin": "KTLN",
+        "javascript": "NODEJS",
+        "typescript": "TS",
+        "csharp": "C#",
+        "php": "PHP",
+        "r": "R",
     },
 }
 
