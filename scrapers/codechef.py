@@ -84,9 +84,11 @@ def _login_headless_codechef(credentials: dict[str, str]) -> LoginResult:
             page.locator('input[name="name"]').fill(credentials.get("username", ""))
             page.locator('input[name="pass"]').fill(credentials.get("password", ""))
             page.locator("input.cc-login-btn").click()
-            try:
-                page.wait_for_url(lambda url: "/login" not in url, timeout=3000)
-            except Exception:
+            page.wait_for_function(
+                "() => !window.location.href.includes('/login') || !!document.querySelector('div.error')",
+                timeout=BROWSER_NAV_TIMEOUT,
+            )
+            if "/login" in page.url:
                 login_error = "bad_credentials"
                 return
         except Exception as e:
@@ -163,9 +165,11 @@ def _submit_headless_codechef(
             page.locator('input[name="name"]').fill(credentials.get("username", ""))
             page.locator('input[name="pass"]').fill(credentials.get("password", ""))
             page.locator("input.cc-login-btn").click()
-            try:
-                page.wait_for_url(lambda url: "/login" not in url, timeout=3000)
-            except Exception:
+            page.wait_for_function(
+                "() => !window.location.href.includes('/login') || !!document.querySelector('div.error')",
+                timeout=BROWSER_NAV_TIMEOUT,
+            )
+            if "/login" in page.url:
                 login_error = "bad_credentials"
                 return
         except Exception as e:
