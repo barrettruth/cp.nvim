@@ -262,15 +262,8 @@ local function validate_language(id, lang)
 
   if lang.commands.build ~= nil then
     vim.validate({ build = { lang.commands.build, { 'table' } } })
-    if not has_tokens(lang.commands.build, { '{source}', '{binary}' }) then
-      error(('[cp.nvim] languages.%s.commands.build must include {source} and {binary}'):format(id))
-    end
-    for _, k in ipairs({ 'run', 'debug' }) do
-      if lang.commands[k] then
-        if not has_tokens(lang.commands[k], { '{binary}' }) then
-          error(('[cp.nvim] languages.%s.commands.%s must include {binary}'):format(id, k))
-        end
-      end
+    if not has_tokens(lang.commands.build, { '{source}' }) then
+      error(('[cp.nvim] languages.%s.commands.build must include {source}'):format(id))
     end
   else
     for _, k in ipairs({ 'run', 'debug' }) do

@@ -1054,20 +1054,14 @@ Set {version} globally or per-platform:
       },
     },
 <
-Available versions per platform ~
+Available versions ~
 
-  Platform    cpp              python           java    rust
-  AtCoder     c++20/23         python3, pypy3   java    rust
-  Codeforces  c++17/20/23      python3, pypy3   -       -
-  CSES        c++11/17/20      python3, pypy3   java    rust2018/2021
-  Kattis      c++17/20/23      python3          java    rust
-  USACO       c++11/17         python3          java    -
-  CodeChef    c++20            python3, pypy3   java    rust
+Each platform supports all of its own languages and compiler versions.
+The full list of version keys is in `lua/cp/constants.lua` under
+`LANGUAGE_VERSIONS`. Use any key from that table as the {version} value.
 
-Using a raw platform ID ~
-
-If your preferred version is not listed, you can bypass version
-lookup by setting {submit_id} to the raw platform language ID:
+To bypass version lookup entirely, set {submit_id} to the raw platform
+language ID (the value from the platform's submit page dropdown):
 >lua
     platforms = {
       codeforces = {
@@ -1075,9 +1069,6 @@ lookup by setting {submit_id} to the raw platform language ID:
       },
     },
 <
-To find the raw ID, open the platform's submit page in your browser,
-inspect the language dropdown, and copy the <option value="..."> for
-your desired language.
 
 ==============================================================================
 OPEN                                                                 *cp-open*

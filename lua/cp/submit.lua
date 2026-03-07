@@ -78,7 +78,7 @@ function M.submit(opts)
 
   prompt_credentials(platform, function(creds)
     vim.cmd.update()
-    vim.notify('[cp.nvim] Submitting...', vim.log.levels.INFO)
+    logger.log('Submitting...', { level = vim.log.levels.INFO, override = true })
 
     require('cp.scraper').submit(
       platform,
@@ -89,7 +89,10 @@ function M.submit(opts)
       creds,
       function(ev)
         vim.schedule(function()
-          vim.notify('[cp.nvim] ' .. (STATUS_MSGS[ev.status] or ev.status), vim.log.levels.INFO)
+          logger.log(
+            STATUS_MSGS[ev.status] or ev.status,
+            { level = vim.log.levels.INFO, override = true }
+          )
         end)
       end,
       function(result)

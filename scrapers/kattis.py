@@ -338,13 +338,14 @@ class KattisScraper(BaseScraper):
                 await _save_kattis_cookies(client)
 
             print(json.dumps({"status": "submitting"}), flush=True)
-            ext = "py" if "python" in language_id.lower() else "cpp"
+            lang_lower = language_id.lower()
+            mainclass = Path(file_path).stem if "java" in lang_lower else ""
             data: dict[str, str] = {
                 "submit": "true",
                 "script": "true",
                 "language": language_id,
                 "problem": problem_id,
-                "mainclass": "",
+                "mainclass": mainclass,
                 "submit_ctr": "2",
             }
             if contest_id != problem_id:
@@ -354,7 +355,7 @@ class KattisScraper(BaseScraper):
                 return await client.post(
                     f"{BASE_URL}/submit",
                     data=data,
-                    files={"sub_file[]": (f"solution.{ext}", source, "text/plain")},
+                    files={"sub_file[]": (Path(file_path).name, source, "text/plain")},
                     headers=HEADERS,
                     timeout=HTTP_TIMEOUT,
                 )
