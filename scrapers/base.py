@@ -46,6 +46,7 @@ def clear_platform_cookies(platform: str) -> None:
     except Exception:
         pass
 
+
 _PRECISION_ABS_REL_RE = re.compile(
     r"(?:absolute|relative)\s+error[^.]*?10\s*[\^{]\s*\{?\s*[-\u2212]\s*(\d+)\s*\}?",
     re.IGNORECASE,

@@ -330,7 +330,9 @@ function M.setup_problem(problem_id, language)
 
   local _abs_sf = vim.fn.fnamemodify(source_file, ':p')
   if vim.uv.fs_stat(_abs_sf) and vim.fn.bufnr(_abs_sf) == -1 then
-    local ans = vim.fn.input(('File %q already exists. Overwrite? [y/N]: '):format(vim.fn.fnamemodify(source_file, ':~:.')))
+    local ans = vim.fn.input(
+      ('File %q already exists. Overwrite? [y/N]: '):format(vim.fn.fnamemodify(source_file, ':~:.'))
+    )
     vim.cmd.redraw()
     if ans:lower() ~= 'y' then
       local prov0 = state.get_provisional()
