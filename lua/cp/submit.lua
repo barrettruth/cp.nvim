@@ -20,23 +20,26 @@ local function prompt_credentials(platform, callback)
     return
   end
   local display = constants.PLATFORM_DISPLAY_NAMES[platform] or platform
-  vim.ui.input({ prompt = '[cp.nvim]: ' .. display .. ' username (<Esc> to cancel): ' }, function(username)
-    if not username or username == '' then
-      logger.log('Submit cancelled', { level = vim.log.levels.WARN })
-      return
+  vim.ui.input(
+    { prompt = '[cp.nvim]: ' .. display .. ' username (<Esc> to cancel): ' },
+    function(username)
+      if not username or username == '' then
+        logger.log('Submit cancelled', { level = vim.log.levels.WARN })
+        return
+      end
+      vim.fn.inputsave()
+      local password = vim.fn.inputsecret('[cp.nvim]: ' .. display .. ' password: ')
+      vim.fn.inputrestore()
+      vim.cmd.redraw()
+      if not password or password == '' then
+        logger.log('Submit cancelled', { level = vim.log.levels.WARN })
+        return
+      end
+      local creds = { username = username, password = password }
+      cache.set_credentials(platform, creds)
+      callback(creds)
     end
-    vim.fn.inputsave()
-    local password = vim.fn.inputsecret('[cp.nvim]: ' .. display .. ' password: ')
-    vim.fn.inputrestore()
-    vim.cmd.redraw()
-    if not password or password == '' then
-      logger.log('Submit cancelled', { level = vim.log.levels.WARN })
-      return
-    end
-    local creds = { username = username, password = password }
-    cache.set_credentials(platform, creds)
-    callback(creds)
-  end)
+  )
 end
 
 ---@param opts { language?: string }?

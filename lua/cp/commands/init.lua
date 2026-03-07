@@ -428,7 +428,10 @@ function M.handle_command(opts)
     elseif cmd.action == 'login' then
       local p = cmd.platform or state.get_platform()
       if not p then
-        logger.log('No platform active. Usage: :CP <platform> login', { level = vim.log.levels.ERROR })
+        logger.log(
+          'No platform active. Usage: :CP <platform> login',
+          { level = vim.log.levels.ERROR }
+        )
         return
       end
       if not check_platform_enabled(p) then
@@ -438,7 +441,10 @@ function M.handle_command(opts)
     elseif cmd.action == 'logout' then
       local p = cmd.platform or state.get_platform()
       if not p then
-        logger.log('No platform active. Usage: :CP <platform> logout', { level = vim.log.levels.ERROR })
+        logger.log(
+          'No platform active. Usage: :CP <platform> logout',
+          { level = vim.log.levels.ERROR }
+        )
         return
       end
       if not check_platform_enabled(p) then
@@ -448,15 +454,15 @@ function M.handle_command(opts)
     elseif cmd.action == 'signup' then
       local p = cmd.platform or state.get_platform()
       if not p then
-        logger.log('No platform active. Usage: :CP <platform> signup', { level = vim.log.levels.ERROR })
+        logger.log(
+          'No platform active. Usage: :CP <platform> signup',
+          { level = vim.log.levels.ERROR }
+        )
         return
       end
       local url = constants.SIGNUP_URLS[p]
       if not url then
-        logger.log(
-          ("No signup URL available for '%s'"):format(p),
-          { level = vim.log.levels.WARN }
-        )
+        logger.log(("No signup URL available for '%s'"):format(p), { level = vim.log.levels.WARN })
         return
       end
       vim.ui.open(url)
