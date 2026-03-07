@@ -85,10 +85,10 @@ M.LANGUAGE_VERSIONS = {
     python = { python3 = '31', pypy3 = '70' },
   },
   cses = {
-    cpp = { ['c++11'] = 'C++11', ['c++17'] = 'C++17', ['c++20'] = 'C++20' },
+    cpp = { ['c++17'] = 'C++17' },
     python = { python3 = 'Python3', pypy3 = 'PyPy3' },
     java = { java = 'Java' },
-    rust = { rust2018 = 'Rust2018', rust2021 = 'Rust2021' },
+    rust = { rust2021 = 'Rust2021' },
   },
   kattis = {
     cpp = { ['c++17'] = 'C++', ['c++20'] = 'C++', ['c++23'] = 'C++' },

@@ -31,24 +31,18 @@ HEADERS = {
 CONNECTIONS = 8
 
 CSES_LANGUAGES: dict[str, dict[str, str]] = {
-    "C++11": {"name": "C++", "option": "C++11"},
     "C++17": {"name": "C++", "option": "C++17"},
-    "C++20": {"name": "C++", "option": "C++20"},
     "Python3": {"name": "Python3", "option": "CPython3"},
     "PyPy3": {"name": "Python3", "option": "PyPy3"},
     "Java": {"name": "Java", "option": "Java"},
-    "Rust2018": {"name": "Rust", "option": "2018"},
     "Rust2021": {"name": "Rust", "option": "2021"},
 }
 
 EXTENSIONS: dict[str, str] = {
-    "C++11": "cpp",
     "C++17": "cpp",
-    "C++20": "cpp",
     "Python3": "py",
     "PyPy3": "py",
     "Java": "java",
-    "Rust2018": "rs",
     "Rust2021": "rs",
 }
 
@@ -443,7 +437,7 @@ class CSESScraper(BaseScraper):
             print(json.dumps({"status": "submitting"}), flush=True)
 
             ext = EXTENSIONS.get(language_id, "cpp")
-            lang = CSES_LANGUAGES.get(language_id, {})
+            lang = CSES_LANGUAGES.get(language_id, {"name": "C++", "option": "C++17"})
             content_b64 = base64.b64encode(source_code.encode()).decode()
 
             payload: dict[str, Any] = {
