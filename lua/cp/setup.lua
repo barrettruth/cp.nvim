@@ -328,6 +328,64 @@ function M.setup_problem(problem_id, language)
     end
   end
 
+  local _abs_sf = vim.fn.fnamemodify(source_file, ':p')
+  if vim.uv.fs_stat(_abs_sf) and vim.fn.bufnr(_abs_sf) == -1 then
+    local ans = vim.fn.input(
+      ('File %q already exists. Overwrite? [y/N]: '):format(vim.fn.fnamemodify(source_file, ':~:.'))
+    )
+    vim.cmd.redraw()
+    if ans:lower() ~= 'y' then
+      local prov0 = state.get_provisional()
+      if
+        prov0
+        and prov0.platform == platform
+        and prov0.contest_id == (state.get_contest_id() or '')
+      then
+        if vim.api.nvim_buf_is_valid(prov0.bufnr) then
+          vim.api.nvim_buf_delete(prov0.bufnr, { force = true })
+        end
+        state.set_provisional(nil)
+      end
+      vim.cmd.only({ mods = { silent = true } })
+      if vim.fn.expand('%:p') ~= vim.fn.fnamemodify(source_file, ':p') then
+        vim.cmd.e(source_file)
+      end
+      local declined_bufnr = vim.api.nvim_get_current_buf()
+      state.set_solution_win(vim.api.nvim_get_current_win())
+      require('cp.ui.views').ensure_io_view()
+      if not vim.b[declined_bufnr].cp_setup_done then
+        local s = config.hooks and config.hooks.setup
+        if s and s.code then
+          local ok = pcall(s.code, state)
+          if ok then
+            vim.b[declined_bufnr].cp_setup_done = true
+          end
+        else
+          helpers.clearcol(declined_bufnr)
+          vim.b[declined_bufnr].cp_setup_done = true
+        end
+        local o = config.hooks and config.hooks.on
+        if o and o.enter then
+          vim.api.nvim_create_autocmd('BufEnter', {
+            buffer = declined_bufnr,
+            callback = function()
+              pcall(o.enter, state)
+            end,
+          })
+          pcall(o.enter, state)
+        end
+      end
+      cache.set_file_state(
+        vim.fn.expand('%:p'),
+        platform,
+        state.get_contest_id() or '',
+        state.get_problem_id() or '',
+        lang
+      )
+      return
+    end
+  end
+
   local contest_dir = vim.fn.fnamemodify(source_file, ':h')
   local is_new_dir = vim.fn.isdirectory(contest_dir) == 0
   vim.fn.mkdir(contest_dir, 'p')

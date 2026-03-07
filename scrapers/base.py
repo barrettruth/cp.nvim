@@ -7,6 +7,16 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any
 
+from .language_ids import get_language_id
+from .models import (
+    CombinedTest,
+    ContestListResult,
+    LoginResult,
+    MetadataResult,
+    SubmitResult,
+    TestsResult,
+)
+
 _COOKIE_FILE = Path.home() / ".cache" / "cp-nvim" / "cookies.json"
 
 
@@ -36,16 +46,6 @@ def clear_platform_cookies(platform: str) -> None:
     except Exception:
         pass
 
-
-from .language_ids import get_language_id
-from .models import (
-    CombinedTest,
-    ContestListResult,
-    LoginResult,
-    MetadataResult,
-    SubmitResult,
-    TestsResult,
-)
 
 _PRECISION_ABS_REL_RE = re.compile(
     r"(?:absolute|relative)\s+error[^.]*?10\s*[\^{]\s*\{?\s*[-\u2212]\s*(\d+)\s*\}?",

@@ -9,7 +9,12 @@ from typing import Any
 
 import httpx
 
-from .base import BaseScraper, clear_platform_cookies, load_platform_cookies, save_platform_cookies
+from .base import (
+    BaseScraper,
+    clear_platform_cookies,
+    load_platform_cookies,
+    save_platform_cookies,
+)
 from .timeouts import BROWSER_SESSION_TIMEOUT, HTTP_TIMEOUT
 from .models import (
     ContestListResult,
@@ -234,9 +239,7 @@ def _submit_headless_codechef(
                 print(json.dumps({"status": "logging_in"}), flush=True)
                 session.fetch(f"{BASE_URL}/login", page_action=login_action)
                 if login_error:
-                    return SubmitResult(
-                        success=False, error=login_error
-                    )
+                    return SubmitResult(success=False, error=login_error)
                 logged_in = True
 
             if not _practice:

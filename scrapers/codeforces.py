@@ -8,7 +8,13 @@ from typing import Any
 import requests
 from bs4 import BeautifulSoup, Tag
 
-from .base import BaseScraper, clear_platform_cookies, extract_precision, load_platform_cookies, save_platform_cookies
+from .base import (
+    BaseScraper,
+    clear_platform_cookies,
+    extract_precision,
+    load_platform_cookies,
+    save_platform_cookies,
+)
 from .models import (
     ContestListResult,
     ContestSummary,
@@ -387,7 +393,9 @@ def _login_headless_cf(credentials: dict[str, str]) -> LoginResult:
                 google_search=False,
                 cookies=saved_cookies,
             ) as session:
-                session.fetch(f"{BASE_URL}/", page_action=check_action, solve_cloudflare=True)
+                session.fetch(
+                    f"{BASE_URL}/", page_action=check_action, solve_cloudflare=True
+                )
             if logged_in:
                 return LoginResult(success=True, error="")
         except Exception:
@@ -419,7 +427,9 @@ def _login_headless_cf(credentials: dict[str, str]) -> LoginResult:
 
             session.fetch(f"{BASE_URL}/", page_action=verify_action, network_idle=True)
             if not logged_in:
-                return LoginResult(success=False, error="Login failed (bad credentials?)")
+                return LoginResult(
+                    success=False, error="Login failed (bad credentials?)"
+                )
 
             try:
                 browser_cookies = session.context.cookies()
@@ -444,7 +454,6 @@ def _submit_headless(
     from pathlib import Path
 
     source_code = Path(file_path).read_text()
-
 
     try:
         from scrapling.fetchers import StealthySession  # type: ignore[import-untyped,unresolved-import]
@@ -519,7 +528,9 @@ def _submit_headless(
         ) as session:
             if not _retried and saved_cookies:
                 print(json.dumps({"status": "checking_login"}), flush=True)
-                session.fetch(f"{BASE_URL}/", page_action=check_login, solve_cloudflare=True)
+                session.fetch(
+                    f"{BASE_URL}/", page_action=check_login, solve_cloudflare=True
+                )
 
             if not logged_in:
                 print(json.dumps({"status": "logging_in"}), flush=True)

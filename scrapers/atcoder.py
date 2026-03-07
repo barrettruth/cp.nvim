@@ -6,7 +6,6 @@ import os
 import re
 import subprocess
 import time
-from pathlib import Path
 from typing import Any
 
 import backoff
@@ -16,7 +15,13 @@ from bs4 import BeautifulSoup, Tag
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-from .base import BaseScraper, clear_platform_cookies, extract_precision, load_platform_cookies, save_platform_cookies
+from .base import (
+    BaseScraper,
+    clear_platform_cookies,
+    extract_precision,
+    load_platform_cookies,
+    save_platform_cookies,
+)
 from .models import (
     ContestListResult,
     ContestSummary,
@@ -432,7 +437,9 @@ def _login_headless(credentials: dict[str, str]) -> LoginResult:
                 google_search=False,
                 cookies=saved_cookies,
             ) as session:
-                session.fetch(f"{BASE_URL}/home", page_action=check_action, network_idle=True)
+                session.fetch(
+                    f"{BASE_URL}/home", page_action=check_action, network_idle=True
+                )
             if logged_in:
                 return LoginResult(success=True, error="")
         except Exception:
@@ -462,9 +469,13 @@ def _login_headless(credentials: dict[str, str]) -> LoginResult:
                 nonlocal logged_in
                 logged_in = _at_check_logged_in(page)
 
-            session.fetch(f"{BASE_URL}/home", page_action=verify_action, network_idle=True)
+            session.fetch(
+                f"{BASE_URL}/home", page_action=verify_action, network_idle=True
+            )
             if not logged_in:
-                return LoginResult(success=False, error="Login failed (bad credentials?)")
+                return LoginResult(
+                    success=False, error="Login failed (bad credentials?)"
+                )
 
             try:
                 browser_cookies = session.context.cookies()
@@ -547,7 +558,9 @@ def _submit_headless(
         ) as session:
             if not _retried and saved_cookies:
                 print(json.dumps({"status": "checking_login"}), flush=True)
-                session.fetch(f"{BASE_URL}/home", page_action=check_login, network_idle=True)
+                session.fetch(
+                    f"{BASE_URL}/home", page_action=check_login, network_idle=True
+                )
 
             if not logged_in:
                 print(json.dumps({"status": "logging_in"}), flush=True)
@@ -558,7 +571,9 @@ def _submit_headless(
                 )
                 login_error = get_login_error()
                 if login_error:
-                    return SubmitResult(success=False, error=f"Login failed: {login_error}")
+                    return SubmitResult(
+                        success=False, error=f"Login failed: {login_error}"
+                    )
                 logged_in = True
                 try:
                     browser_cookies = session.context.cookies()
@@ -577,13 +592,20 @@ def _submit_headless(
         if needs_relogin and not _retried:
             clear_platform_cookies("atcoder")
             return _submit_headless(
-                contest_id, problem_id, file_path, language_id, credentials, _retried=True
+                contest_id,
+                problem_id,
+                file_path,
+                language_id,
+                credentials,
+                _retried=True,
             )
 
         if submit_error:
             return SubmitResult(success=False, error=submit_error)
 
-        return SubmitResult(success=True, error="", submission_id="", verdict="submitted")
+        return SubmitResult(
+            success=True, error="", submission_id="", verdict="submitted"
+        )
     except Exception as e:
         return SubmitResult(success=False, error=str(e))
 

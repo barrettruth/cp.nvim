@@ -53,11 +53,20 @@ function M.submit(opts)
   end
 
   local source_file = state.get_source_file()
-  if not source_file or vim.fn.filereadable(source_file) ~= 1 then
+  if not source_file then
     logger.log('Source file not found', { level = vim.log.levels.ERROR })
     return
   end
   source_file = vim.fn.fnamemodify(source_file, ':p')
+  local _stat = vim.uv.fs_stat(source_file)
+  if not _stat then
+    logger.log('Source file not found', { level = vim.log.levels.ERROR })
+    return
+  end
+  if _stat.size == 0 then
+    logger.log('Submit aborted: source file has no content', { level = vim.log.levels.WARN })
+    return
+  end
 
   local submit_language = language
   local cfg = config.get_config()
