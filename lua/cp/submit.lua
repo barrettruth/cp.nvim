@@ -89,7 +89,10 @@ function M.submit(opts)
       creds,
       function(ev)
         vim.schedule(function()
-          logger.log(STATUS_MSGS[ev.status] or ev.status, { level = vim.log.levels.INFO, override = true })
+          logger.log(
+            STATUS_MSGS[ev.status] or ev.status,
+            { level = vim.log.levels.INFO, override = true }
+          )
         end)
       end,
       function(result)
