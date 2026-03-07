@@ -209,6 +209,15 @@ function M.start(platform, contest_id, language)
   race_state.last_refetch = os.time()
   race_state.token = token
 
+  logger.log(
+    ('%s race "%s" starts in %s'):format(
+      display,
+      race_state.contest_name,
+      format_countdown(remaining)
+    ),
+    { level = vim.log.levels.INFO, override = true }
+  )
+
   local timer = vim.uv.new_timer()
   race_state.timer = timer
   timer:start(
