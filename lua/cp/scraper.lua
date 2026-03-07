@@ -344,7 +344,7 @@ function M.login(platform, credentials, on_status, callback)
   local done = false
   run_scraper(platform, 'login', {}, {
     ndjson = true,
-    env_extra = { CP_CREDENTIALS = vim.json.encode(credentials) },
+    stdin = vim.json.encode(credentials),
     on_event = function(ev)
       if ev.credentials ~= nil and next(ev.credentials) ~= nil then
         require('cp.cache').set_credentials(platform, ev.credentials)
@@ -392,9 +392,9 @@ function M.submit(
   local done = false
   run_scraper(platform, 'submit', { contest_id, problem_id, language, source_file }, {
     ndjson = true,
-    env_extra = { CP_CREDENTIALS = vim.json.encode(credentials) },
+    stdin = vim.json.encode(credentials),
     on_event = function(ev)
-      if ev.credentials ~= nil then
+      if ev.credentials ~= nil and next(ev.credentials) ~= nil then
         require('cp.cache').set_credentials(platform, ev.credentials)
       end
       if ev.status ~= nil then

@@ -117,6 +117,7 @@ function M.logout(platform)
     if ok and type(data) == 'table' then
       data[platform] = nil
       vim.fn.writefile({ vim.fn.json_encode(data) }, cookie_file)
+      vim.fn.setfperm(cookie_file, 'rw-------')
     end
   end
   logger.log(display .. ' credentials cleared', { level = vim.log.levels.INFO, override = true })
