@@ -30,7 +30,6 @@ from .timeouts import (
     BROWSER_ELEMENT_WAIT,
     BROWSER_NAV_TIMEOUT,
     BROWSER_SESSION_TIMEOUT,
-    BROWSER_SETTLE_DELAY,
     BROWSER_SUBMIT_NAV_TIMEOUT,
     BROWSER_TURNSTILE_POLL,
     HTTP_TIMEOUT,
@@ -500,7 +499,6 @@ def _submit_headless(
                     "buffer": Path(file_path).read_bytes(),
                 },
             )
-            page.wait_for_timeout(BROWSER_SETTLE_DELAY)
             page.locator('button[type="submit"]').click(no_wait_after=True)
             page.wait_for_url(
                 lambda url: "/submissions/me" in url,
