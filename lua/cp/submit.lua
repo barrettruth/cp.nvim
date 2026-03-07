@@ -65,13 +65,13 @@ function M.submit(opts)
   local eff = plat_effective and plat_effective[language]
   if eff then
     if eff.submit_id then
-      submit_language = eff.submit_id
+      submit_language = eff.submit_id or submit_language
     else
       local ver = eff.version or constants.DEFAULT_VERSIONS[language]
       if ver then
         local versions = (constants.LANGUAGE_VERSIONS[platform] or {})[language]
         if versions and versions[ver] then
-          submit_language = versions[ver]
+          submit_language = versions[ver] or submit_language
         end
       end
     end
