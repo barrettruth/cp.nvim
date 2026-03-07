@@ -439,7 +439,7 @@ class USACOScraper(BaseScraper):
                     except Exception as e:
                         return self._submit_error(f"Login failed: {e}")
                     if not ok:
-                        return self._submit_error("Login failed (bad credentials?)")
+                        return self._submit_error("bad_credentials")
                     await _save_usaco_cookies(client)
             else:
                 print(json.dumps({"status": "logging_in"}), flush=True)
@@ -448,7 +448,7 @@ class USACOScraper(BaseScraper):
                 except Exception as e:
                     return self._submit_error(f"Login failed: {e}")
                 if not ok:
-                    return self._submit_error("Login failed (bad credentials?)")
+                    return self._submit_error("bad_credentials")
                 await _save_usaco_cookies(client)
 
             result = await self._do_submit(client, problem_id, language_id, source)
@@ -463,7 +463,7 @@ class USACOScraper(BaseScraper):
             except Exception as e:
                 return self._submit_error(f"Login failed: {e}")
             if not ok:
-                return self._submit_error("Login failed (bad credentials?)")
+                return self._submit_error("bad_credentials")
             await _save_usaco_cookies(client)
 
             return await self._do_submit(client, problem_id, language_id, source)
@@ -543,7 +543,7 @@ class USACOScraper(BaseScraper):
                 return self._login_error(f"Login request failed: {e}")
 
             if not ok:
-                return self._login_error("Login failed (bad credentials?)")
+                return self._login_error("bad_credentials")
 
             await _save_usaco_cookies(client)
         return LoginResult(

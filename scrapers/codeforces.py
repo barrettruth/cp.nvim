@@ -353,10 +353,15 @@ def _cf_login_action(credentials: dict[str, str]):
             page.wait_for_selector('input[name="handleOrEmail"]', timeout=60000)
             page.fill('input[name="handleOrEmail"]', credentials.get("username", ""))
             page.fill('input[name="password"]', credentials.get("password", ""))
+            page.locator('#enterForm input[name="remember"]').check()
             page.locator('#enterForm input[type="submit"]').click()
-            page.wait_for_url(
-                lambda url: "/enter" not in url, timeout=BROWSER_NAV_TIMEOUT
+            page.wait_for_function(
+                "() => !window.location.href.includes('/enter') || !!document.querySelector('#enterForm span.error')",
+                timeout=BROWSER_NAV_TIMEOUT,
             )
+            if "/enter" in page.url:
+                login_error = "bad_credentials"
+                return
         except Exception as e:
             login_error = str(e)
 
@@ -416,7 +421,9 @@ def _login_headless_cf(credentials: dict[str, str]) -> LoginResult:
                 solve_cloudflare=True,
             )
             login_error = get_error()
-            if login_error:
+            if login_error == "bad_credentials":
+                return LoginResult(success=False, error="bad_credentials")
+            elif login_error:
                 return LoginResult(success=False, error=f"Login failed: {login_error}")
 
             logged_in = False
@@ -428,7 +435,7 @@ def _login_headless_cf(credentials: dict[str, str]) -> LoginResult:
             session.fetch(f"{BASE_URL}/", page_action=verify_action, network_idle=True)
             if not logged_in:
                 return LoginResult(
-                    success=False, error="Login failed (bad credentials?)"
+                    success=False, error="bad_credentials"
                 )
 
             try:
@@ -540,7 +547,9 @@ def _submit_headless(
                     solve_cloudflare=True,
                 )
                 login_error = _get_login_error()
-                if login_error:
+                if login_error == "bad_credentials":
+                    return SubmitResult(success=False, error="bad_credentials")
+                elif login_error:
                     return SubmitResult(
                         success=False, error=f"Login failed: {login_error}"
                     )

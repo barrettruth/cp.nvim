@@ -344,7 +344,7 @@ class KattisScraper(BaseScraper):
                 print(json.dumps({"status": "logging_in"}), flush=True)
                 ok = await _do_kattis_login(client, username, password)
                 if not ok:
-                    return self._submit_error("Login failed (bad credentials?)")
+                    return self._submit_error("bad_credentials")
                 await _save_kattis_cookies(client)
 
             print(json.dumps({"status": "submitting"}), flush=True)
@@ -381,7 +381,7 @@ class KattisScraper(BaseScraper):
                 print(json.dumps({"status": "logging_in"}), flush=True)
                 ok = await _do_kattis_login(client, username, password)
                 if not ok:
-                    return self._submit_error("Login failed (bad credentials?)")
+                    return self._submit_error("bad_credentials")
                 await _save_kattis_cookies(client)
                 try:
                     r = await _do_submit()
@@ -421,7 +421,7 @@ class KattisScraper(BaseScraper):
             print(json.dumps({"status": "logging_in"}), flush=True)
             ok = await _do_kattis_login(client, username, password)
             if not ok:
-                return self._login_error("Login failed (bad credentials?)")
+                return self._login_error("bad_credentials")
             await _save_kattis_cookies(client)
         return LoginResult(
             success=True,

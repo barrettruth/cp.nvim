@@ -11,6 +11,7 @@ local STATUS_MESSAGES = {
   installing_browser = 'Installing browser...',
 }
 
+
 ---@param platform string
 ---@param display string
 local function prompt_and_login(platform, display)
@@ -45,7 +46,11 @@ local function prompt_and_login(platform, display)
           )
         else
           local err = result.error or 'unknown error'
-          logger.log(display .. ' login failed: ' .. err, { level = vim.log.levels.ERROR })
+          cache.clear_credentials(platform)
+          logger.log(
+            display .. ' login failed: ' .. (constants.LOGIN_ERRORS[err] or err),
+            { level = vim.log.levels.ERROR }
+          )
         end
       end)
     end)
@@ -83,6 +88,7 @@ function M.login(platform)
             { level = vim.log.levels.INFO, override = true }
           )
         else
+          cache.clear_credentials(platform)
           prompt_and_login(platform, display)
         end
       end)

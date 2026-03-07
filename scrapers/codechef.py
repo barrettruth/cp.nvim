@@ -87,7 +87,7 @@ def _login_headless_codechef(credentials: dict[str, str]) -> LoginResult:
             try:
                 page.wait_for_url(lambda url: "/login" not in url, timeout=3000)
             except Exception:
-                login_error = "bad credentials?"
+                login_error = "bad_credentials"
                 return
         except Exception as e:
             login_error = str(e)
@@ -106,7 +106,7 @@ def _login_headless_codechef(credentials: dict[str, str]) -> LoginResult:
             session.fetch(f"{BASE_URL}/", page_action=check_login, network_idle=True)
             if not logged_in:
                 return LoginResult(
-                    success=False, error="Login failed (bad credentials?)"
+                    success=False, error="bad_credentials"
                 )
 
             try:
@@ -166,7 +166,7 @@ def _submit_headless_codechef(
             try:
                 page.wait_for_url(lambda url: "/login" not in url, timeout=3000)
             except Exception:
-                login_error = "bad credentials?"
+                login_error = "bad_credentials"
                 return
         except Exception as e:
             login_error = str(e)

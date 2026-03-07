@@ -221,4 +221,8 @@ M.DEFAULT_VERSIONS = { cpp = 'c++20', python = 'python3' }
 
 M.COOKIE_FILE = vim.fn.expand('~/.cache/cp-nvim/cookies.json')
 
+M.LOGIN_ERRORS = {
+  bad_credentials = 'bad credentials',
+}
+
 return M
