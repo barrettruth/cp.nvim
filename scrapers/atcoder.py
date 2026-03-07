@@ -36,9 +36,29 @@ from .timeouts import (
     HTTP_TIMEOUT,
 )
 
-_LANGUAGE_ID_EXTENSION = {
-    "6017": "cc",
-    "6082": "py",
+_LANGUAGE_ID_EXTENSION: dict[str, str] = {
+    "6002": "ada", "6003": "apl", "6004": "asm", "6005": "asm",
+    "6006": "awk", "6008": "sh", "6009": "bas", "6010": "bc",
+    "6012": "bf", "6013": "c", "6014": "c",
+    "6015": "cs", "6016": "cs",
+    "6017": "cc", "6021": "clj", "6022": "clj", "6023": "clj", "6025": "cljs",
+    "6026": "cob", "6027": "lisp", "6028": "cr", "6030": "d", "6031": "d",
+    "6032": "d", "6033": "dart", "6038": "ex", "6039": "el", "6041": "erl",
+    "6042": "fs", "6043": "factor", "6044": "fish", "6045": "fth",
+    "6046": "f90", "6047": "f90", "6048": "f", "6049": "gleam",
+    "6050": "go", "6051": "go", "6052": "hs", "6053": "hx", "6054": "cc",
+    "6056": "java", "6057": "js", "6058": "js", "6059": "js",
+    "6060": "jule", "6061": "kk", "6062": "kt", "6065": "lean",
+    "6066": "ll", "6067": "lua", "6068": "lua", "6071": "nim", "6072": "nim",
+    "6073": "ml", "6074": "m", "6075": "pas", "6076": "pl", "6077": "php",
+    "6079": "pony", "6080": "ps1", "6081": "pro",
+    "6082": "py", "6083": "py", "6084": "r", "6085": "re",
+    "6086": "rb", "6087": "rb", "6088": "rs", "6089": "py",
+    "6090": "scala", "6091": "scala", "6092": "scm", "6093": "scm",
+    "6094": "sd7", "6095": "swift", "6096": "tcl",
+    "6100": "ts", "6101": "ts", "6102": "ts",
+    "6105": "v", "6106": "vala", "6107": "v", "6109": "wat",
+    "6111": "zig", "6114": "jl", "6115": "py", "6116": "cc", "6118": "sql",
 }
 
 MIB_TO_MB = 1.048576
@@ -304,9 +324,6 @@ def _login_headless(credentials: dict[str, str]) -> LoginResult:
 
     _ensure_browser()
 
-    cookie_cache = Path.home() / ".cache" / "cp-nvim" / "atcoder-cookies.json"
-    cookie_cache.parent.mkdir(parents=True, exist_ok=True)
-
     logged_in = False
     login_error: str | None = None
 
@@ -352,13 +369,6 @@ def _login_headless(credentials: dict[str, str]) -> LoginResult:
                     success=False, error="Login failed (bad credentials?)"
                 )
 
-            try:
-                browser_cookies = session.context.cookies()
-                if any(c["name"] == "REVEL_SESSION" for c in browser_cookies):
-                    cookie_cache.write_text(json.dumps(browser_cookies))
-            except Exception:
-                pass
-
         return LoginResult(success=True, error="")
     except Exception as e:
         return LoginResult(success=False, error=str(e))
@@ -370,7 +380,6 @@ def _submit_headless(
     file_path: str,
     language_id: str,
     credentials: dict[str, str],
-    _retried: bool = False,
 ) -> "SubmitResult":
     try:
         from scrapling.fetchers import StealthySession  # type: ignore[import-untyped,unresolved-import]
@@ -382,25 +391,8 @@ def _submit_headless(
 
     _ensure_browser()
 
-    cookie_cache = Path.home() / ".cache" / "cp-nvim" / "atcoder-cookies.json"
-    cookie_cache.parent.mkdir(parents=True, exist_ok=True)
-    saved_cookies: list[dict[str, Any]] = []
-    if cookie_cache.exists():
-        try:
-            saved_cookies = json.loads(cookie_cache.read_text())
-        except Exception:
-            pass
-
-    logged_in = cookie_cache.exists() and not _retried
     login_error: str | None = None
     submit_error: str | None = None
-    needs_relogin = False
-
-    def check_login(page):
-        nonlocal logged_in
-        logged_in = page.evaluate(
-            "() => Array.from(document.querySelectorAll('a')).some(a => a.textContent.trim() === 'Sign Out')"
-        )
 
     def login_action(page):
         nonlocal login_error
@@ -416,9 +408,9 @@ def _submit_headless(
             login_error = str(e)
 
     def submit_action(page):
-        nonlocal submit_error, needs_relogin
+        nonlocal submit_error
         if "/login" in page.url:
-            needs_relogin = True
+            submit_error = "Not logged in after login step"
             return
         try:
             _solve_turnstile(page)
@@ -430,9 +422,13 @@ def _submit_headless(
                 f'select[name="data.LanguageId"] option[value="{language_id}"]'
             ).wait_for(state="attached", timeout=BROWSER_ELEMENT_WAIT)
             page.select_option('select[name="data.LanguageId"]', language_id)
-            page.set_input_files("#input-open-file", file_path)
+            ext = _LANGUAGE_ID_EXTENSION.get(language_id, Path(file_path).suffix.lstrip(".") or "txt")
+            page.set_input_files(
+                "#input-open-file",
+                {"name": f"solution.{ext}", "mimeType": "text/plain", "buffer": Path(file_path).read_bytes()},
+            )
             page.wait_for_timeout(BROWSER_SETTLE_DELAY)
-            page.locator('button[type="submit"]').click()
+            page.locator('button[type="submit"]').click(no_wait_after=True)
             page.wait_for_url(
                 lambda url: "/submissions/me" in url,
                 timeout=BROWSER_SUBMIT_NAV_TIMEOUT["atcoder"],
@@ -445,49 +441,21 @@ def _submit_headless(
             headless=True,
             timeout=BROWSER_SESSION_TIMEOUT,
             google_search=False,
-            cookies=saved_cookies if (cookie_cache.exists() and not _retried) else [],
         ) as session:
-            if not (cookie_cache.exists() and not _retried):
-                print(json.dumps({"status": "checking_login"}), flush=True)
-                session.fetch(
-                    f"{BASE_URL}/home", page_action=check_login, network_idle=True
-                )
-
-            if not logged_in:
-                print(json.dumps({"status": "logging_in"}), flush=True)
-                session.fetch(
-                    f"{BASE_URL}/login",
-                    page_action=login_action,
-                    solve_cloudflare=True,
-                )
-                if login_error:
-                    return SubmitResult(
-                        success=False, error=f"Login failed: {login_error}"
-                    )
+            print(json.dumps({"status": "logging_in"}), flush=True)
+            session.fetch(
+                f"{BASE_URL}/login",
+                page_action=login_action,
+                solve_cloudflare=True,
+            )
+            if login_error:
+                return SubmitResult(success=False, error=f"Login failed: {login_error}")
 
             print(json.dumps({"status": "submitting"}), flush=True)
             session.fetch(
                 f"{BASE_URL}/contests/{contest_id}/submit",
                 page_action=submit_action,
                 solve_cloudflare=True,
-            )
-
-            try:
-                browser_cookies = session.context.cookies()
-                if any(c["name"] == "REVEL_SESSION" for c in browser_cookies):
-                    cookie_cache.write_text(json.dumps(browser_cookies))
-            except Exception:
-                pass
-
-        if needs_relogin and not _retried:
-            cookie_cache.unlink(missing_ok=True)
-            return _submit_headless(
-                contest_id,
-                problem_id,
-                file_path,
-                language_id,
-                credentials,
-                _retried=True,
             )
 
         if submit_error:

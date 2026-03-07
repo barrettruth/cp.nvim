@@ -4,6 +4,7 @@ local conf = require('telescope.config').values
 local action_state = require('telescope.actions.state')
 local actions = require('telescope.actions')
 
+local logger = require('cp.log')
 local picker_utils = require('cp.pickers')
 
 local M = {}
@@ -14,10 +15,7 @@ local function contest_picker(opts, platform, refresh, language)
   local contests = picker_utils.get_platform_contests(platform, refresh)
 
   if vim.tbl_isempty(contests) then
-    vim.notify(
-      ('No contests found for platform: %s'):format(platform_display_name),
-      vim.log.levels.WARN
-    )
+    logger.log(('No contests found for platform: %s'):format(platform_display_name), { level = vim.log.levels.WARN })
     return
   end
 

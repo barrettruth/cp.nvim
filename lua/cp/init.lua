@@ -21,7 +21,7 @@ local function ensure_initialized()
   local ok, result = pcall(config_module.setup, user_config)
   if not ok then
     local msg = tostring(result):gsub('^.+:%d+: ', '')
-    vim.notify(msg, vim.log.levels.ERROR)
+    logger.log(msg, { level = vim.log.levels.ERROR, override = true, sync = true })
     return false
   end
   config_module.set_current_config(result)

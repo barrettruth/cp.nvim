@@ -142,7 +142,7 @@ local function discover_nix_submit_cmd()
 
   local plugin_path = M.get_plugin_path()
   vim.cmd.redraw()
-  vim.notify('Building submit environment...', vim.log.levels.INFO)
+  logger.log('Building submit environment...', { level = vim.log.levels.INFO, override = true, sync = true })
   vim.cmd.redraw()
   local result = vim
     .system(
@@ -209,7 +209,7 @@ local function discover_nix_python()
   end
 
   local plugin_path = M.get_plugin_path()
-  vim.notify('[cp.nvim] Building Python environment with nix...', vim.log.levels.INFO)
+  logger.log('Building Python environment with nix...', { level = vim.log.levels.INFO, override = true, sync = true })
   vim.cmd.redraw()
   local result = vim
     .system(
@@ -263,7 +263,7 @@ function M.setup_python_env()
   if not on_nixos and vim.fn.executable('uv') == 1 then
     local plugin_path = M.get_plugin_path()
     logger.log('Python env: uv sync (dir=' .. plugin_path .. ')')
-    vim.notify('[cp.nvim] Setting up Python environment...', vim.log.levels.INFO)
+    logger.log('Setting up Python environment...', { level = vim.log.levels.INFO, override = true, sync = true })
     vim.cmd.redraw()
 
     local env = vim.fn.environ()

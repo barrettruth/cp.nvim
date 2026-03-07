@@ -239,13 +239,13 @@ function M.start(platform, contest_id, language)
         logger.log('Contest started!', { level = vim.log.levels.INFO, override = true })
         race_try_setup(p, c, l, 1, token)
       elseif should_notify(r) then
-        vim.notify(
-          ('[cp.nvim]: %s race "%s" starts in %s'):format(
+        logger.log(
+          ('%s race "%s" starts in %s'):format(
             constants.PLATFORM_DISPLAY_NAMES[race_state.platform] or race_state.platform,
             race_state.contest_name,
             format_countdown(r)
           ),
-          vim.log.levels.INFO
+          { level = vim.log.levels.INFO, override = true }
         )
       end
     end)
