@@ -75,7 +75,10 @@ M.signal_codes = {
 
 M.LANGUAGE_VERSIONS = {
   atcoder = { cpp = { ['c++23'] = '6017' }, python = { python3 = '6082' } },
-  codeforces = { cpp = { ['c++17'] = '89' }, python = { python3 = '70' } },
+  codeforces = {
+    cpp = { ['c++17'] = '54', ['c++20'] = '89', ['c++23'] = '91' },
+    python = { python3 = '31', pypy3 = '70' },
+  },
   cses = { cpp = { ['c++17'] = 'C++17' }, python = { python3 = 'Python3' } },
   kattis = {
     cpp = { ['c++17'] = 'C++', ['c++20'] = 'C++', ['c++23'] = 'C++' },
@@ -88,6 +91,6 @@ M.LANGUAGE_VERSIONS = {
   codechef = { cpp = { ['c++17'] = 'C++ 17' }, python = { python3 = 'Python 3' } },
 }
 
-M.DEFAULT_VERSIONS = { cpp = 'c++17', python = 'python3' }
+M.DEFAULT_VERSIONS = { cpp = 'c++20', python = 'python3' }
 
 return M

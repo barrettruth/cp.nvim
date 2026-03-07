@@ -61,9 +61,10 @@ local function refetch_start_time()
   local new_time = cache.get_contest_start_time(race_state.platform, race_state.contest_id)
   if new_time and new_time ~= race_state.start_time then
     race_state.start_time = new_time
-    race_state.contest_name =
-      cache.get_contest_display_name(race_state.platform, race_state.contest_id)
-      or race_state.contest_id
+    race_state.contest_name = cache.get_contest_display_name(
+      race_state.platform,
+      race_state.contest_id
+    ) or race_state.contest_id
   end
 end
 
@@ -121,11 +122,7 @@ local function race_try_setup(platform, contest_id, language, attempt, token)
       end
       if attempt >= MAX_RETRY_ATTEMPTS then
         logger.log(
-          ('Failed to load %s contest "%s" after %d attempts'):format(
-            display,
-            contest_id,
-            attempt
-          ),
+          ('Failed to load %s contest "%s" after %d attempts'):format(display, contest_id, attempt),
           { level = vim.log.levels.ERROR }
         )
         return
