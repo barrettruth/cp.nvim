@@ -379,7 +379,7 @@ end
 function M.get_contest_summaries(platform)
   local contest_list = {}
   for contest_id, contest_data in pairs(cache_data[platform] or {}) do
-    if contest_id:sub(1, 1) ~= '_' then
+    if type(contest_data) == 'table' and contest_id:sub(1, 1) ~= '_' then
       table.insert(contest_list, {
         id = contest_id,
         name = contest_data.name,
