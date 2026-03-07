@@ -2,6 +2,8 @@ LANGUAGE_IDS = {
     "atcoder": {
         "cpp": "6017",
         "python": "6082",
+        "java": "6056",
+        "rust": "6088",
     },
     "codeforces": {
         "cpp": "89",
@@ -10,18 +12,25 @@ LANGUAGE_IDS = {
     "cses": {
         "cpp": "C++17",
         "python": "Python3",
+        "java": "Java",
+        "rust": "Rust2021",
     },
     "usaco": {
         "cpp": "cpp",
         "python": "python",
+        "java": "java",
     },
     "kattis": {
         "cpp": "C++",
         "python": "Python 3",
+        "java": "Java",
+        "rust": "Rust",
     },
     "codechef": {
-        "cpp": "C++ 17",
-        "python": "Python 3",
+        "cpp": "C++",
+        "python": "PYTH 3",
+        "java": "JAVA",
+        "rust": "rust",
     },
 }
 
