@@ -9,7 +9,7 @@ from typing import Any
 import httpx
 
 from .base import BaseScraper, extract_precision
-from .timeouts import HTTP_TIMEOUT, SUBMIT_POLL_TIMEOUT
+from .timeouts import HTTP_TIMEOUT
 from .models import (
     ContestListResult,
     ContestSummary,
@@ -465,40 +465,8 @@ class CSESScraper(BaseScraper):
                     err = r.text
                 return self._submit_error(f"Submit request failed: {err}")
 
-            info = r.json()
-            submission_id = str(info.get("id", ""))
-
-            for _ in range(60):
-                await asyncio.sleep(2)
-                try:
-                    r = await client.get(
-                        f"{API_URL}/{SUBMIT_SCOPE}/submissions/{submission_id}",
-                        params={"poll": "true"},
-                        headers={
-                            "X-Auth-Token": token,
-                            **HEADERS,
-                        },
-                        timeout=SUBMIT_POLL_TIMEOUT,
-                    )
-                    if r.status_code == 200:
-                        info = r.json()
-                        if not info.get("pending", True):
-                            verdict = info.get("result", "unknown")
-                            return SubmitResult(
-                                success=True,
-                                error="",
-                                submission_id=submission_id,
-                                verdict=verdict,
-                            )
-                except Exception:
-                    pass
-
-            return SubmitResult(
-                success=True,
-                error="",
-                submission_id=submission_id,
-                verdict="submitted (poll timed out)",
-            )
+            submission_id = str(r.json().get("id", ""))
+            return SubmitResult(success=True, error="", submission_id=submission_id)
 
 
 if __name__ == "__main__":
