@@ -81,7 +81,7 @@ def _login_headless_codechef(credentials: dict[str, str]) -> LoginResult:
         try:
             page.locator('input[name="name"]').fill(credentials.get("username", ""))
             page.locator('input[name="pass"]').fill(credentials.get("password", ""))
-            page.locator('input.cc-login-btn').click()
+            page.locator("input.cc-login-btn").click()
             try:
                 page.wait_for_url(lambda url: "/login" not in url, timeout=3000)
             except Exception:
@@ -163,7 +163,7 @@ def _submit_headless_codechef(
         try:
             page.locator('input[name="name"]').fill(credentials.get("username", ""))
             page.locator('input[name="pass"]').fill(credentials.get("password", ""))
-            page.locator('input.cc-login-btn').click()
+            page.locator("input.cc-login-btn").click()
             try:
                 page.wait_for_url(lambda url: "/login" not in url, timeout=3000)
             except Exception:
@@ -185,8 +185,8 @@ def _submit_headless_codechef(
             page.locator(f'[role="option"][data-value="{language_id}"]').click()
             page.wait_for_timeout(2000)
 
-            page.locator('.ace_editor').click()
-            page.keyboard.press('Control+a')
+            page.locator(".ace_editor").click()
+            page.keyboard.press("Control+a")
             page.wait_for_timeout(200)
             page.evaluate(
                 """(code) => {
@@ -205,7 +205,7 @@ def _submit_headless_codechef(
                 "() => document.getElementById('submit_btn').scrollIntoView({block:'center'})"
             )
             page.wait_for_timeout(200)
-            page.locator('#submit_btn').dispatch_event('click')
+            page.locator("#submit_btn").dispatch_event("click")
             page.wait_for_timeout(3000)
 
             dialog_text = page.evaluate("""() => {
@@ -342,7 +342,11 @@ class CodeChefScraper(BaseScraper):
             async def fetch_past_page(offset: int) -> list[dict[str, Any]]:
                 r = await client.get(
                     BASE_URL + API_CONTESTS_PAST,
-                    params={"sort_by": "START", "sorting_order": "desc", "offset": offset},
+                    params={
+                        "sort_by": "START",
+                        "sorting_order": "desc",
+                        "offset": offset,
+                    },
                     headers=HEADERS,
                     timeout=HTTP_TIMEOUT,
                 )
@@ -353,7 +357,9 @@ class CodeChefScraper(BaseScraper):
             offset = 0
             while True:
                 page = await fetch_past_page(offset)
-                past.extend(c for c in page if re.match(r"^START\d+", c.get("contest_code", "")))
+                past.extend(
+                    c for c in page if re.match(r"^START\d+", c.get("contest_code", ""))
+                )
                 if len(page) < 20:
                     break
                 offset += 20
@@ -382,7 +388,9 @@ class CodeChefScraper(BaseScraper):
                 base_name = re.sub(r"\s*\(.*?\)\s*$", "", name).strip()
                 try:
                     async with sem:
-                        detail = await fetch_json(client, API_CONTEST.format(contest_id=code))
+                        detail = await fetch_json(
+                            client, API_CONTEST.format(contest_id=code)
+                        )
                     children = detail.get("child_contests")
                     if children and isinstance(children, dict):
                         divs: list[ContestSummary] = []
@@ -391,17 +399,28 @@ class CodeChefScraper(BaseScraper):
                             if not child:
                                 continue
                             child_code = child.get("contest_code")
-                            div_num = child.get("div", {}).get("div_number", div_key[-1])
+                            div_num = child.get("div", {}).get(
+                                "div_number", div_key[-1]
+                            )
                             if child_code:
                                 display = f"{base_name} (Div. {div_num})"
-                                divs.append(ContestSummary(
-                                    id=child_code, name=display, display_name=display, start_time=start_time
-                                ))
+                                divs.append(
+                                    ContestSummary(
+                                        id=child_code,
+                                        name=display,
+                                        display_name=display,
+                                        start_time=start_time,
+                                    )
+                                )
                         if divs:
                             return divs
                 except Exception:
                     pass
-                return [ContestSummary(id=code, name=name, display_name=name, start_time=start_time)]
+                return [
+                    ContestSummary(
+                        id=code, name=name, display_name=name, start_time=start_time
+                    )
+                ]
 
             results = await asyncio.gather(*[expand(c) for c in raw])
 
@@ -434,7 +453,9 @@ class CodeChefScraper(BaseScraper):
                 )
                 return
             all_problems = contest_data.get("problems", {})
-            if not all_problems and isinstance(contest_data.get("child_contests"), dict):
+            if not all_problems and isinstance(
+                contest_data.get("child_contests"), dict
+            ):
                 for div in ("div_4", "div_3", "div_2", "div_1"):
                     child = contest_data["child_contests"].get(div, {})
                     child_code = child.get("contest_code")
