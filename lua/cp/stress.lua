@@ -171,7 +171,11 @@ function M.toggle(generator_cmd, brute_cmd)
 
     vim.cmd.terminal(cmdline)
     local term_buf = vim.api.nvim_get_current_buf()
-    pcall(vim.api.nvim_buf_set_name, term_buf, ("term://stress.py '%s' '%s' '%s'"):format(gen_cmd, brute_run_cmd, binary))
+    pcall(
+      vim.api.nvim_buf_set_name,
+      term_buf,
+      ("term://stress.py '%s' '%s' '%s'"):format(gen_cmd, brute_run_cmd, binary)
+    )
     local term_win = vim.api.nvim_get_current_win()
 
     local cleaned = false
