@@ -1039,18 +1039,18 @@ Submit the current solution to the online judge.
 SUBMIT LANGUAGE VERSIONS                              *cp-submit-language*
 
 When submitting, cp.nvim selects a language version for the platform.
-The default is C++17 for cpp and Python 3 for python.
+The default is C++20 for cpp and Python 3 for python.
 
 Configuring a version ~
 
 Set {version} globally or per-platform:
 >lua
     languages = {
-      cpp = { version = "c++20", ... },
+      cpp = { version = "c++23", ... },
     },
     platforms = {
-      atcoder = {
-        overrides = { cpp = { version = "c++23" } },
+      codeforces = {
+        overrides = { cpp = { version = "c++17" } },
       },
     },
 <
@@ -1058,7 +1058,7 @@ Available versions per platform ~
 
   Platform    cpp              python
   AtCoder     c++23            python3
-  Codeforces  c++17            python3
+  Codeforces  c++17/20/23      python3, pypy3
   CSES        c++17            python3
   Kattis      c++17/20/23      python3
   USACO       c++17/20/23      python3
