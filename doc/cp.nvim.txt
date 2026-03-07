@@ -453,6 +453,7 @@ COMMANDS                                                         *cp-commands*
                                 any previously saved credentials.
                                 If [platform] is omitted, uses the active platform.
                                 Examples: >
+                                    :CP login
                                     :CP login atcoder
                                     :CP login codeforces
 <
@@ -460,6 +461,7 @@ COMMANDS                                                         *cp-commands*
                                 Remove stored credentials for a platform.
                                 If [platform] is omitted, uses the active platform.
                                 Examples: >
+                                    :CP logout
                                     :CP logout atcoder
 <
             :CP {platform} signup

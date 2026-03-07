@@ -415,7 +415,6 @@ class KattisScraper(BaseScraper):
                     return LoginResult(
                         success=True,
                         error="",
-                        credentials={"username": username, "password": password},
                     )
 
             print(json.dumps({"status": "logging_in"}), flush=True)
@@ -426,7 +425,6 @@ class KattisScraper(BaseScraper):
         return LoginResult(
             success=True,
             error="",
-            credentials={"username": username, "password": password},
         )
 
 

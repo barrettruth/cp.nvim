@@ -19,23 +19,27 @@ local function prompt_credentials(platform, callback)
     callback(saved)
     return
   end
-  vim.ui.input({ prompt = platform .. ' username: ' }, function(username)
-    if not username or username == '' then
-      logger.log('Submit cancelled', { level = vim.log.levels.WARN })
-      return
+  local display = constants.PLATFORM_DISPLAY_NAMES[platform] or platform
+  vim.ui.input(
+    { prompt = '[cp.nvim]: ' .. display .. ' username (<Esc> to cancel): ' },
+    function(username)
+      if not username or username == '' then
+        logger.log('Submit cancelled', { level = vim.log.levels.WARN })
+        return
+      end
+      vim.fn.inputsave()
+      local password = vim.fn.inputsecret('[cp.nvim]: ' .. display .. ' password: ')
+      vim.fn.inputrestore()
+      vim.cmd.redraw()
+      if not password or password == '' then
+        logger.log('Submit cancelled', { level = vim.log.levels.WARN })
+        return
+      end
+      local creds = { username = username, password = password }
+      cache.set_credentials(platform, creds)
+      callback(creds)
     end
-    vim.fn.inputsave()
-    local password = vim.fn.inputsecret(platform .. ' password: ')
-    vim.fn.inputrestore()
-    vim.cmd.redraw()
-    if not password or password == '' then
-      logger.log('Submit cancelled', { level = vim.log.levels.WARN })
-      return
-    end
-    local creds = { username = username, password = password }
-    cache.set_credentials(platform, creds)
-    callback(creds)
-  end)
+  )
 end
 
 ---@param opts { language?: string }?
@@ -86,7 +90,7 @@ function M.submit(opts)
     end
   end
 
-  prompt_credentials(platform, function(creds)
+  local function do_submit(creds)
     vim.cmd.update()
 
     require('cp.scraper').submit(
@@ -112,16 +116,24 @@ function M.submit(opts)
             local err = result and result.error or 'unknown error'
             if err == 'bad_credentials' or err:match('^Login failed') then
               cache.clear_credentials(platform)
+              logger.log(
+                'Submit failed: ' .. (constants.LOGIN_ERRORS[err] or err),
+                { level = vim.log.levels.ERROR }
+              )
+              prompt_credentials(platform, do_submit)
+            else
+              logger.log(
+                'Submit failed: ' .. (constants.LOGIN_ERRORS[err] or err),
+                { level = vim.log.levels.ERROR }
+              )
             end
-            logger.log(
-              'Submit failed: ' .. (constants.LOGIN_ERRORS[err] or err),
-              { level = vim.log.levels.ERROR }
-            )
           end
         end)
       end
     )
-  end)
+  end
+
+  prompt_credentials(platform, do_submit)
 end
 
 return M

@@ -36,6 +36,7 @@ def save_platform_cookies(platform: str, data: Any) -> None:
         existing = {}
     existing[platform] = data
     _COOKIE_FILE.write_text(json.dumps(existing))
+    _COOKIE_FILE.chmod(0o600)
 
 
 def clear_platform_cookies(platform: str) -> None:
@@ -43,6 +44,7 @@ def clear_platform_cookies(platform: str) -> None:
         existing = json.loads(_COOKIE_FILE.read_text())
         existing.pop(platform, None)
         _COOKIE_FILE.write_text(json.dumps(existing))
+        _COOKIE_FILE.chmod(0o600)
     except Exception:
         pass
 
@@ -160,7 +162,7 @@ class BaseScraper(ABC):
                         ).model_dump_json()
                     )
                     return 1
-                creds_raw = os.environ.get("CP_CREDENTIALS", "{}")
+                creds_raw = sys.stdin.read()
                 try:
                     credentials = json.loads(creds_raw)
                 except json.JSONDecodeError:
@@ -173,7 +175,7 @@ class BaseScraper(ABC):
                 return 0 if result.success else 1
 
             case "login":
-                creds_raw = os.environ.get("CP_CREDENTIALS", "{}")
+                creds_raw = sys.stdin.read()
                 try:
                     credentials = json.loads(creds_raw)
                 except json.JSONDecodeError:

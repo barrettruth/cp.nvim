@@ -14,46 +14,50 @@ local STATUS_MESSAGES = {
 ---@param platform string
 ---@param display string
 local function prompt_and_login(platform, display)
-  vim.ui.input({ prompt = '[cp.nvim]: ' .. display .. ' username: ' }, function(username)
-    if not username or username == '' then
-      logger.log('Cancelled', { level = vim.log.levels.WARN })
-      return
-    end
-    vim.fn.inputsave()
-    local password = vim.fn.inputsecret('[cp.nvim]: ' .. display .. ' password: ')
-    vim.fn.inputrestore()
-    if not password or password == '' then
-      logger.log('Cancelled', { level = vim.log.levels.WARN })
-      return
-    end
+  vim.ui.input(
+    { prompt = '[cp.nvim]: ' .. display .. ' username (<Esc> to cancel): ' },
+    function(username)
+      if not username or username == '' then
+        logger.log(display .. ' login cancelled', { level = vim.log.levels.WARN })
+        return
+      end
+      vim.fn.inputsave()
+      local password = vim.fn.inputsecret('[cp.nvim]: ' .. display .. ' password: ')
+      vim.fn.inputrestore()
+      if not password or password == '' then
+        logger.log(display .. ' login cancelled', { level = vim.log.levels.WARN })
+        return
+      end
 
-    local credentials = { username = username, password = password }
+      local credentials = { username = username, password = password }
 
-    local scraper = require('cp.scraper')
-    scraper.login(platform, credentials, function(ev)
-      vim.schedule(function()
-        local msg = STATUS_MESSAGES[ev.status] or ev.status
-        logger.log(display .. ': ' .. msg, { level = vim.log.levels.INFO, override = true })
+      local scraper = require('cp.scraper')
+      scraper.login(platform, credentials, function(ev)
+        vim.schedule(function()
+          local msg = STATUS_MESSAGES[ev.status] or ev.status
+          logger.log(display .. ': ' .. msg, { level = vim.log.levels.INFO, override = true })
+        end)
+      end, function(result)
+        vim.schedule(function()
+          if result.success then
+            cache.set_credentials(platform, credentials)
+            logger.log(
+              display .. ' login successful',
+              { level = vim.log.levels.INFO, override = true }
+            )
+          else
+            local err = result.error or 'unknown error'
+            cache.clear_credentials(platform)
+            logger.log(
+              display .. ' login failed: ' .. (constants.LOGIN_ERRORS[err] or err),
+              { level = vim.log.levels.ERROR }
+            )
+            prompt_and_login(platform, display)
+          end
+        end)
       end)
-    end, function(result)
-      vim.schedule(function()
-        if result.success then
-          cache.set_credentials(platform, credentials)
-          logger.log(
-            display .. ' login successful',
-            { level = vim.log.levels.INFO, override = true }
-          )
-        else
-          local err = result.error or 'unknown error'
-          cache.clear_credentials(platform)
-          logger.log(
-            display .. ' login failed: ' .. (constants.LOGIN_ERRORS[err] or err),
-            { level = vim.log.levels.ERROR }
-          )
-        end
-      end)
-    end)
-  end)
+    end
+  )
 end
 
 ---@param platform string?
@@ -117,6 +121,7 @@ function M.logout(platform)
     if ok and type(data) == 'table' then
       data[platform] = nil
       vim.fn.writefile({ vim.fn.json_encode(data) }, cookie_file)
+      vim.fn.setfperm(cookie_file, 'rw-------')
     end
   end
   logger.log(display .. ' credentials cleared', { level = vim.log.levels.INFO, override = true })

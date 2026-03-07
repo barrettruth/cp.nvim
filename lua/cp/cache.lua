@@ -57,6 +57,7 @@ function M.load()
 
   if vim.fn.filereadable(cache_file) == 0 then
     vim.fn.writefile({}, cache_file)
+    vim.fn.setfperm(cache_file, 'rw-------')
     loaded = true
     return
   end
@@ -107,6 +108,7 @@ function M.save()
     local encoded = vim.json.encode(cache_data)
     local lines = vim.split(encoded, '\n')
     vim.fn.writefile(lines, cache_file)
+    vim.fn.setfperm(cache_file, 'rw-------')
   end)
 end
 
