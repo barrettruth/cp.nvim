@@ -64,7 +64,14 @@ local function contest_picker(opts, platform, refresh, language)
     :find()
 end
 
-function M.pick(language)
+---@param language? string
+---@param platform? string
+function M.pick(language, platform)
+  if platform then
+    contest_picker({}, platform, false, language)
+    return
+  end
+
   local opts = {}
   local platforms = picker_utils.get_platforms()
 

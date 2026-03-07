@@ -221,6 +221,9 @@ def run_scraper_offline(fixture_text):
                     if "/api/list/contests/all" in url:
                         data = json.loads(fixture_text("codechef/contests.json"))
                         return MockResponse(data)
+                    if "/api/list/contests/past" in url:
+                        data = json.loads(fixture_text("codechef/contests_past.json"))
+                        return MockResponse(data)
                     if "/api/contests/START" in url and "/problems/" not in url:
                         contest_id = url.rstrip("/").split("/")[-1]
                         try:

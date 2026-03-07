@@ -38,11 +38,13 @@ function M.handle_command(opts)
   commands.handle_command(opts)
 end
 
+---@return boolean
 function M.is_initialized()
   return initialized
 end
 
 ---@deprecated Use `vim.g.cp` instead
+---@param user_config table?
 function M.setup(user_config)
   vim.deprecate('require("cp").setup()', 'vim.g.cp', 'v0.7.7', 'cp.nvim', false)
 

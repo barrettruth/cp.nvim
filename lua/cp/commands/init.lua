@@ -257,10 +257,7 @@ local function parse_command(args)
 
   if vim.tbl_contains(platforms, first) then
     if #args == 1 then
-      return {
-        type = 'error',
-        message = 'Too few arguments - specify a contest.',
-      }
+      return { type = 'action', action = 'pick', requires_context = false, platform = first }
     elseif #args == 2 then
       if args[2] == 'login' or args[2] == 'logout' or args[2] == 'signup' then
         return { type = 'action', action = args[2], requires_context = false, platform = first }
@@ -362,6 +359,7 @@ local function check_platform_enabled(platform)
 end
 
 --- Core logic for handling `:CP ...` commands
+---@param opts { fargs: string[] }
 ---@return nil
 function M.handle_command(opts)
   local cmd = parse_command(opts.fargs)
@@ -400,7 +398,7 @@ function M.handle_command(opts)
       setup.navigate_problem(-1, cmd.language)
     elseif cmd.action == 'pick' then
       local picker = require('cp.commands.picker')
-      picker.handle_pick_action(cmd.language)
+      picker.handle_pick_action(cmd.language, cmd.platform)
     elseif cmd.action == 'edit' then
       local edit = require('cp.ui.edit')
       edit.toggle_edit(cmd.test_index)

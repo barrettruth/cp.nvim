@@ -531,10 +531,12 @@ end
 
 local current_config = nil
 
+---@param config cp.Config
 function M.set_current_config(config)
   current_config = config
 end
 
+---@return cp.Config
 function M.get_config()
   return current_config or M.defaults
 end

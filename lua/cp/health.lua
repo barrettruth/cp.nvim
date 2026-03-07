@@ -66,6 +66,7 @@ local function check()
   end
 end
 
+---@return nil
 function M.check()
   local version = require('cp.version')
   vim.health.start('cp.nvim health check ~')

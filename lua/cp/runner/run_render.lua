@@ -376,6 +376,7 @@ function M.get_highlight_groups()
   }
 end
 
+---@return nil
 function M.setup_highlights()
   local groups = M.get_highlight_groups()
   for name, opts in pairs(groups) do

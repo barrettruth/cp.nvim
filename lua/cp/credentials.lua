@@ -11,6 +11,7 @@ local STATUS_MESSAGES = {
   installing_browser = 'Installing browser...',
 }
 
+---@param platform string?
 function M.login(platform)
   platform = platform or state.get_platform()
   if not platform then
@@ -68,6 +69,7 @@ function M.login(platform)
   end)
 end
 
+---@param platform string?
 function M.logout(platform)
   platform = platform or state.get_platform()
   if not platform then

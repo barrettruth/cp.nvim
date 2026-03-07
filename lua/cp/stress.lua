@@ -58,6 +58,8 @@ local function build_run_cmd(file)
   return './' .. file
 end
 
+---@param generator_cmd? string
+---@param brute_cmd? string
 function M.toggle(generator_cmd, brute_cmd)
   if state.get_active_panel() == 'stress' then
     if state.stress_buf and vim.api.nvim_buf_is_valid(state.stress_buf) then
@@ -239,6 +241,7 @@ function M.toggle(generator_cmd, brute_cmd)
   end)
 end
 
+---@return nil
 function M.cancel()
   if state.stress_buf and vim.api.nvim_buf_is_valid(state.stress_buf) then
     local job = vim.b[state.stress_buf].terminal_job_id
