@@ -10,7 +10,7 @@ from typing import Any
 import httpx
 
 from .base import BaseScraper
-from .timeouts import BROWSER_NAV_TIMEOUT, BROWSER_SESSION_TIMEOUT, HTTP_TIMEOUT
+from .timeouts import BROWSER_SESSION_TIMEOUT, HTTP_TIMEOUT
 from .models import (
     ContestListResult,
     ContestSummary,
