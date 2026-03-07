@@ -178,16 +178,15 @@ def _submit_headless_codechef(
             needs_relogin = True
             return
         try:
-            page.wait_for_timeout(2000)
+            page.wait_for_selector('[aria-haspopup="listbox"]', timeout=10000)
 
             page.locator('[aria-haspopup="listbox"]').click()
             page.wait_for_selector('[role="option"]', timeout=5000)
             page.locator(f'[role="option"][data-value="{language_id}"]').click()
-            page.wait_for_timeout(2000)
+            page.wait_for_timeout(250)
 
             page.locator(".ace_editor").click()
             page.keyboard.press("Control+a")
-            page.wait_for_timeout(200)
             page.evaluate(
                 """(code) => {
                     const textarea = document.querySelector('.ace_text-input');
@@ -199,20 +198,25 @@ def _submit_headless_codechef(
                 }""",
                 source_code,
             )
-            page.wait_for_timeout(1000)
+            page.wait_for_timeout(125)
 
             page.evaluate(
                 "() => document.getElementById('submit_btn').scrollIntoView({block:'center'})"
             )
-            page.wait_for_timeout(200)
             page.locator("#submit_btn").dispatch_event("click")
-            page.wait_for_timeout(3000)
+            try:
+                page.wait_for_selector('[role="dialog"], .swal2-popup', timeout=5000)
+            except Exception:
+                pass
 
             dialog_text = page.evaluate("""() => {
                 const d = document.querySelector('[role="dialog"], .swal2-popup');
                 return d ? d.textContent.trim() : null;
             }""")
-            if dialog_text and "not available for accepting solutions" in dialog_text:
+            if dialog_text and (
+                "not available for accepting solutions" in dialog_text
+                or "not available for submission" in dialog_text
+            ):
                 submit_error = "PRACTICE_FALLBACK"
             elif dialog_text:
                 submit_error = dialog_text
