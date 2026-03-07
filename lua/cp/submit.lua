@@ -110,10 +110,13 @@ function M.submit(opts)
             logger.log('Submitted successfully', { level = vim.log.levels.INFO, override = true })
           else
             local err = result and result.error or 'unknown error'
-            if err:match('^Login failed') then
+            if err == 'bad_credentials' or err:match('^Login failed') then
               cache.clear_credentials(platform)
             end
-            logger.log('Submit failed: ' .. err, { level = vim.log.levels.ERROR })
+            logger.log(
+              'Submit failed: ' .. (constants.LOGIN_ERRORS[err] or err),
+              { level = vim.log.levels.ERROR }
+            )
           end
         end)
       end

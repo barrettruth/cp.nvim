@@ -400,9 +400,13 @@ def _at_login_action(credentials: dict[str, str]):
             page.fill('input[name="username"]', credentials.get("username", ""))
             page.fill('input[name="password"]', credentials.get("password", ""))
             page.click("#submit")
-            page.wait_for_url(
-                lambda url: "/login" not in url, timeout=BROWSER_NAV_TIMEOUT
+            page.wait_for_function(
+                "() => !window.location.href.includes('/login') || !!document.querySelector('.alert-danger')",
+                timeout=BROWSER_NAV_TIMEOUT,
             )
+            if "/login" in page.url:
+                login_error = "bad_credentials"
+                return
         except Exception as e:
             login_error = str(e)
 
@@ -460,7 +464,9 @@ def _login_headless(credentials: dict[str, str]) -> LoginResult:
                 solve_cloudflare=True,
             )
             login_error = get_error()
-            if login_error:
+            if login_error == "bad_credentials":
+                return LoginResult(success=False, error="bad_credentials")
+            elif login_error:
                 return LoginResult(success=False, error=f"Login failed: {login_error}")
 
             logged_in = False
@@ -473,9 +479,7 @@ def _login_headless(credentials: dict[str, str]) -> LoginResult:
                 f"{BASE_URL}/home", page_action=verify_action, network_idle=True
             )
             if not logged_in:
-                return LoginResult(
-                    success=False, error="Login failed (bad credentials?)"
-                )
+                return LoginResult(success=False, error="bad_credentials")
 
             try:
                 browser_cookies = session.context.cookies()
@@ -570,7 +574,9 @@ def _submit_headless(
                     solve_cloudflare=True,
                 )
                 login_error = get_login_error()
-                if login_error:
+                if login_error == "bad_credentials":
+                    return SubmitResult(success=False, error="bad_credentials")
+                elif login_error:
                     return SubmitResult(
                         success=False, error=f"Login failed: {login_error}"
                     )

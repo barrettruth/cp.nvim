@@ -14,13 +14,13 @@ local STATUS_MESSAGES = {
 ---@param platform string
 ---@param display string
 local function prompt_and_login(platform, display)
-  vim.ui.input({ prompt = display .. ' username: ' }, function(username)
+  vim.ui.input({ prompt = '[cp.nvim]: ' .. display .. ' username: ' }, function(username)
     if not username or username == '' then
       logger.log('Cancelled', { level = vim.log.levels.WARN })
       return
     end
     vim.fn.inputsave()
-    local password = vim.fn.inputsecret(display .. ' password: ')
+    local password = vim.fn.inputsecret('[cp.nvim]: ' .. display .. ' password: ')
     vim.fn.inputrestore()
     if not password or password == '' then
       logger.log('Cancelled', { level = vim.log.levels.WARN })
@@ -45,7 +45,11 @@ local function prompt_and_login(platform, display)
           )
         else
           local err = result.error or 'unknown error'
-          logger.log(display .. ' login failed: ' .. err, { level = vim.log.levels.ERROR })
+          cache.clear_credentials(platform)
+          logger.log(
+            display .. ' login failed: ' .. (constants.LOGIN_ERRORS[err] or err),
+            { level = vim.log.levels.ERROR }
+          )
         end
       end)
     end)
@@ -83,6 +87,7 @@ function M.login(platform)
             { level = vim.log.levels.INFO, override = true }
           )
         else
+          cache.clear_credentials(platform)
           prompt_and_login(platform, display)
         end
       end)

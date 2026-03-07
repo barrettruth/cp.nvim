@@ -15,7 +15,7 @@ from .base import (
     load_platform_cookies,
     save_platform_cookies,
 )
-from .timeouts import BROWSER_SESSION_TIMEOUT, HTTP_TIMEOUT
+from .timeouts import BROWSER_NAV_TIMEOUT, BROWSER_SESSION_TIMEOUT, HTTP_TIMEOUT
 from .models import (
     ContestListResult,
     ContestSummary,
@@ -84,10 +84,12 @@ def _login_headless_codechef(credentials: dict[str, str]) -> LoginResult:
             page.locator('input[name="name"]').fill(credentials.get("username", ""))
             page.locator('input[name="pass"]').fill(credentials.get("password", ""))
             page.locator("input.cc-login-btn").click()
-            try:
-                page.wait_for_url(lambda url: "/login" not in url, timeout=3000)
-            except Exception:
-                login_error = "bad credentials?"
+            page.wait_for_function(
+                "() => !window.location.href.includes('/login') || !!document.querySelector('div.error')",
+                timeout=BROWSER_NAV_TIMEOUT,
+            )
+            if "/login" in page.url:
+                login_error = "bad_credentials"
                 return
         except Exception as e:
             login_error = str(e)
@@ -105,9 +107,7 @@ def _login_headless_codechef(credentials: dict[str, str]) -> LoginResult:
 
             session.fetch(f"{BASE_URL}/", page_action=check_login, network_idle=True)
             if not logged_in:
-                return LoginResult(
-                    success=False, error="Login failed (bad credentials?)"
-                )
+                return LoginResult(success=False, error="bad_credentials")
 
             try:
                 browser_cookies = session.context.cookies()
@@ -163,10 +163,12 @@ def _submit_headless_codechef(
             page.locator('input[name="name"]').fill(credentials.get("username", ""))
             page.locator('input[name="pass"]').fill(credentials.get("password", ""))
             page.locator("input.cc-login-btn").click()
-            try:
-                page.wait_for_url(lambda url: "/login" not in url, timeout=3000)
-            except Exception:
-                login_error = "bad credentials?"
+            page.wait_for_function(
+                "() => !window.location.href.includes('/login') || !!document.querySelector('div.error')",
+                timeout=BROWSER_NAV_TIMEOUT,
+            )
+            if "/login" in page.url:
+                login_error = "bad_credentials"
                 return
         except Exception as e:
             login_error = str(e)

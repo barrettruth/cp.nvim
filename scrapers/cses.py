@@ -266,7 +266,7 @@ class CSESScraper(BaseScraper):
             print(json.dumps({"status": "logging_in"}), flush=True)
             token = await self._web_login(client, username, password)
             if not token:
-                return self._login_error("Login failed (bad credentials?)")
+                return self._login_error("bad_credentials")
 
             return LoginResult(
                 success=True,
@@ -434,7 +434,7 @@ class CSESScraper(BaseScraper):
                 print(json.dumps({"status": "logging_in"}), flush=True)
                 token = await self._web_login(client, username, password)
                 if not token:
-                    return self._submit_error("Login failed (bad credentials?)")
+                    return self._submit_error("bad_credentials")
                 print(
                     json.dumps(
                         {
