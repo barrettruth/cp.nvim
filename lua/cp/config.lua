@@ -605,10 +605,10 @@ end
 ---@param problem_id? string
 ---@return string
 local function default_filename(contest_id, problem_id)
-  if problem_id then
+  if problem_id and problem_id ~= contest_id then
     return (contest_id .. problem_id):lower()
   end
-  return contest_id:lower()
+  return (problem_id or contest_id):lower()
 end
 M.default_filename = default_filename
 
