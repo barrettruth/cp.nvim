@@ -9,8 +9,7 @@ https://github.com/user-attachments/assets/e81d8dfb-578f-4a79-9989-210164fc0148
 
 ## Features
 
-- **Multi-platform support**: AtCoder, CodeChef, Codeforces, USACO, CSES,
-  Kattis
+- **Multi-platform support**: AtCoder, CodeChef, Codeforces, USACO, CSES, Kattis
 - **Automatic problem setup**: Scrape test cases and metadata in seconds
 - **Dual view modes**: Lightweight I/O view for quick feedback, full panel for
   detailed analysis
