@@ -314,6 +314,7 @@ end
 
 --- Configure the buffer with good defaults
 ---@param filetype? string
+---@return integer
 function M.create_buffer_with_options(filetype)
   local buf = vim.api.nvim_create_buf(false, true)
   vim.api.nvim_set_option_value('bufhidden', 'hide', { buf = buf })
@@ -345,6 +346,7 @@ function M.update_buffer_content(bufnr, lines, highlights, namespace)
   end
 end
 
+---@return boolean, string?
 function M.check_required_runtime()
   if is_windows() then
     return false, 'Windows is not supported'
@@ -419,16 +421,19 @@ local function find_gnu_timeout()
   return _timeout_path, _timeout_reason
 end
 
+---@return string?
 function M.timeout_path()
   local path = find_gnu_timeout()
   return path
 end
 
+---@return { ok: boolean, path: string|nil, reason: string|nil }
 function M.timeout_capability()
   local path, reason = find_gnu_timeout()
   return { ok = path ~= nil, path = path, reason = reason }
 end
 
+---@return string[]
 function M.cwd_executables()
   local uv = vim.uv
   local req = uv.fs_scandir('.')
@@ -452,6 +457,7 @@ function M.cwd_executables()
   return out
 end
 
+---@return nil
 function M.ensure_dirs()
   vim.system({ 'mkdir', '-p', 'build', 'io' }):wait()
 end

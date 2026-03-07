@@ -266,6 +266,7 @@ end
 ---@param memory_mb number
 ---@param interactive boolean
 ---@param multi_test boolean
+---@param precision number?
 function M.set_test_cases(
   platform,
   contest_id,
@@ -467,6 +468,7 @@ function M.clear_credentials(platform)
   M.save()
 end
 
+---@return nil
 function M.clear_all()
   cache_data = {}
   M.save()
@@ -488,6 +490,7 @@ function M.get_data_pretty()
   return vim.inspect(cache_data)
 end
 
+---@return table
 function M.get_raw_cache()
   return cache_data
 end

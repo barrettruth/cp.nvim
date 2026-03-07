@@ -33,6 +33,9 @@ local function substitute_template(cmd_template, substitutions)
   return out
 end
 
+---@param cmd_template string[]
+---@param substitutions SubstitutableCommand
+---@return string[]
 function M.build_command(cmd_template, substitutions)
   return substitute_template(cmd_template, substitutions)
 end

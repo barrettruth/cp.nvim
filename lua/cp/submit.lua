@@ -38,6 +38,7 @@ local function prompt_credentials(platform, callback)
   end)
 end
 
+---@param opts { language?: string }?
 function M.submit(opts)
   local platform = state.get_platform()
   local contest_id = state.get_contest_id()

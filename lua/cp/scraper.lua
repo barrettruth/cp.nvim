@@ -216,6 +216,10 @@ local function run_scraper(platform, subcommand, args, opts)
   end
 end
 
+---@param platform string
+---@param contest_id string
+---@param callback fun(data: table)?
+---@param on_error fun()?
 function M.scrape_contest_metadata(platform, contest_id, callback, on_error)
   run_scraper(platform, 'metadata', { contest_id }, {
     on_exit = function(result)
@@ -253,6 +257,8 @@ function M.scrape_contest_metadata(platform, contest_id, callback, on_error)
   })
 end
 
+---@param platform string
+---@return { contests: ContestSummary[], supports_countdown: boolean }?
 function M.scrape_contest_list(platform)
   local result = run_scraper(platform, 'contests', {}, { sync = true })
   if not result or not result.success or not (result.data and result.data.contests) then
@@ -330,6 +336,10 @@ function M.scrape_all_tests(platform, contest_id, callback, on_done)
   })
 end
 
+---@param platform string
+---@param credentials table
+---@param on_status fun(ev: table)?
+---@param callback fun(result: table)?
 function M.login(platform, credentials, on_status, callback)
   local done = false
   run_scraper(platform, 'login', {}, {
@@ -361,6 +371,14 @@ function M.login(platform, credentials, on_status, callback)
   })
 end
 
+---@param platform string
+---@param contest_id string
+---@param problem_id string
+---@param language string
+---@param source_file string
+---@param credentials table
+---@param on_status fun(ev: table)?
+---@param callback fun(result: table)?
 function M.submit(
   platform,
   contest_id,

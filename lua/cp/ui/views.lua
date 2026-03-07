@@ -16,6 +16,7 @@ local current_diff_layout = nil
 local current_mode = nil
 local _run_gen = 0
 
+---@return nil
 function M.disable()
   local active_panel = state.get_active_panel()
   if not active_panel then
@@ -351,6 +352,7 @@ local function create_window_layout(output_buf, input_buf)
   vim.api.nvim_set_current_win(solution_win)
 end
 
+---@return nil
 function M.ensure_io_view()
   local platform, contest_id, problem_id =
     state.get_platform(), state.get_contest_id(), state.get_problem_id()
@@ -598,6 +600,9 @@ local function render_io_view_results(io_state, test_indices, mode, combined_res
   utils.update_buffer_content(io_state.output_buf, output_lines, final_highlights, output_ns)
 end
 
+---@param test_indices_arg integer[]?
+---@param debug boolean?
+---@param mode? string
 function M.run_io_view(test_indices_arg, debug, mode)
   _run_gen = _run_gen + 1
   local gen = _run_gen
@@ -754,10 +759,12 @@ function M.run_io_view(test_indices_arg, debug, mode)
   end)
 end
 
+---@return nil
 function M.cancel_io_view()
   _run_gen = _run_gen + 1
 end
 
+---@return nil
 function M.cancel_interactive()
   if state.interactive_buf and vim.api.nvim_buf_is_valid(state.interactive_buf) then
     local job = vim.b[state.interactive_buf].terminal_job_id

@@ -1,3 +1,9 @@
+---@class DiffLayout
+---@field buffers integer[]
+---@field windows integer[]
+---@field mode string
+---@field cleanup fun()
+
 local M = {}
 
 local helpers = require('cp.helpers')
@@ -171,6 +177,11 @@ local function create_single_layout(parent_win, content)
   }
 end
 
+---@param mode string
+---@param parent_win integer
+---@param expected_content string
+---@param actual_content string
+---@return DiffLayout
 function M.create_diff_layout(mode, parent_win, expected_content, actual_content)
   if mode == 'single' then
     return create_single_layout(parent_win, actual_content)
@@ -185,6 +196,13 @@ function M.create_diff_layout(mode, parent_win, expected_content, actual_content
   end
 end
 
+---@param current_diff_layout DiffLayout?
+---@param current_mode string?
+---@param main_win integer
+---@param run table
+---@param config cp.Config
+---@param setup_keybindings_for_buffer fun(buf: integer)
+---@return DiffLayout?, string?
 function M.update_diff_panes(
   current_diff_layout,
   current_mode,

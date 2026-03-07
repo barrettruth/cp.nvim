@@ -134,6 +134,9 @@ local function race_try_setup(platform, contest_id, language, attempt, token)
   )
 end
 
+---@param platform string
+---@param contest_id string
+---@param language? string
 function M.start(platform, contest_id, language)
   if not platform or not vim.tbl_contains(constants.PLATFORMS, platform) then
     logger.log('Invalid platform', { level = vim.log.levels.ERROR })
@@ -252,6 +255,7 @@ function M.start(platform, contest_id, language)
   )
 end
 
+---@return nil
 function M.stop()
   local timer = race_state.timer
   if not timer then
@@ -276,6 +280,7 @@ function M.stop()
   )
 end
 
+---@return { active: boolean, platform?: string, contest_id?: string, remaining_seconds?: integer }
 function M.status()
   if not race_state.timer or not race_state.start_time then
     return { active = false }

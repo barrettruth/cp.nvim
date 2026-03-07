@@ -331,6 +331,7 @@ setup_keybindings = function(buf)
   })
 end
 
+---@param test_index? integer
 function M.toggle_edit(test_index)
   if edit_state then
     save_all_tests()
