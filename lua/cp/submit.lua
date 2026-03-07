@@ -79,7 +79,6 @@ function M.submit(opts)
 
   prompt_credentials(platform, function(creds)
     vim.cmd.update()
-    logger.log('Submitting...', { level = vim.log.levels.INFO, override = true })
 
     require('cp.scraper').submit(
       platform,

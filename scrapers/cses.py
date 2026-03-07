@@ -248,7 +248,21 @@ class CSESScraper(BaseScraper):
         if not username or not password:
             return self._login_error("Missing username or password")
 
+        token = credentials.get("token")
         async with httpx.AsyncClient(follow_redirects=True) as client:
+            if token:
+                print(json.dumps({"status": "checking_login"}), flush=True)
+                if await self._check_token(client, token):
+                    return LoginResult(
+                        success=True,
+                        error="",
+                        credentials={
+                            "username": username,
+                            "password": password,
+                            "token": token,
+                        },
+                    )
+
             print(json.dumps({"status": "logging_in"}), flush=True)
             token = await self._web_login(client, username, password)
             if not token:
@@ -460,7 +474,8 @@ class CSESScraper(BaseScraper):
 
             if r.status_code not in range(200, 300):
                 try:
-                    err = r.json().get("message", r.text)
+                    body = r.json()
+                    err = body.get("error") or body.get("message") or r.text
                 except Exception:
                     err = r.text
                 return self._submit_error(f"Submit request failed: {err}")

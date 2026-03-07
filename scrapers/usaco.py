@@ -429,7 +429,19 @@ class USACOScraper(BaseScraper):
 
         async with httpx.AsyncClient(follow_redirects=True) as client:
             await _load_usaco_cookies(client)
-            if not client.cookies:
+            if client.cookies:
+                print(json.dumps({"status": "checking_login"}), flush=True)
+                if not await _check_usaco_login(client, username):
+                    client.cookies.clear()
+                    print(json.dumps({"status": "logging_in"}), flush=True)
+                    try:
+                        ok = await _do_usaco_login(client, username, password)
+                    except Exception as e:
+                        return self._submit_error(f"Login failed: {e}")
+                    if not ok:
+                        return self._submit_error("Login failed (bad credentials?)")
+                    await _save_usaco_cookies(client)
+            else:
                 print(json.dumps({"status": "logging_in"}), flush=True)
                 try:
                     ok = await _do_usaco_login(client, username, password)
@@ -470,7 +482,8 @@ class USACOScraper(BaseScraper):
                 headers=HEADERS,
                 timeout=HTTP_TIMEOUT,
             )
-            if "login" in page_r.url.path.lower() or "Login" in page_r.text[:2000]:
+            page_url = str(page_r.url)
+            if "/login" in page_url or "Login" in page_r.text[:2000]:
                 return self._submit_error("auth_failure")
             form_url, hidden_fields, lang_val = _parse_submit_form(
                 page_r.text, language_id
@@ -513,6 +526,16 @@ class USACOScraper(BaseScraper):
             return self._login_error("Missing username or password")
 
         async with httpx.AsyncClient(follow_redirects=True) as client:
+            await _load_usaco_cookies(client)
+            if client.cookies:
+                print(json.dumps({"status": "checking_login"}), flush=True)
+                if await _check_usaco_login(client, username):
+                    return LoginResult(
+                        success=True,
+                        error="",
+                        credentials={"username": username, "password": password},
+                    )
+
             print(json.dumps({"status": "logging_in"}), flush=True)
             try:
                 ok = await _do_usaco_login(client, username, password)

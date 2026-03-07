@@ -329,6 +329,7 @@ class KattisScraper(BaseScraper):
             return self._submit_error("Missing credentials. Use :CP kattis login")
 
         async with httpx.AsyncClient(follow_redirects=True) as client:
+            print(json.dumps({"status": "checking_login"}), flush=True)
             await _load_kattis_cookies(client)
             if not client.cookies:
                 print(json.dumps({"status": "logging_in"}), flush=True)
@@ -366,7 +367,7 @@ class KattisScraper(BaseScraper):
             except Exception as e:
                 return self._submit_error(f"Submit request failed: {e}")
 
-            if r.text == "Request validation failed":
+            if r.status_code in (400, 403) or r.text == "Request validation failed":
                 _COOKIE_PATH.unlink(missing_ok=True)
                 print(json.dumps({"status": "logging_in"}), flush=True)
                 ok = await _do_kattis_login(client, username, password)
