@@ -56,8 +56,11 @@ function M.load()
   end
 
   if vim.fn.filereadable(cache_file) == 0 then
-    vim.fn.writefile({}, cache_file)
-    vim.fn.setfperm(cache_file, 'rw-------')
+    vim.fn.mkdir(vim.fn.fnamemodify(cache_file, ':h'), 'p')
+    local tmpfile = vim.fn.tempname()
+    vim.fn.writefile({}, tmpfile)
+    vim.fn.setfperm(tmpfile, 'rw-------')
+    vim.uv.fs_rename(tmpfile, cache_file)
     loaded = true
     return
   end
@@ -107,8 +110,10 @@ function M.save()
     cache_data._version = CACHE_VERSION
     local encoded = vim.json.encode(cache_data)
     local lines = vim.split(encoded, '\n')
-    vim.fn.writefile(lines, cache_file)
-    vim.fn.setfperm(cache_file, 'rw-------')
+    local tmpfile = vim.fn.tempname()
+    vim.fn.writefile(lines, tmpfile)
+    vim.fn.setfperm(tmpfile, 'rw-------')
+    vim.uv.fs_rename(tmpfile, cache_file)
   end)
 end
 

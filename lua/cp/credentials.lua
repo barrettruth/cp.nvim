@@ -120,8 +120,10 @@ function M.logout(platform)
     local ok, data = pcall(vim.fn.json_decode, vim.fn.readfile(cookie_file, 'b'))
     if ok and type(data) == 'table' then
       data[platform] = nil
-      vim.fn.writefile({ vim.fn.json_encode(data) }, cookie_file)
-      vim.fn.setfperm(cookie_file, 'rw-------')
+      local tmpfile = vim.fn.tempname()
+      vim.fn.writefile({ vim.fn.json_encode(data) }, tmpfile)
+      vim.fn.setfperm(tmpfile, 'rw-------')
+      vim.uv.fs_rename(tmpfile, cookie_file)
     end
   end
   logger.log(display .. ' credentials cleared', { level = vim.log.levels.INFO, override = true })
