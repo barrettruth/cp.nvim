@@ -9,6 +9,24 @@ local HOSTS = {
   usaco = 'usaco.org',
 }
 
+local _helper_checked = false
+local _helper_ok = false
+
+---@return boolean
+function M.has_helper()
+  if not _helper_checked then
+    local r = vim
+      .system({ 'git', 'config', 'credential.helper' }, { text = true, timeout = 5000 })
+      :wait()
+    _helper_ok = r.code == 0 and r.stdout ~= nil and vim.trim(r.stdout) ~= ''
+    _helper_checked = true
+  end
+  return _helper_ok
+end
+
+---@param host string
+---@param extra? table<string, string>
+---@return string
 local function _build_input(host, extra)
   local lines = { 'protocol=https', 'host=' .. host }
   if extra then
@@ -21,6 +39,8 @@ local function _build_input(host, extra)
   return table.concat(lines, '\n')
 end
 
+---@param stdout string
+---@return table<string, string>
 local function _parse_output(stdout)
   local result = {}
   for line in stdout:gmatch('[^\n]+') do
@@ -32,6 +52,8 @@ local function _parse_output(stdout)
   return result
 end
 
+---@param platform string
+---@return { username: string, password: string, token?: string }?
 function M.get(platform)
   local host = HOSTS[platform]
   if not host then
@@ -69,6 +91,8 @@ function M.get(platform)
   return creds
 end
 
+---@param platform string
+---@param creds { username: string, password: string, token?: string }
 function M.store(platform, creds)
   local host = HOSTS[platform]
   if not host then
@@ -85,6 +109,8 @@ function M.store(platform, creds)
   end
 end
 
+---@param platform string
+---@param creds { username: string, password: string, token?: string }
 function M.reject(platform, creds)
   local host = HOSTS[platform]
   if not host or not creds then

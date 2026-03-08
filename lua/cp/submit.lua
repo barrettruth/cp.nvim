@@ -42,6 +42,14 @@ end
 
 ---@param opts { language?: string }?
 function M.submit(opts)
+  if not git_credential.has_helper() then
+    logger.log(
+      'No git credential helper configured. See :help cp-credentials',
+      { level = vim.log.levels.ERROR }
+    )
+    return
+  end
+
   local platform = state.get_platform()
   local contest_id = state.get_contest_id()
   local problem_id = state.get_problem_id()

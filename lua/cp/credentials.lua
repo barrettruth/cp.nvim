@@ -71,6 +71,14 @@ function M.login(platform)
     return
   end
 
+  if not git_credential.has_helper() then
+    logger.log(
+      'No git credential helper configured. See :help cp-credentials',
+      { level = vim.log.levels.ERROR }
+    )
+    return
+  end
+
   local display = constants.PLATFORM_DISPLAY_NAMES[platform] or platform
 
   local existing = git_credential.get(platform) or {}
@@ -111,6 +119,14 @@ function M.logout(platform)
     )
     return
   end
+  if not git_credential.has_helper() then
+    logger.log(
+      'No git credential helper configured. See :help cp-credentials',
+      { level = vim.log.levels.ERROR }
+    )
+    return
+  end
+
   local display = constants.PLATFORM_DISPLAY_NAMES[platform] or platform
   local existing = git_credential.get(platform)
   if existing then

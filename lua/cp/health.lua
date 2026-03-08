@@ -84,6 +84,13 @@ local function check()
         vim.health.warn('git >= 1.7.9 required for credential storage, found ' .. ver_str)
       end
     end
+
+    local helper = vim.system({ 'git', 'config', 'credential.helper' }, { text = true }):wait()
+    if helper.code == 0 and helper.stdout and vim.trim(helper.stdout) ~= '' then
+      vim.health.ok('git credential helper: ' .. vim.trim(helper.stdout))
+    else
+      vim.health.warn('no git credential helper configured (required for login/submit)')
+    end
   else
     vim.health.warn('git not found (required for credential storage)')
   end
