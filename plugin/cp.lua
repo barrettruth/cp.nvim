@@ -8,6 +8,7 @@ vim.api.nvim_create_user_command('CP', function(opts)
   cp.handle_command(opts)
 end, {
   nargs = '*',
+  bar = true,
   desc = 'Competitive programming helper',
   complete = function(ArgLead, CmdLine, _)
     local constants = require('cp.constants')
