@@ -1,7 +1,6 @@
 ---@class cp.Credentials
 ---@field username string
 ---@field password string
----@field token? string
 
 local M = {}
 
@@ -57,32 +56,6 @@ local function _parse_output(stdout)
   return result
 end
 
-local CSES_TOKEN_SEP = '\t'
-
----@param platform string
----@param password string
----@return string, string?
-local function _decode_password(platform, password)
-  if platform ~= 'cses' then
-    return password, nil
-  end
-  local pw, token = password:match('^(.-)' .. CSES_TOKEN_SEP .. '(.+)$')
-  if pw then
-    return pw, token
-  end
-  return password, nil
-end
-
----@param password string
----@param token? string
----@return string
-local function _encode_password(password, token)
-  if token then
-    return password .. CSES_TOKEN_SEP .. token
-  end
-  return password
-end
-
 ---@param platform string
 ---@return cp.Credentials?
 function M.get(platform)
@@ -104,13 +77,7 @@ function M.get(platform)
     return nil
   end
 
-  local password, token = _decode_password(platform, parsed.password)
-  local creds = { username = parsed.username, password = password }
-  if token then
-    creds.token = token
-  end
-
-  return creds
+  return { username = parsed.username, password = parsed.password }
 end
 
 ---@param platform string
@@ -121,8 +88,7 @@ function M.store(platform, creds)
     return
   end
 
-  local stored_password = _encode_password(creds.password, creds.token)
-  local input = _build_input(host, { username = creds.username, password = stored_password })
+  local input = _build_input(host, { username = creds.username, password = creds.password })
   vim.system({ 'git', 'credential', 'approve' }, { stdin = input, text = true }):wait()
 end
 
@@ -134,8 +100,7 @@ function M.reject(platform, creds)
     return
   end
 
-  local stored_password = _encode_password(creds.password, creds.token)
-  local input = _build_input(host, { username = creds.username, password = stored_password })
+  local input = _build_input(host, { username = creds.username, password = creds.password })
   vim.system({ 'git', 'credential', 'reject' }, { stdin = input, text = true }):wait()
 end
 
