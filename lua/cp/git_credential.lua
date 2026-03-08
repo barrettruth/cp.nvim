@@ -57,6 +57,32 @@ local function _parse_output(stdout)
   return result
 end
 
+local CSES_TOKEN_SEP = '\t'
+
+---@param platform string
+---@param password string
+---@return string, string?
+local function _decode_password(platform, password)
+  if platform ~= 'cses' then
+    return password, nil
+  end
+  local pw, token = password:match('^(.-)' .. CSES_TOKEN_SEP .. '(.+)$')
+  if pw then
+    return pw, token
+  end
+  return password, nil
+end
+
+---@param password string
+---@param token? string
+---@return string
+local function _encode_password(password, token)
+  if token then
+    return password .. CSES_TOKEN_SEP .. token
+  end
+  return password
+end
+
 ---@param platform string
 ---@return cp.Credentials?
 function M.get(platform)
@@ -78,19 +104,10 @@ function M.get(platform)
     return nil
   end
 
-  local creds = { username = parsed.username, password = parsed.password }
-
-  if platform == 'cses' then
-    local token_input = _build_input(host, { path = 'api-token' })
-    local token_obj = vim
-      .system({ 'git', 'credential', 'fill' }, { stdin = token_input, text = true, timeout = 5000 })
-      :wait()
-    if token_obj.code == 0 then
-      local token_parsed = _parse_output(token_obj.stdout or '')
-      if token_parsed.password then
-        creds.token = token_parsed.password
-      end
-    end
+  local password, token = _decode_password(platform, parsed.password)
+  local creds = { username = parsed.username, password = password }
+  if token then
+    creds.token = token
   end
 
   return creds
@@ -104,14 +121,9 @@ function M.store(platform, creds)
     return
   end
 
-  local input = _build_input(host, { username = creds.username, password = creds.password })
+  local stored_password = _encode_password(creds.password, creds.token)
+  local input = _build_input(host, { username = creds.username, password = stored_password })
   vim.system({ 'git', 'credential', 'approve' }, { stdin = input, text = true }):wait()
-
-  if platform == 'cses' and creds.token then
-    local token_input =
-      _build_input(host, { path = 'api-token', username = creds.username, password = creds.token })
-    vim.system({ 'git', 'credential', 'approve' }, { stdin = token_input, text = true }):wait()
-  end
 end
 
 ---@param platform string
@@ -122,14 +134,9 @@ function M.reject(platform, creds)
     return
   end
 
-  local input = _build_input(host, { username = creds.username, password = creds.password })
+  local stored_password = _encode_password(creds.password, creds.token)
+  local input = _build_input(host, { username = creds.username, password = stored_password })
   vim.system({ 'git', 'credential', 'reject' }, { stdin = input, text = true }):wait()
-
-  if platform == 'cses' and creds.token then
-    local token_input =
-      _build_input(host, { path = 'api-token', username = creds.username, password = creds.token })
-    vim.system({ 'git', 'credential', 'reject' }, { stdin = token_input, text = true }):wait()
-  end
 end
 
 return M
