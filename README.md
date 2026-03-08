@@ -13,10 +13,9 @@ https://github.com/user-attachments/assets/e81d8dfb-578f-4a79-9989-210164fc0148
 - **Online Judge Integration**: Submit problems and view contest standings
 - **Live Contest Support**: Participate in real-time contests
 - **Automatic setup**: Scrape test cases and metadata in seconds
-- **Streamlined Editing**: Configure coding view, edit test cases,
-  stress-test solutions, run interactive problems, and more
-- **Rich output**: 256 color ANSI support for compiler errors and program
-  output
+- **Streamlined Editing**: Configure coding view, edit test cases, stress-test
+  solutions, run interactive problems, and more
+- **Rich output**: 256 color ANSI support for compiler errors and program output
 - **Language agnosticism**: Configure with any language
 - **Security**: Passwords go untampered
 
