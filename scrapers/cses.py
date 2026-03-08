@@ -8,7 +8,12 @@ from typing import Any
 
 import httpx
 
-from .base import BaseScraper, extract_precision, load_platform_cookies, save_platform_cookies
+from .base import (
+    BaseScraper,
+    extract_precision,
+    load_platform_cookies,
+    save_platform_cookies,
+)
 from .timeouts import HTTP_TIMEOUT
 from .models import (
     ContestListResult,
