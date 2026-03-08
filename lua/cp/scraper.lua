@@ -347,7 +347,7 @@ function M.login(platform, credentials, on_status, callback)
     stdin = vim.json.encode(credentials),
     on_event = function(ev)
       if ev.credentials ~= nil and next(ev.credentials) ~= nil then
-        require('cp.cache').set_credentials(platform, ev.credentials)
+        require('cp.git_credential').store(platform, ev.credentials)
       end
       if ev.status ~= nil then
         if type(on_status) == 'function' then
@@ -395,7 +395,7 @@ function M.submit(
     stdin = vim.json.encode(credentials),
     on_event = function(ev)
       if ev.credentials ~= nil and next(ev.credentials) ~= nil then
-        require('cp.cache').set_credentials(platform, ev.credentials)
+        require('cp.git_credential').store(platform, ev.credentials)
       end
       if ev.status ~= nil then
         if type(on_status) == 'function' then

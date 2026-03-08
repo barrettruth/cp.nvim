@@ -1,8 +1,8 @@
 local M = {}
 
-local cache = require('cp.cache')
 local config = require('cp.config')
 local constants = require('cp.constants')
+local git_credential = require('cp.git_credential')
 local logger = require('cp.log')
 local state = require('cp.state')
 
@@ -14,7 +14,7 @@ local STATUS_MSGS = {
 }
 
 local function prompt_credentials(platform, callback)
-  local saved = cache.get_credentials(platform)
+  local saved = git_credential.get(platform)
   if saved and saved.username and saved.password then
     callback(saved)
     return
@@ -109,12 +109,12 @@ function M.submit(opts)
       function(result)
         vim.schedule(function()
           if result and result.success then
-            cache.set_credentials(platform, creds)
+            git_credential.store(platform, creds)
             logger.log('Submitted successfully', { level = vim.log.levels.INFO, override = true })
           else
             local err = result and result.error or 'unknown error'
             if err == 'bad_credentials' or err:match('^Login failed') then
-              cache.clear_credentials(platform)
+              git_credential.reject(platform, creds)
               logger.log(
                 'Submit failed: ' .. (constants.LOGIN_ERRORS[err] or err),
                 { level = vim.log.levels.ERROR }
