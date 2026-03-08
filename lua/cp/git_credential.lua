@@ -1,3 +1,8 @@
+---@class cp.Credentials
+---@field username string
+---@field password string
+---@field token? string
+
 local M = {}
 
 local HOSTS = {
@@ -53,7 +58,7 @@ local function _parse_output(stdout)
 end
 
 ---@param platform string
----@return { username: string, password: string, token?: string }?
+---@return cp.Credentials?
 function M.get(platform)
   local host = HOSTS[platform]
   if not host then
@@ -92,7 +97,7 @@ function M.get(platform)
 end
 
 ---@param platform string
----@param creds { username: string, password: string, token?: string }
+---@param creds cp.Credentials
 function M.store(platform, creds)
   local host = HOSTS[platform]
   if not host then
@@ -110,7 +115,7 @@ function M.store(platform, creds)
 end
 
 ---@param platform string
----@param creds { username: string, password: string, token?: string }
+---@param creds cp.Credentials
 function M.reject(platform, creds)
   local host = HOSTS[platform]
   if not host or not creds then
