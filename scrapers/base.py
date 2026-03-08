@@ -3,6 +3,7 @@ import json
 import os
 import re
 import sys
+import tempfile
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any
@@ -20,6 +21,18 @@ from .models import (
 _COOKIE_FILE = Path.home() / ".cache" / "cp-nvim" / "cookies.json"
 
 
+def _atomic_write(path: Path, content: str) -> None:
+    fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=".tmp-")
+    try:
+        os.fchmod(fd, 0o600)
+        with os.fdopen(fd, "w") as f:
+            f.write(content)
+        os.replace(tmp, path)
+    except BaseException:
+        os.unlink(tmp)
+        raise
+
+
 def load_platform_cookies(platform: str) -> Any | None:
     try:
         data = json.loads(_COOKIE_FILE.read_text())
@@ -29,22 +42,20 @@ def load_platform_cookies(platform: str) -> Any | None:
 
 
 def save_platform_cookies(platform: str, data: Any) -> None:
-    _COOKIE_FILE.parent.mkdir(parents=True, exist_ok=True)
+    _COOKIE_FILE.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
     try:
         existing = json.loads(_COOKIE_FILE.read_text())
     except Exception:
         existing = {}
     existing[platform] = data
-    _COOKIE_FILE.write_text(json.dumps(existing))
-    _COOKIE_FILE.chmod(0o600)
+    _atomic_write(_COOKIE_FILE, json.dumps(existing))
 
 
 def clear_platform_cookies(platform: str) -> None:
     try:
         existing = json.loads(_COOKIE_FILE.read_text())
         existing.pop(platform, None)
-        _COOKIE_FILE.write_text(json.dumps(existing))
-        _COOKIE_FILE.chmod(0o600)
+        _atomic_write(_COOKIE_FILE, json.dumps(existing))
     except Exception:
         pass
 

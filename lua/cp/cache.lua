@@ -42,13 +42,10 @@
 
 local M = {}
 
-local CACHE_VERSION = 2
-
 local cache_file = vim.fn.stdpath('data') .. '/cp-nvim.json'
 local cache_data = {}
 local loaded = false
 
---- Load the cache from disk if not done already
 ---@return nil
 function M.load()
   if loaded then
@@ -56,8 +53,11 @@ function M.load()
   end
 
   if vim.fn.filereadable(cache_file) == 0 then
-    vim.fn.writefile({}, cache_file)
-    vim.fn.setfperm(cache_file, 'rw-------')
+    vim.fn.mkdir(vim.fn.fnamemodify(cache_file, ':h'), 'p')
+    local tmpfile = vim.fn.tempname()
+    vim.fn.writefile({}, tmpfile)
+    vim.fn.setfperm(tmpfile, 'rw-------')
+    vim.uv.fs_rename(tmpfile, cache_file)
     loaded = true
     return
   end
@@ -70,26 +70,7 @@ function M.load()
   end
 
   local ok, decoded = pcall(vim.json.decode, table.concat(content, '\n'))
-  if not ok then
-    cache_data = {}
-    M.save()
-    loaded = true
-    return
-  end
-
-  if decoded._version == 1 then
-    local old_creds = decoded._credentials
-    decoded._credentials = nil
-    if old_creds then
-      for platform, creds in pairs(old_creds) do
-        decoded[platform] = decoded[platform] or {}
-        decoded[platform]._credentials = creds
-      end
-    end
-    decoded._version = CACHE_VERSION
-    cache_data = decoded
-    M.save()
-  elseif decoded._version == CACHE_VERSION then
+  if ok and type(decoded) == 'table' then
     cache_data = decoded
   else
     cache_data = {}
@@ -98,17 +79,16 @@ function M.load()
   loaded = true
 end
 
---- Save the cache to disk, overwriting existing contents
 ---@return nil
 function M.save()
   vim.schedule(function()
     vim.fn.mkdir(vim.fn.fnamemodify(cache_file, ':h'), 'p')
-
-    cache_data._version = CACHE_VERSION
     local encoded = vim.json.encode(cache_data)
     local lines = vim.split(encoded, '\n')
-    vim.fn.writefile(lines, cache_file)
-    vim.fn.setfperm(cache_file, 'rw-------')
+    local tmpfile = vim.fn.tempname()
+    vim.fn.writefile(lines, tmpfile)
+    vim.fn.setfperm(tmpfile, 'rw-------')
+    vim.uv.fs_rename(tmpfile, cache_file)
   end)
 end
 
@@ -443,31 +423,6 @@ function M.get_contest_display_name(platform, contest_id)
     return nil
   end
   return cache_data[platform][contest_id].display_name
-end
-
----@param platform string
----@return table?
-function M.get_credentials(platform)
-  if not cache_data[platform] then
-    return nil
-  end
-  return cache_data[platform]._credentials
-end
-
----@param platform string
----@param creds table
-function M.set_credentials(platform, creds)
-  cache_data[platform] = cache_data[platform] or {}
-  cache_data[platform]._credentials = creds
-  M.save()
-end
-
----@param platform string
-function M.clear_credentials(platform)
-  if cache_data[platform] then
-    cache_data[platform]._credentials = nil
-  end
-  M.save()
 end
 
 ---@return nil

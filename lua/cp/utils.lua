@@ -366,6 +366,10 @@ function M.check_required_runtime()
     return false, timeout.reason
   end
 
+  if vim.fn.executable('git') ~= 1 then
+    return false, 'git is required for credential storage'
+  end
+
   return true
 end
 

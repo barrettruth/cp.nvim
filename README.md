@@ -10,14 +10,15 @@ https://github.com/user-attachments/assets/e81d8dfb-578f-4a79-9989-210164fc0148
 ## Features
 
 - **Multi-platform support**: AtCoder, CodeChef, Codeforces, USACO, CSES, Kattis
-- **Automatic problem setup**: Scrape test cases and metadata in seconds
-- **Dual view modes**: Lightweight I/O view for quick feedback, full panel for
-  detailed analysis
-- **Test case management**: Quickly view, edit, add, & remove test cases
-- **Rich test output**: 256 color ANSI support for compiler errors and program
+- **Online Judge Integration**: Submit problems and view contest standings
+- **Live Contest Support**: Participate in real-time contests
+- **Automatic setup**: Scrape test cases and metadata in seconds
+- **Streamlined Editing**: Configure coding view, edit test cases,
+  stress-test solutions, run interactive problems, and more
+- **Rich output**: 256 color ANSI support for compiler errors and program
   output
-- **Language agnostic**: Works with any language
-- **Diff viewer**: Compare expected vs actual output with 3 diff modes
+- **Language agnosticism**: Configure with any language
+- **Security**: Passwords go untampered
 
 ## Installation
 
@@ -37,30 +38,31 @@ luarocks install cp.nvim
 
 ## Quick Start
 
-cp.nvim follows a simple principle: **solve locally, submit remotely**.
+1. Find a contest:
 
-### Basic Usage
+```
+:CP pick
+```
 
-1. Find a contest or problem
-2. Set up contests locally
+2. View the problem:
 
-   ```
-   :CP codeforces 1848
-   ```
+```
+:CP open
+```
 
 3. Code and test
 
-   ```
-   :CP run
-   ```
+```
+:CP run
+```
 
 4. Navigate between problems
 
-   ```
-   :CP next
-   :CP prev
-   :CP e1
-   ```
+```
+:CP next
+:CP prev
+:CP e1
+```
 
 5. Debug and edit test cases
 
@@ -69,7 +71,17 @@ cp.nvim follows a simple principle: **solve locally, submit remotely**.
 :CP panel --debug
 ```
 
-5. Submit on the original website
+6. Submit:
+
+```
+:CP submit
+```
+
+7. View contest standings:
+
+```
+:CP open standings
+```
 
 ## Documentation
 
@@ -78,7 +90,7 @@ cp.nvim follows a simple principle: **solve locally, submit remotely**.
 ```
 
 See
-[my config](https://github.com/barrettruth/dots/blob/main/.config/nvim/lua/plugins/cp.lua)
+[my config](https://github.com/barrettruth/nix/blob/5d0ede3668eb7f5ad2b4475267fc0458f9fa4527/config/nvim/lua/plugins/dev.lua#L165)
 for the setup in the video shown above.
 
 ## Motivation

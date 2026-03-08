@@ -1,7 +1,7 @@
 local M = {}
 
-local cache = require('cp.cache')
 local constants = require('cp.constants')
+local git_credential = require('cp.git_credential')
 local logger = require('cp.log')
 local state = require('cp.state')
 
@@ -40,14 +40,14 @@ local function prompt_and_login(platform, display)
       end, function(result)
         vim.schedule(function()
           if result.success then
-            cache.set_credentials(platform, credentials)
+            git_credential.store(platform, credentials)
             logger.log(
               display .. ' login successful',
               { level = vim.log.levels.INFO, override = true }
             )
           else
             local err = result.error or 'unknown error'
-            cache.clear_credentials(platform)
+            git_credential.reject(platform, credentials)
             logger.log(
               display .. ' login failed: ' .. (constants.LOGIN_ERRORS[err] or err),
               { level = vim.log.levels.ERROR }
@@ -71,10 +71,17 @@ function M.login(platform)
     return
   end
 
+  if not git_credential.has_helper() then
+    logger.log(
+      'No git credential helper configured. See :help cp-credentials',
+      { level = vim.log.levels.ERROR }
+    )
+    return
+  end
+
   local display = constants.PLATFORM_DISPLAY_NAMES[platform] or platform
 
-  cache.load()
-  local existing = cache.get_credentials(platform) or {}
+  local existing = git_credential.get(platform) or {}
 
   if existing.username and existing.password then
     local scraper = require('cp.scraper')
@@ -91,7 +98,7 @@ function M.login(platform)
             { level = vim.log.levels.INFO, override = true }
           )
         else
-          cache.clear_credentials(platform)
+          git_credential.reject(platform, existing)
           prompt_and_login(platform, display)
         end
       end)
@@ -112,16 +119,28 @@ function M.logout(platform)
     )
     return
   end
+  if not git_credential.has_helper() then
+    logger.log(
+      'No git credential helper configured. See :help cp-credentials',
+      { level = vim.log.levels.ERROR }
+    )
+    return
+  end
+
   local display = constants.PLATFORM_DISPLAY_NAMES[platform] or platform
-  cache.load()
-  cache.clear_credentials(platform)
+  local existing = git_credential.get(platform)
+  if existing then
+    git_credential.reject(platform, existing)
+  end
   local cookie_file = constants.COOKIE_FILE
   if vim.fn.filereadable(cookie_file) == 1 then
     local ok, data = pcall(vim.fn.json_decode, vim.fn.readfile(cookie_file, 'b'))
     if ok and type(data) == 'table' then
       data[platform] = nil
-      vim.fn.writefile({ vim.fn.json_encode(data) }, cookie_file)
-      vim.fn.setfperm(cookie_file, 'rw-------')
+      local tmpfile = vim.fn.tempname()
+      vim.fn.writefile({ vim.fn.json_encode(data) }, tmpfile)
+      vim.fn.setfperm(tmpfile, 'rw-------')
+      vim.uv.fs_rename(tmpfile, cookie_file)
     end
   end
   logger.log(display .. ' credentials cleared', { level = vim.log.levels.INFO, override = true })

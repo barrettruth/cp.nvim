@@ -49,7 +49,8 @@ REQUIREMENTS                                                 *cp-requirements*
 
 - Neovim 0.10.0+
 - Unix-like operating system
-- uv package manager (https://docs.astral.sh/uv/)
+- (Optional) git 1.7.9+ (credential storage)
+- (Optional) uv package manager (https://docs.astral.sh/uv/)
 
 ==============================================================================
 SETUP                                                              *cp-setup*
@@ -998,8 +999,15 @@ CREDENTIALS                                                   *cp-credentials*
 
 Manage stored login credentials for platform submission.
 
-Credentials are stored under _credentials in the main cache file
-(stdpath('data')/cp-nvim.json). Use :CP cache read to inspect them.
+Credentials are stored via git-credential(1), using whatever credential
+helper is configured in your git config (macOS Keychain, libsecret,
+credential-store, etc.). Git is required. Cookie files
+(~/.cache/cp-nvim/cookies.json) are unaffected.
+
+To inspect stored credentials:
+>sh
+    printf 'protocol=https\nhost=cses.fi\n\n' | git credential fill
+<
 
 :CP login [platform]
         Set or update credentials for a platform. Prompts for username

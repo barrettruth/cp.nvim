@@ -8,7 +8,7 @@ from typing import Any
 
 import httpx
 
-from .base import BaseScraper, extract_precision
+from .base import BaseScraper, extract_precision, load_platform_cookies, save_platform_cookies
 from .timeouts import HTTP_TIMEOUT
 from .models import (
     ContestListResult,
@@ -248,35 +248,20 @@ class CSESScraper(BaseScraper):
         if not username or not password:
             return self._login_error("Missing username or password")
 
-        token = credentials.get("token")
+        token = load_platform_cookies("cses")
         async with httpx.AsyncClient(follow_redirects=True) as client:
             if token:
                 print(json.dumps({"status": "checking_login"}), flush=True)
                 if await self._check_token(client, token):
-                    return LoginResult(
-                        success=True,
-                        error="",
-                        credentials={
-                            "username": username,
-                            "password": password,
-                            "token": token,
-                        },
-                    )
+                    return LoginResult(success=True, error="")
 
             print(json.dumps({"status": "logging_in"}), flush=True)
             token = await self._web_login(client, username, password)
             if not token:
                 return self._login_error("bad_credentials")
 
-            return LoginResult(
-                success=True,
-                error="",
-                credentials={
-                    "username": username,
-                    "password": password,
-                    "token": token,
-                },
-            )
+            save_platform_cookies("cses", token)
+            return LoginResult(success=True, error="")
 
     async def stream_tests_for_category_async(self, category_id: str) -> None:
         async with httpx.AsyncClient(
@@ -423,7 +408,7 @@ class CSESScraper(BaseScraper):
             return self._submit_error("Missing credentials. Use :CP login cses")
 
         async with httpx.AsyncClient(follow_redirects=True) as client:
-            token = credentials.get("token")
+            token = load_platform_cookies("cses")
 
             if token:
                 print(json.dumps({"status": "checking_login"}), flush=True)
@@ -435,18 +420,7 @@ class CSESScraper(BaseScraper):
                 token = await self._web_login(client, username, password)
                 if not token:
                     return self._submit_error("bad_credentials")
-                print(
-                    json.dumps(
-                        {
-                            "credentials": {
-                                "username": username,
-                                "password": password,
-                                "token": token,
-                            }
-                        }
-                    ),
-                    flush=True,
-                )
+                save_platform_cookies("cses", token)
 
             print(json.dumps({"status": "submitting"}), flush=True)
 
