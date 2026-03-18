@@ -5,7 +5,7 @@
 Scrape problems, run tests, and debug solutions across multiple platforms with
 zero configuration.
 
-https://github.com/user-attachments/assets/e81d8dfb-578f-4a79-9989-210164fc0148
+https://github.com/user-attachments/assets/2b9e6c63-8750-451f-87ea-8909cef83762
 
 ## Features
 
