@@ -115,11 +115,11 @@
         "rust-overlay": "rust-overlay"
       },
       "locked": {
-        "lastModified": 1773955042,
-        "narHash": "sha256-PoPfH1Npv9DLHNykn5G18viWigbtbCVVei3/14dUDc4=",
+        "lastModified": 1773957462,
+        "narHash": "sha256-mBgdC5AC4fTn7vJEMND3pH4gfL5sFKAOu9C4mK2KR6o=",
         "owner": "barrettruth",
         "repo": "vimdoc-language-server",
-        "rev": "5b42e87a1fdb2250e04907e1f8b2418e4c7db2ff",
+        "rev": "b4c0a8cc4dbc3cc759ddc18fcec2365504b8b23e",
         "type": "github"
       },
       "original": {
