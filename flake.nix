@@ -2,6 +2,7 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     systems.url = "github:nix-systems/default-linux";
+    vimdoc-language-server.url = "github:barrettruth/vimdoc-language-server";
   };
 
   outputs =
@@ -9,6 +10,7 @@
       self,
       nixpkgs,
       systems,
+      vimdoc-language-server,
     }:
     let
       eachSystem = nixpkgs.lib.genAttrs (import systems);
@@ -130,6 +132,7 @@
             selene
             lua-language-server
             ty
+            vimdoc-language-server.packages.${system}.default
           ];
         };
       });
