@@ -1,7 +1,7 @@
 *cp.nvim.txt*            Competitive programming plugin for Neovim
 
 Author:  Barrett Ruth <br.barrettruth@gmail.com>
-License: Same terms as Vim itself (see |license|)
+License: Same terms as Vim itself (see `:h license`)
 
 ==============================================================================
 CONTENTS                                                        *cp-contents*
@@ -467,7 +467,7 @@ COMMANDS                                                         *cp-commands*
 <
             :CP {platform} signup
                                 Open the platform's registration page in the
-                                browser via |vim.ui.open()|. Works even if
+                                browser via `vim.ui.open()`. Works even if
                                 {platform} is not enabled in your config.
                                 Examples: >
                                     :CP atcoder signup
@@ -484,7 +484,7 @@ COMMANDS                                                         *cp-commands*
             :CP open [problem|contest|standings]
                                 Open the URL for the current problem, contest,
                                 or standings page in the browser via
-                                |vim.ui.open()|. Defaults to "problem" if no
+                                `vim.ui.open()`. Defaults to "problem" if no
                                 argument is given. Warns if the URL is not
                                 available (e.g. CSES has no standings).
                                 Examples: >
@@ -1020,7 +1020,7 @@ To inspect stored credentials:
 
 :CP {platform} signup
         Open the platform's account registration page in the browser via
-        |vim.ui.open()|. Works even if {platform} is not enabled in your
+        `vim.ui.open()`. Works even if {platform} is not enabled in your
         config. {platform} is one of: atcoder, codechef, codeforces, cses,
         kattis, usaco.
 
@@ -1087,7 +1087,7 @@ Open a platform URL for the current contest in the browser.
 
 :CP open [problem|contest|standings]
         Open the URL for the active problem, contest page, or standings.
-        Defaults to "problem" if no argument is given. Uses |vim.ui.open()|.
+        Defaults to "problem" if no argument is given. Uses `vim.ui.open()`.
         Warns if the URL is unavailable (e.g. CSES has no standings page).
 
         Platform support:

@@ -10,5 +10,5 @@ nix develop --command lua-language-server --check . --checklevel=Warning
 nix develop --command ruff format --check .
 nix develop --command ruff check .
 nix develop --command ty check .
-nix develop --command vimdoc-language-server check doc/ --no-runtime-tags
+nix develop --command vimdoc-language-server check doc/
 nix develop --command python -m pytest tests/ -v
