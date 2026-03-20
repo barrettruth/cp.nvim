@@ -129,6 +129,7 @@
             prettier
             ruff
             stylua
+            neovim
             selene
             lua-language-server
             ty
