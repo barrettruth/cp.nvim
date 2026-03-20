@@ -1,7 +1,7 @@
 *cp.nvim.txt*            Competitive programming plugin for Neovim
 
 Author:  Barrett Ruth <br.barrettruth@gmail.com>
-License: Same terms as Vim itself (see |license|)
+License: Same terms as Vim itself (see `:h license`)
 
 ==============================================================================
 CONTENTS                                                        *cp-contents*
@@ -202,8 +202,8 @@ add Rust and use it by default on CSES:
         {ansi}          (boolean, default: true) Enable ANSI color parsing
                         and highlighting in both I/O view and panel.
         {run}           (|RunConfig|) I/O view configuration.
-        {panel}         (|PanelConfig|) Test panel behavior configuration.
-        {diff}          (|DiffConfig|) Diff backend configuration.
+        {panel}         (|cp.PanelConfig|) Test panel behavior configuration.
+        {diff}          (|cp.DiffConfig|) Diff backend configuration.
         {picker}        (string|nil) 'telescope', 'fzf-lua', or nil.
 
                                                                   *RunConfig*
@@ -284,7 +284,7 @@ add Rust and use it by default on CSES:
                  function(state: cp.State)
 
     All hook functions receive the cp.nvim state object (|cp.State|). See
-    |lua/cp/state.lua| for available methods and fields.
+    |cp.State| for available methods and fields.
 
     Example usage:
 >lua
@@ -371,7 +371,7 @@ COMMANDS                                                         *cp-commands*
                                 Open an interactive terminal for the current problem.
                                 If an executable interactor is provided, runs the compiled
                                 binary against the source file (see
-                                *cp-interact*). Otherwise, runs the source
+                                |cp-interact|). Otherwise, runs the source
                                 file. Only valid for interactive problems.
 
             :CP stress [generator] [brute]
@@ -467,7 +467,7 @@ COMMANDS                                                         *cp-commands*
 <
             :CP {platform} signup
                                 Open the platform's registration page in the
-                                browser via |vim.ui.open|. Works even if
+                                browser via `vim.ui.open()`. Works even if
                                 {platform} is not enabled in your config.
                                 Examples: >
                                     :CP atcoder signup
@@ -484,7 +484,7 @@ COMMANDS                                                         *cp-commands*
             :CP open [problem|contest|standings]
                                 Open the URL for the current problem, contest,
                                 or standings page in the browser via
-                                |vim.ui.open|. Defaults to "problem" if no
+                                `vim.ui.open()`. Defaults to "problem" if no
                                 argument is given. Warns if the URL is not
                                 available (e.g. CSES has no standings).
                                 Examples: >
@@ -1020,7 +1020,7 @@ To inspect stored credentials:
 
 :CP {platform} signup
         Open the platform's account registration page in the browser via
-        |vim.ui.open|. Works even if {platform} is not enabled in your
+        `vim.ui.open()`. Works even if {platform} is not enabled in your
         config. {platform} is one of: atcoder, codechef, codeforces, cses,
         kattis, usaco.
 
@@ -1087,7 +1087,7 @@ Open a platform URL for the current contest in the browser.
 
 :CP open [problem|contest|standings]
         Open the URL for the active problem, contest page, or standings.
-        Defaults to "problem" if no argument is given. Uses |vim.ui.open|.
+        Defaults to "problem" if no argument is given. Uses `vim.ui.open()`.
         Warns if the URL is unavailable (e.g. CSES has no standings page).
 
         Platform support:
@@ -1348,6 +1348,6 @@ cp.nvim creates the following file structure upon problem setup: >
 ==============================================================================
 HEALTH CHECK                                                       *cp-health*
 
-Run |:checkhealth| cp to verify your setup.
+Run `:checkhealth` cp to verify your setup.
 
  vim:tw=78:ts=8:ft=help:norl:
