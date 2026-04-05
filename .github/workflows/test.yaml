@@ -8,7 +8,7 @@ on:
 
 jobs:
   changes:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, netcup, general]
     outputs:
       lua: ${{ steps.changes.outputs.lua }}
       python: ${{ steps.changes.outputs.python }}
@@ -37,7 +37,7 @@ jobs:
 
   python-test:
     name: Python Tests
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, netcup, general]
     needs: changes
     if: ${{ needs.changes.outputs.python == 'true' }}
     steps:
