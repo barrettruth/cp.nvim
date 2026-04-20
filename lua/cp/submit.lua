@@ -67,8 +67,8 @@ function M.submit(opts)
     logger.log('Source file not found', { level = vim.log.levels.ERROR })
     return
   end
-  source_file = vim.fn.fnamemodify(source_file, ':p')
-  local _stat = vim.uv.fs_stat(source_file)
+  local abs_source_file = vim.fn.fnamemodify(source_file, ':p')
+  local _stat = vim.uv.fs_stat(abs_source_file)
   if not _stat then
     logger.log('Source file not found', { level = vim.log.levels.ERROR })
     return
@@ -104,7 +104,7 @@ function M.submit(opts)
       contest_id,
       problem_id,
       submit_language,
-      source_file,
+      abs_source_file,
       creds,
       function(ev)
         vim.schedule(function()

@@ -156,7 +156,7 @@ def _is_interactive(block: Tag) -> bool:
 
 def _fetch_problems_html(contest_id: str) -> str:
     try:
-        from scrapling.fetchers import StealthySession  # type: ignore[import-untyped,unresolved-import]
+        from scrapling.fetchers import StealthySession  # type: ignore[import-untyped,unresolved-import] # ty: ignore[unresolved-import]
     except ImportError:
         raise RuntimeError("scrapling is required for Codeforces metadata")
 
@@ -383,7 +383,7 @@ def _cf_login_action(credentials: dict[str, str]):
 
 def _login_headless_cf(credentials: dict[str, str]) -> LoginResult:
     try:
-        from scrapling.fetchers import StealthySession  # type: ignore[import-untyped,unresolved-import]
+        from scrapling.fetchers import StealthySession  # type: ignore[import-untyped,unresolved-import] # ty: ignore[unresolved-import]
     except ImportError:
         return LoginResult(
             success=False,
@@ -474,7 +474,7 @@ def _submit_headless(
     source_code = Path(file_path).read_text()
 
     try:
-        from scrapling.fetchers import StealthySession  # type: ignore[import-untyped,unresolved-import]
+        from scrapling.fetchers import StealthySession  # type: ignore[import-untyped,unresolved-import] # ty: ignore[unresolved-import]
     except ImportError:
         return SubmitResult(
             success=False,
