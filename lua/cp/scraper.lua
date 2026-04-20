@@ -89,6 +89,7 @@ local function run_scraper(platform, subcommand, args, opts)
     local stderr = uv.new_pipe(false)
     local buf = ''
 
+    ---@type uv.uv_timer_t?
     local timer = nil
     local handle
     handle = uv.spawn(cmd[1], {
@@ -135,26 +136,29 @@ local function run_scraper(platform, subcommand, args, opts)
 
     if needs_browser then
       timer = uv.new_timer()
-      timer:start(120000, 0, function()
-        timer:stop()
-        timer:close()
-        if stdin_pipe and not stdin_pipe:is_closing() then
-          stdin_pipe:close()
-        end
-        if not stdout:is_closing() then
-          stdout:close()
-        end
-        if not stderr:is_closing() then
-          stderr:close()
-        end
-        if handle and not handle:is_closing() then
-          handle:kill(15)
-          handle:close()
-        end
-        if opts.on_exit then
-          opts.on_exit({ success = false, error = 'submit timed out' })
-        end
-      end)
+      if timer then
+        local t = timer
+        t:start(120000, 0, function()
+          t:stop()
+          t:close()
+          if stdin_pipe and not stdin_pipe:is_closing() then
+            stdin_pipe:close()
+          end
+          if not stdout:is_closing() then
+            stdout:close()
+          end
+          if not stderr:is_closing() then
+            stderr:close()
+          end
+          if handle and not handle:is_closing() then
+            handle:kill(15)
+            handle:close()
+          end
+          if opts.on_exit then
+            opts.on_exit({ success = false, error = 'submit timed out' })
+          end
+        end)
+      end
     end
 
     if stdin_pipe then

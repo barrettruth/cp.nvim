@@ -60,7 +60,7 @@ async def fetch_json(client: httpx.AsyncClient, path: str) -> dict[str, Any]:
 
 def _login_headless_codechef(credentials: dict[str, str]) -> LoginResult:
     try:
-        from scrapling.fetchers import StealthySession  # type: ignore[import-untyped,unresolved-import]
+        from scrapling.fetchers import StealthySession  # type: ignore[import-untyped,unresolved-import] # ty: ignore[unresolved-import]
     except ImportError:
         return LoginResult(
             success=False,
@@ -133,7 +133,7 @@ def _submit_headless_codechef(
     source_code = Path(file_path).read_text()
 
     try:
-        from scrapling.fetchers import StealthySession  # type: ignore[import-untyped,unresolved-import]
+        from scrapling.fetchers import StealthySession  # type: ignore[import-untyped,unresolved-import] # ty: ignore[unresolved-import]
     except ImportError:
         return SubmitResult(
             success=False,

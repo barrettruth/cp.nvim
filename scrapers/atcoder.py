@@ -365,7 +365,7 @@ def _solve_turnstile(page) -> None:
 
 def _ensure_browser() -> None:
     try:
-        from patchright._impl._driver import compute_driver_executable  # type: ignore[import-untyped,unresolved-import]
+        from patchright._impl._driver import compute_driver_executable  # type: ignore[import-untyped,unresolved-import] # ty: ignore[unresolved-import]
 
         node, cli = compute_driver_executable()
     except Exception:
@@ -415,7 +415,7 @@ def _at_login_action(credentials: dict[str, str]):
 
 def _login_headless(credentials: dict[str, str]) -> LoginResult:
     try:
-        from scrapling.fetchers import StealthySession  # type: ignore[import-untyped,unresolved-import]
+        from scrapling.fetchers import StealthySession  # type: ignore[import-untyped,unresolved-import] # ty: ignore[unresolved-import]
     except ImportError:
         return LoginResult(
             success=False,
@@ -502,7 +502,7 @@ def _submit_headless(
     _retried: bool = False,
 ) -> "SubmitResult":
     try:
-        from scrapling.fetchers import StealthySession  # type: ignore[import-untyped,unresolved-import]
+        from scrapling.fetchers import StealthySession  # type: ignore[import-untyped,unresolved-import] # ty: ignore[unresolved-import]
     except ImportError:
         return SubmitResult(
             success=False,
