@@ -105,6 +105,24 @@
           passthru = { inherit pythonEnv submitEnv; };
           meta.description = "Competitive programming plugin for Neovim";
         };
+
+      mkToolingShell =
+        system:
+        (pkgsFor system).mkShell {
+          packages = with (pkgsFor system); [
+            just
+            uv
+            (mkDevPythonEnv (pkgsFor system))
+            prettier
+            ruff
+            stylua
+            neovim
+            selene
+            lua-language-server
+            ty
+            vimdoc-language-server.packages.${system}.default
+          ];
+        };
     in
     {
       overlays.default = final: prev: {
@@ -122,20 +140,8 @@
       formatter = eachSystem (system: (pkgsFor system).nixfmt-tree);
 
       devShells = eachSystem (system: {
-        default = (pkgsFor system).mkShell {
-          packages = with (pkgsFor system); [
-            uv
-            (mkDevPythonEnv (pkgsFor system))
-            prettier
-            ruff
-            stylua
-            neovim
-            selene
-            lua-language-server
-            ty
-            vimdoc-language-server.packages.${system}.default
-          ];
-        };
+        default = mkToolingShell system;
+        ci = mkToolingShell system;
       });
     };
 }
