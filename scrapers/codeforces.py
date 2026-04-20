@@ -68,7 +68,13 @@ def _extract_limits(block: Tag) -> tuple[int, float]:
 def _group_lines_by_id(pre: Tag) -> dict[int, list[str]]:
     groups: dict[int, list[str]] = {}
     for div in pre.find_all("div", class_="test-example-line"):
-        cls = " ".join(div.get("class", []))
+        class_attr = div.get("class")
+        if isinstance(class_attr, str):
+            cls = class_attr
+        elif class_attr is None:
+            cls = ""
+        else:
+            cls = " ".join(class_attr)
         m = re.search(r"\btest-example-line-(\d+)\b", cls)
         if not m:
             continue
@@ -93,18 +99,21 @@ def _extract_samples(block: Tag) -> tuple[list[TestCase], bool]:
     if not isinstance(st, Tag):
         return [], False
 
-    input_pres: list[Tag] = [
-        inp.find("pre")
-        for inp in st.find_all("div", class_="input")
-        if isinstance(inp, Tag) and inp.find("pre")
-    ]
-    output_pres: list[Tag] = [
-        out.find("pre")
-        for out in st.find_all("div", class_="output")
-        if isinstance(out, Tag) and out.find("pre")
-    ]
-    input_pres = [p for p in input_pres if isinstance(p, Tag)]
-    output_pres = [p for p in output_pres if isinstance(p, Tag)]
+    input_pres: list[Tag] = []
+    for inp in st.find_all("div", class_="input"):
+        if not isinstance(inp, Tag):
+            continue
+        pre = inp.find("pre")
+        if isinstance(pre, Tag):
+            input_pres.append(pre)
+
+    output_pres: list[Tag] = []
+    for out in st.find_all("div", class_="output"):
+        if not isinstance(out, Tag):
+            continue
+        pre = out.find("pre")
+        if isinstance(pre, Tag):
+            output_pres.append(pre)
 
     has_grouped = any(
         p.find("div", class_="test-example-line") for p in input_pres + output_pres
@@ -178,7 +187,11 @@ def _parse_all_blocks(html: str) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
     for b in blocks:
         holder = b.find_parent("div", class_="problemindexholder")
-        letter = (holder.get("problemindex") if holder else "").strip().upper()
+        problemindex = holder.get("problemindex") if holder else None
+        if isinstance(problemindex, str):
+            letter = problemindex.strip().upper()
+        else:
+            letter = ""
         name = _extract_title(b)[1]
         if not letter:
             continue
