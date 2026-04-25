@@ -1,8 +1,0 @@
-.pytest_cache/
-node_modules/
-.venv/
-build/
-dist/
-*.pyc
-__pycache__/
-tests/fixtures/

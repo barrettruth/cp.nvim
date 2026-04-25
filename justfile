@@ -4,7 +4,7 @@ default:
 format:
     nix fmt -- --ci
     stylua --check .
-    prettier --check .
+    biome format .
     ruff format --check .
 
 lint:
