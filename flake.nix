@@ -108,10 +108,10 @@
         system:
         (pkgsFor system).mkShell {
           packages = with (pkgsFor system); [
+            biome
             just
             uv
             (mkDevPythonEnv (pkgsFor system))
-            prettier
             ruff
             stylua
             neovim
