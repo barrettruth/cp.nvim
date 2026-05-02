@@ -2,7 +2,16 @@ rockspec_format = '3.0'
 package = 'cp.nvim'
 version = 'scm-1'
 
-source = { url = 'git://github.com/barrettruth/cp.nvim' }
+source = {
+  url = 'git+https://git.barrettruth.com/barrettruth/cp.nvim.git',
+}
+
+description = {
+  summary = 'Competitive programming plugin for Neovim',
+  homepage = 'https://git.barrettruth.com/barrettruth/cp.nvim',
+  license = 'GPL-3.0',
+}
+
 build = { type = 'builtin' }
 
 test_dependencies = {

@@ -21,8 +21,15 @@ zero configuration.
 
 ## Installation
 
-Install using your package manager of choice or via
-[luarocks](https://luarocks.org/modules/barrettruth/cp.nvim):
+With `vim.pack` (Neovim 0.12+):
+
+```lua
+vim.pack.add({
+  'https://git.barrettruth.com/barrettruth/cp.nvim',
+})
+```
+
+Or via [luarocks](https://luarocks.org/modules/barrettruth/cp.nvim):
 
 ```
 luarocks install cp.nvim
@@ -89,7 +96,7 @@ luarocks install cp.nvim
 ```
 
 See
-[my config](https://github.com/barrettruth/nix/blob/5d0ede3668eb7f5ad2b4475267fc0458f9fa4527/config/nvim/lua/plugins/dev.lua#L165)
+[my config](https://git.barrettruth.com/barrettruth/nix/src/commit/5d0ede3668eb7f5ad2b4475267fc0458f9fa4527/config/nvim/lua/plugins/dev.lua#L165)
 for the setup in the video shown above.
 
 ## Motivation

@@ -34,7 +34,7 @@ CONTENTS                                                        *cp-contents*
  26. Statusline Integration .................................. |cp-statusline|
  27. Panel Keymaps .......................................... |cp-panel-keys|
  28. File Structure ................................................ |cp-files|
- 28. Health Check ................................................ |cp-health|
+ 29. Health Check ................................................ |cp-health|
 
 ==============================================================================
 INTRODUCTION                                                         *cp.nvim*
@@ -55,8 +55,13 @@ REQUIREMENTS                                                 *cp-requirements*
 ==============================================================================
 SETUP                                                              *cp-setup*
 
-Load cp.nvim with your package manager. For example, with lazy.nvim: >lua
-    { 'barrettruth/cp.nvim' }
+With vim.pack (Neovim 0.12+): >lua
+    vim.pack.add({
+      'https://git.barrettruth.com/barrettruth/cp.nvim',
+    })
+<
+With luarocks: >sh
+    luarocks install cp.nvim
 <
 The plugin works automatically with no configuration required. For
 customization, see |cp-config|.
