@@ -1,5 +1,10 @@
 # cp.nvim
 
+> [!IMPORTANT]
+> cp.nvim development has moved to
+> <https://git.barrettruth.com/barrettruth/cp.nvim>. Use Forgejo for issues,
+> pull requests, documentation, and active development.
+
 **The definitive competitive programming environment for Neovim**
 
 Scrape problems, run tests, and debug solutions across multiple platforms with

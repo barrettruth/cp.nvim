@@ -1,5 +1,5 @@
 blank_issues_enabled: false
 contact_links:
-  - name: Questions
-    url: https://github.com/barrettruth/cp.nvim/discussions
-    about: Ask questions and discuss ideas
+  - name: Open a cp.nvim issue on Forgejo
+    url: https://git.barrettruth.com/barrettruth/cp.nvim/issues
+    about: GitHub is a compatibility mirror; issues are tracked on Forgejo.

@@ -9,32 +9,33 @@ CONTENTS                                                        *cp-contents*
   1. Introduction .................................................. |cp.nvim|
   2. Requirements ........................................ |cp-requirements|
   3. Setup ........................................................ |cp-setup|
-  4. Configuration ................................................ |cp-config|
-  5. Commands .................................................. |cp-commands|
-  6. Mappings .................................................. |cp-mappings|
-  7. Language Selection .................................. |cp-lang-selection|
-  8. Workflow .................................................. |cp-workflow|
-  9. Workflow Example ............................................ |cp-example|
- 10. Verdict Formatting ................................. |cp-verdict-format|
- 11. Picker Integration .......................................... |cp-picker|
- 12. Picker Keymaps ........................................ |cp-picker-keys|
- 13. Panel ........................................................ |cp-panel|
- 14. Interactive Mode .......................................... |cp-interact|
- 15. Stress Testing .............................................. |cp-stress|
- 16. Race .......................................................... |cp-race|
- 17. Credentials ............................................ |cp-credentials|
- 18. Submit ...................................................... |cp-submit|
- 19. Submit Language Versions ......................... |cp-submit-language|
- 20. Open ......................................................... |cp-open|
- 21. ANSI Colors ................................................... |cp-ansi|
- 22. Highlight Groups ........................................ |cp-highlights|
- 23. Terminal Colors .................................... |cp-terminal-colors|
- 24. Highlight Customization .......................... |cp-highlight-custom|
- 25. Helpers .................................................... |cp-helpers|
- 26. Statusline Integration .................................. |cp-statusline|
- 27. Panel Keymaps .......................................... |cp-panel-keys|
- 28. File Structure ................................................ |cp-files|
- 28. Health Check ................................................ |cp-health|
+  4. Migration .............................................. |cp.nvim-migration|
+  5. Configuration ................................................ |cp-config|
+  6. Commands .................................................. |cp-commands|
+  7. Mappings .................................................. |cp-mappings|
+  8. Language Selection .................................. |cp-lang-selection|
+  9. Workflow .................................................. |cp-workflow|
+ 10. Workflow Example ............................................ |cp-example|
+ 11. Verdict Formatting ................................. |cp-verdict-format|
+ 12. Picker Integration .......................................... |cp-picker|
+ 13. Picker Keymaps ........................................ |cp-picker-keys|
+ 14. Panel ........................................................ |cp-panel|
+ 15. Interactive Mode .......................................... |cp-interact|
+ 16. Stress Testing .............................................. |cp-stress|
+ 17. Race .......................................................... |cp-race|
+ 18. Credentials ............................................ |cp-credentials|
+ 19. Submit ...................................................... |cp-submit|
+ 20. Submit Language Versions ......................... |cp-submit-language|
+ 21. Open ......................................................... |cp-open|
+ 22. ANSI Colors ................................................... |cp-ansi|
+ 23. Highlight Groups ........................................ |cp-highlights|
+ 24. Terminal Colors .................................... |cp-terminal-colors|
+ 25. Highlight Customization .......................... |cp-highlight-custom|
+ 26. Helpers .................................................... |cp-helpers|
+ 27. Statusline Integration .................................. |cp-statusline|
+ 28. Panel Keymaps .......................................... |cp-panel-keys|
+ 29. File Structure ................................................ |cp-files|
+ 30. Health Check ................................................ |cp-health|
 
 ==============================================================================
 INTRODUCTION                                                         *cp.nvim*
@@ -55,11 +56,39 @@ REQUIREMENTS                                                 *cp-requirements*
 ==============================================================================
 SETUP                                                              *cp-setup*
 
-Load cp.nvim with your package manager. For example, with lazy.nvim: >lua
-    { 'barrettruth/cp.nvim' }
+With vim.pack (Neovim 0.12+): >lua
+    vim.pack.add({
+      'https://git.barrettruth.com/barrettruth/cp.nvim',
+    })
+<
+With luarocks: >sh
+    luarocks install cp.nvim
 <
 The plugin works automatically with no configuration required. For
 customization, see |cp-config|.
+
+==============================================================================
+MIGRATION                                                 *cp.nvim-migration*
+
+Development has moved to:
+>
+    https://git.barrettruth.com/barrettruth/cp.nvim
+<
+Use Forgejo for documentation, issues, pull requests, and active development.
+The GitHub repository remains available as a compatibility mirror.
+
+For vim.pack (Neovim 0.12+): >lua
+    vim.pack.add({
+      'https://git.barrettruth.com/barrettruth/cp.nvim',
+    })
+<
+For lazy.nvim, replace GitHub shorthand with an explicit URL: >lua
+    {
+      url = 'https://git.barrettruth.com/barrettruth/cp.nvim',
+    }
+<
+If you prefer not to change the source URL, pin a commit in your package
+manager for repeatable installs.
 
 ==============================================================================
 CONFIGURATION                                                      *cp-config*
