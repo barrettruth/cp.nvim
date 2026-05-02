@@ -5,7 +5,7 @@
 Scrape problems, run tests, and debug solutions across multiple platforms with
 zero configuration.
 
-https://github.com/user-attachments/assets/2b9e6c63-8750-451f-87ea-8909cef83762
+<video src="https://github.com/user-attachments/assets/2b9e6c63-8750-451f-87ea-8909cef83762" width="100%" controls muted playsinline></video>
 
 ## Features
 
