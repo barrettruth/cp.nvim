@@ -27,7 +27,7 @@ jobs:
         run: echo "LUAROCKS_SPECREV=$(git rev-list --count "$GITHUB_SHA")" >> "$GITHUB_ENV"
 
       - name: Publish nightly LuaRocks
-        uses: https://git.barrettruth.com/barrettruth/luarocks-tag-release-forgejo@v0.1.2
+        uses: https://git.barrettruth.com/barrettruth/luarocks-tag-release-forgejo@v0.1.3
         env:
           LUAROCKS_API_KEY: ${{ secrets.LUAROCKS_API_KEY }}
         with:
