@@ -66,7 +66,7 @@ jobs:
           EOF
 
       - name: Publish to LuaRocks
-        uses: https://git.barrettruth.com/barrettruth/luarocks-tag-release-forgejo@v0.1.1
+        uses: https://git.barrettruth.com/barrettruth/luarocks-tag-release-forgejo@v0.1.2
         env:
           LUAROCKS_API_KEY: ${{ secrets.LUAROCKS_API_KEY }}
         with:
