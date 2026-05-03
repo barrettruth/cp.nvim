@@ -66,8 +66,11 @@ jobs:
           EOF
 
       - name: Publish to LuaRocks
+        uses: https://git.barrettruth.com/barrettruth/luarocks-tag-release-forgejo@v0.1.1
         env:
           LUAROCKS_API_KEY: ${{ secrets.LUAROCKS_API_KEY }}
-        run: |
-          nix shell nixpkgs#gnugrep nixpkgs#gnused nixpkgs#luarocks nixpkgs#zip nixpkgs#unzip -c \
-            bash .forgejo/scripts/publish-luarocks-tag.sh
+        with:
+          license: GPL-3.0
+          verification_servers: |
+            https://luarocks.org
+            https://luarocks.org/manifests/barrettruth
