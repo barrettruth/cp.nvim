@@ -5,6 +5,12 @@
 Scrape problems, run tests, and debug solutions across multiple platforms with
 zero configuration.
 
+> [!NOTE]
+> Due to GitHub's historic unreliability, development, issues, and pull requests
+> have moved to [Forgejo](https://git.barrettruth.com/barrettruth/cp.nvim). See
+> `:help cp.nvim-migration` to optionally update your plugin source
+> configuration.
+
 <video src="https://github.com/user-attachments/assets/2b9e6c63-8750-451f-87ea-8909cef83762" width="100%" controls muted playsinline></video>
 
 ## Features

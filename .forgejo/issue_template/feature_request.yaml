@@ -9,7 +9,7 @@ body:
       options:
         - label:
             I have searched [existing
-            issues](https://github.com/barrettruth/cp.nvim/issues)
+            issues](https://git.barrettruth.com/barrettruth/cp.nvim/issues)
           required: true
 
   - type: textarea

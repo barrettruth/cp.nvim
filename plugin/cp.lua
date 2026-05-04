@@ -3,6 +3,10 @@ if vim.g.loaded_cp then
 end
 vim.g.loaded_cp = 1
 
+pcall(function()
+  require('cp.migration').warn_if_github_source()
+end)
+
 vim.api.nvim_create_user_command('CP', function(opts)
   local cp = require('cp')
   cp.handle_command(opts)
