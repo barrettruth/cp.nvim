@@ -1,10 +1,9 @@
 *cp.nvim.txt*            Competitive programming plugin for Neovim
 
-Author:  Barrett Ruth <br.barrettruth@gmail.com>
-License: Same terms as Vim itself (see `:h license`)
+Author:  Barrett Ruth <br@barrettruth.com> License: GPL-3.0
 
 ==============================================================================
-CONTENTS                                                        *cp-contents*
+CONTENTS                                                         *cp-contents*
 
   1. Introduction .................................................. |cp.nvim|
   2. Requirements ........................................ |cp-requirements|
@@ -53,17 +52,15 @@ REQUIREMENTS                                                 *cp-requirements*
 - (Optional) uv package manager (https://docs.astral.sh/uv/)
 
 ==============================================================================
-SETUP                                                              *cp-setup*
+SETUP                                                               *cp-setup*
 
 With vim.pack (Neovim 0.12+): >lua
     vim.pack.add({
       'https://git.barrettruth.com/barrettruth/cp.nvim',
     })
-<
-With luarocks: >sh
+< With luarocks: >sh
     luarocks install cp.nvim
-<
-The plugin works automatically with no configuration required. For
+< The plugin works automatically with no configuration required. For
 customization, see |cp-config|.
 
 ==============================================================================
@@ -124,13 +121,12 @@ Configuration is done via `vim.g.cp`. Set this before using the plugin:
 <
 
 By default, C++ (g++ with ISO C++17) and Python are preconfigured under
-'languages'. All six platforms are enabled by default. User-supplied
-platform entries are merged on top of the defaults — you only need to
-specify what you want to change. To disable a platform entirely, set it
-to `false`.
+'languages'. All six platforms are enabled by default. User-supplied platform
+entries are merged on top of the defaults — you only need to specify what you
+want to change. To disable a platform entirely, set it to `false`.
 
-For example, to run Codeforces contests with Python by default and
-disable CodeChef:
+For example, to run Codeforces contests with Python by default and disable
+CodeChef:
 >lua
     vim.g.cp = {
       platforms = {
@@ -211,7 +207,7 @@ add Rust and use it by default on CSES:
         {diff}          (|cp.DiffConfig|) Diff backend configuration.
         {picker}        (string|nil) 'telescope', 'fzf-lua', or nil.
 
-                                                                  *RunConfig*
+                                                                   *RunConfig*
     Fields: ~
         {width}            (number, default: 0.3) Width of I/O view splits as
                            fraction of screen (0.0 to 1.0).
@@ -222,7 +218,7 @@ add Rust and use it by default on CSES:
         {format_verdict}   (|VerdictFormatter|, default: nil) Custom verdict line
                            formatter. See |cp-verdict-format|.
 
-                                                                *EditConfig*
+                                                                  *EditConfig*
     Fields: ~
         {next_test_key}      (string|nil, default: ']t') Jump to next test.
         {prev_test_key}      (string|nil, default: '[t') Jump to previous test.
@@ -277,7 +273,7 @@ add Rust and use it by default on CSES:
                   created. function(bufnr: integer, state: cp.State)
                   Default: helpers.clearcol
 
-                                                               *cp.CpOnHooks*
+                                                                *cp.CpOnHooks*
     Fields: ~
         {enter}  (function, optional) Called on every BufEnter on the
                  solution buffer. Registered as a buffer-scoped autocmd and
@@ -532,7 +528,7 @@ Template Variables ~
         g++ abc324a.cpp -o build/abc324a.run -std=c++17
 <
 Debug Builds ~
-                                                            *cp-debug-builds*
+                                                             *cp-debug-builds*
     The --debug flag uses the debug command configuration instead of build:
 
     • Normal build:  commands.build → outputs to build/<name>.run
@@ -558,7 +554,7 @@ Debug Builds ~
 <
 
 ==============================================================================
-MAPPINGS                                                        *cp-mappings*
+MAPPINGS                                                         *cp-mappings*
 
 cp.nvim provides <Plug> mappings for all primary actions. These dispatch
 through the same code path as |:CP|.
@@ -576,7 +572,8 @@ through the same code path as |:CP|.
 <Plug>(cp-next)         Navigate to the next problem. Equivalent to :CP next.
 
                                                              *<Plug>(cp-prev)*
-<Plug>(cp-prev)         Navigate to the previous problem. Equivalent to :CP prev.
+<Plug>(cp-prev)         Navigate to the previous problem. Equivalent to :CP
+prev.
 
                                                              *<Plug>(cp-pick)*
 <Plug>(cp-pick)         Launch the contest picker. Equivalent to :CP pick.
@@ -591,7 +588,8 @@ through the same code path as |:CP|.
 <Plug>(cp-submit)       Submit current solution. Equivalent to :CP submit.
 
                                                              *<Plug>(cp-open)*
-<Plug>(cp-open)         Open current problem URL in browser. Equivalent to :CP open.
+<Plug>(cp-open)         Open current problem URL in browser. Equivalent to :CP
+open.
 
 Example configuration: >lua
     vim.keymap.set('n', '<leader>cr', '<Plug>(cp-run)')
@@ -607,11 +605,11 @@ Example configuration: >lua
 <
 
 ==============================================================================
-LANGUAGE SELECTION                                           *cp-lang-selection*
+LANGUAGE SELECTION                                         *cp-lang-selection*
 
-cp.nvim supports multiple languages per problem. Each platform enables specific
-languages and has a default. You can override the language for any setup or
-navigation command using the --lang flag.
+cp.nvim supports multiple languages per problem. Each platform enables
+specific languages and has a default. You can override the language for any
+setup or navigation command using the --lang flag.
 
 Language Selection Behavior ~
 
@@ -631,8 +629,7 @@ Different languages create different solution files. For example:
 Both files can exist simultaneously with their own state. Switching between
 languages means switching between different files.
 
-Examples ~
->
+Examples ~ >
     :CP codeforces 1848             " Use platform default (likely C++)
     :CP codeforces 1848 --lang python   " Use Python explicitly
 
@@ -684,7 +681,7 @@ Usage examples: >
     :CP cses dynamic_programming  " Set up all problems in dp category
 
 CodeChef ~
-                                                               *cp-codechef*
+                                                                 *cp-codechef*
 URL format: https://www.codechef.com/{contest_id}/problems/{problem_id}
 
 The contest_id is the contest code from the URL (e.g. START209).
@@ -696,8 +693,8 @@ USACO ~
                                                                     *cp-usaco*
 URL format: https://usaco.org/index.php?page=viewproblem2&cpid={cpid}
 
-The contest_id combines the abbreviated month, two-digit year, and division
-in lowercase, joined by underscores (e.g. dec24_gold, feb23_silver).
+The contest_id combines the abbreviated month, two-digit year, and division in
+lowercase, joined by underscores (e.g. dec24_gold, feb23_silver).
 
 Usage examples: >
     :CP usaco dec24_gold          " Set up December 2024 Gold division
@@ -707,12 +704,12 @@ Kattis ~
                                                                    *cp-kattis*
 Kattis supports single-problem and full-contest modes.
 
-Single problem — the contest_id is the problem slug from the URL:
-URL format: https://open.kattis.com/problems/{slug}
+Single problem — the contest_id is the problem slug from the URL: URL format:
+https://open.kattis.com/problems/{slug}
 
-Full contest — the contest_id is the contest ID from the URL. All problems
-are set up at once with :CP next/:CP prev navigation:
-URL format: https://open.kattis.com/contests/{id}
+Full contest — the contest_id is the contest ID from the URL. All problems are
+set up at once with :CP next/:CP prev navigation: URL format:
+https://open.kattis.com/contests/{id}
 
 Usage examples: >
     :CP kattis primesieve         " Single problem
@@ -760,8 +757,8 @@ Example: Setting up and solving AtCoder contest ABC324
 I/O VIEW                                                          *cp-io-view*
 
 The I/O view provides lightweight test feedback in persistent side splits.
-Test outputs are concatenated with verdict summaries at the bottom.
-The |cp-panel| offers more fine-grained analysis with diff modes.
+Test outputs are concatenated with verdict summaries at the bottom. The
+|cp-panel| offers more fine-grained analysis with diff modes.
 
 Execution Modes ~
 
@@ -818,7 +815,8 @@ Usage ~
 
 Navigation ~
 
-While in the I/O view buffers, use the configured keymaps to cycle through tests:
+While in the I/O view buffers, use the configured keymaps to cycle through
+tests:
     <c-n>               Next test (default, see |RunConfig|.next_test_key)
     <c-p>               Previous test (default, see |RunConfig|.prev_test_key)
 
@@ -829,7 +827,7 @@ to customize buffer appearance. By default, line numbers and columns are
 removed via helpers.clearcol (see |cp-helpers|).
 
 ==============================================================================
-VERDICT FORMATTING                                           *cp-verdict-format*
+VERDICT FORMATTING                                         *cp-verdict-format*
 
 Customize how verdict summaries appear in the I/O view using format_verdict.
 
@@ -839,11 +837,10 @@ Set ui.run.format_verdict to a function that formats verdict data: >lua
     format_verdict = function(data)
       return { line = "...", highlights = {...} }
     end
-<
-Format Function ~
-                                                             *VerdictFormatter*
-Input: |VerdictFormatData| table with test results
-Output: |VerdictFormatResult| table with formatted line and optional highlights
+< Format Function ~
+                                                            *VerdictFormatter*
+Input: |VerdictFormatData| table with test results Output:
+|VerdictFormatResult| table with formatted line and optional highlights
 
                                                            *VerdictFormatData*
     {index}             (integer) Test case number
@@ -874,14 +871,13 @@ Minimal format: >lua
         line = string.format("#%d %s", data.index, data.status.text)
       }
     end
-<
-See |cp-helpers| for alignment functions: pad_right, pad_left, center.
+< See |cp-helpers| for alignment functions: pad_right, pad_left, center.
 
 ==============================================================================
 PICKER INTEGRATION                                                 *cp-picker*
 
-When picker integration is enabled in configuration, cp.nvim provides interactive
-platform and contest selection using telescope.nvim or fzf-lua.
+When picker integration is enabled in configuration, cp.nvim provides
+interactive platform and contest selection using telescope.nvim or fzf-lua.
 
 :CP pick                                                            *:CP-pick*
         Launch configured picker for interactive problem selection.
@@ -945,8 +941,8 @@ Run interactive problems manually or with an orchestrator. :CP interact is
 available for interactive problems. Test cases are ignored in interactive mode
 (no run panel, no diffs).
 
-When using :CP interact {interactor}, the interactor must be executable
-(chmod +x). Completion after :CP interact suggests executables in CWD.
+When using :CP interact {interactor}, the interactor must be executable (chmod
++x). Completion after :CP interact suggests executables in CWD.
 
 1) Terminal-only ~
     :CP interact
@@ -984,7 +980,7 @@ Keymaps ~
     <c-q>   Close the stress panel and restore the previous layout.
 
 ==============================================================================
-RACE                                                                  *cp-race*
+RACE                                                                 *cp-race*
 
 Count down to a contest's start time and automatically run setup at T=0.
 
@@ -995,7 +991,8 @@ Count down to a contest's start time and automatically run setup at T=0.
             :CP atcoder abc400 --race
             :CP codeforces 2100 --race --lang python
 <
-Starting a new race while one is active automatically cancels the previous one.
+Starting a new race while one is active automatically cancels the previous
+one.
 
 Statusline integration: see |cp-race-status|.
 
@@ -1004,10 +1001,10 @@ CREDENTIALS                                                   *cp-credentials*
 
 Manage stored login credentials for platform submission.
 
-Credentials are stored via git-credential(1), using whatever credential
-helper is configured in your git config (macOS Keychain, libsecret,
-credential-store, etc.). Git is required. Cookie files
-(~/.cache/cp-nvim/cookies.json) are unaffected.
+Credentials are stored via git-credential(1), using whatever credential helper
+is configured in your git config (macOS Keychain, libsecret, credential-store,
+etc.). Git is required. Cookie files (~/.cache/cp-nvim/cookies.json) are
+unaffected.
 
 To inspect stored credentials:
 >sh
@@ -1030,7 +1027,7 @@ To inspect stored credentials:
         kattis, usaco.
 
 ==============================================================================
-SUBMIT                                                            *cp-submit*
+SUBMIT                                                             *cp-submit*
 
 Submit the current solution to the online judge.
 
@@ -1051,10 +1048,10 @@ Submit the current solution to the online judge.
         (e.g. C++20 instead of C++17).
 
 ==============================================================================
-SUBMIT LANGUAGE VERSIONS                              *cp-submit-language*
+SUBMIT LANGUAGE VERSIONS                                  *cp-submit-language*
 
-When submitting, cp.nvim selects a language version for the platform.
-The default is C++20 for cpp and Python 3 for python.
+When submitting, cp.nvim selects a language version for the platform. The
+default is C++20 for cpp and Python 3 for python.
 
 Configuring a version ~
 
@@ -1071,8 +1068,8 @@ Set {version} globally or per-platform:
 <
 Available versions ~
 
-Each platform supports all of its own languages and compiler versions.
-The full list of version keys is in `lua/cp/constants.lua` under
+Each platform supports all of its own languages and compiler versions. The
+full list of version keys is in `lua/cp/constants.lua` under
 `LANGUAGE_VERSIONS`. Use any key from that table as the {version} value.
 
 To bypass version lookup entirely, set {submit_id} to the raw platform
@@ -1110,8 +1107,8 @@ compiler output, program stderr, and diff visualization.
 If you cannot see color highlighting in your config, it is likely due to an
 erroneous config. Most tools (GCC, Python, Clang, Rustc) color stdout based on
 whether stdout is connected to a terminal. One can usually get aorund this by
-leveraging flags to force colored output. For example, to force colors with GCC,
-alter your config as follows:
+leveraging flags to force colored output. For example, to force colors with
+GCC, alter your config as follows:
 >lua
     {
         commands = {
@@ -1129,8 +1126,8 @@ HIGHLIGHT GROUPS                                               *cp-highlights*
 
 Test Status Groups ~
 
-All test status groups link to builtin highlight groups, automatically adapting
-to your colorscheme:
+All test status groups link to builtin highlight groups, automatically
+adapting to your colorscheme:
 
     CpTestAC        Links to DiagnosticOk (AC status)
     CpTestWA        Links to DiagnosticError (WA status)
@@ -1141,14 +1138,14 @@ to your colorscheme:
 
 ANSI Color Groups ~
 
-cp.nvim preserves ANSI colors from compiler output and program stderr using
-a sophisticated parsing system. Colors are automatically mapped to your
-terminal colorscheme via vim.g.terminal_color_* variables.
+cp.nvim preserves ANSI colors from compiler output and program stderr using a
+sophisticated parsing system. Colors are automatically mapped to your terminal
+colorscheme via vim.g.terminal_color_* variables.
 
 Diff Highlighting ~
 
-The git diff backend uses Neovim's built-in highlight groups that automatically
-adapt to your colorscheme:
+The git diff backend uses Neovim's built-in highlight groups that
+automatically adapt to your colorscheme:
 
     DiffAdd                 Highlights added text in git diffs
     DiffDelete              Highlights removed text in git diffs
@@ -1173,14 +1170,14 @@ Customize highlight groups after your colorscheme loads:
 ==============================================================================
 HELPERS                                                           *cp-helpers*
 
-The helpers module provides utility functions for buffer customization.
-Access via:
+The helpers module provides utility functions for buffer customization. Access
+via:
 >lua
     local helpers = require('cp').helpers
 <
 Functions ~
 
-    helpers.clearcol({bufnr})                              *helpers.clearcol*
+    helpers.clearcol({bufnr})                               *helpers.clearcol*
         Remove line numbers, columns, and signs from buffer.
         Sets:
             • number = false
@@ -1192,17 +1189,17 @@ Functions ~
             {bufnr}  (integer) Buffer handle
 
 ==============================================================================
-STATUSLINE INTEGRATION                                        *cp-statusline*
+STATUSLINE INTEGRATION                                         *cp-statusline*
 
 cp.nvim exposes its runtime state through a public module that can be queried
 from any statusline plugin. Import it with: >lua
     local state = require('cp.state')
-<
-All getters return nil when no problem is active, so guard every value before
-use. Calling any getter outside a CP context is safe and has no side effects.
+< All getters return nil when no problem is active, so guard every value
+before use. Calling any getter outside a CP context is safe and has no side
+effects.
 
 State API ~
-                                                                  *cp.State*
+                                                                    *cp.State*
 The following getters are available for statusline use:
 
     get_platform()      (string?) Platform id. e.g. "codeforces", "atcoder"
@@ -1215,7 +1212,7 @@ The following getters are available for statusline use:
                         nil when no panel is open.
 
 Race API ~
-                                                               *cp-race-status*
+                                                              *cp-race-status*
     require('cp.race').status() returns a table describing the race state:
         { active = false }
         { active = true, platform = string, contest_id = string,
@@ -1306,17 +1303,14 @@ Build a heirline component using a provider and condition: >lua
         return '[' .. table.concat(filtered, ' · ') .. ']'
       end,
     }
-<
-Include CpComponent in your heirline StatusLine spec wherever desired.
+< Include CpComponent in your heirline StatusLine spec wherever desired.
 
 ==============================================================================
 PANEL KEYMAPS                                                  *cp-panel-keys*
 
-<c-n>   Navigate to next test case
-<c-p>   Navigate to previous test case
-t       Cycle through configured diff modes (see |cp.PanelConfig|)
-q       Exit panel and restore layout
-<c-q>   Exit interactive terminal and restore layout
+<c-n>   Navigate to next test case <c-p>   Navigate to previous test case t
+Cycle through configured diff modes (see |cp.PanelConfig|) q       Exit panel
+and restore layout <c-q>   Exit interactive terminal and restore layout
 
 Diff Modes ~
 
@@ -1326,17 +1320,16 @@ Three diff modes are available:
     vim             Built-in vim diff (always available)
     git             Character-level git word-diff (requires git, more precise)
 
-Configure which modes to cycle through via |cp.PanelConfig|.diff_modes.
-The first element is used as the default mode.
+Configure which modes to cycle through via |cp.PanelConfig|.diff_modes. The
+first element is used as the default mode.
 
 The git backend shows character-level changes with [-removed-] and {+added+}
 markers.
 
 Execution Details ~
 
-Test cases are executed individually using the same compilation and
-execution pipeline, but with isolated input/output for
-precise failure analysis.
+Test cases are executed individually using the same compilation and execution
+pipeline, but with isolated input/output for precise failure analysis.
 
 ==============================================================================
 FILE STRUCTURE                                                      *cp-files*

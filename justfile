@@ -6,6 +6,7 @@ format:
     stylua --check .
     biome format .
     ruff format --check .
+    vimdoc-language-server format --check doc/
 
 lint:
     git ls-files '*.lua' | xargs selene --display-style quiet
